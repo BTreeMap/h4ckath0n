@@ -1,0 +1,17 @@
+[project]
+name = "h4ckrth0n"
+version = "0.0.0"
+description = "H4ckrth0n is a Python library that empowers you to code easily for hackathons. It manages user authentication, database operations (like setup and querying), API development, background task processing, and other common requirements, so you can dedicate your efforts to your primary application."
+authors = [
+    {name = "multiset",email = "h4ckrth0n@oss.joefang.org"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
