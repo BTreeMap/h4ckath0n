@@ -360,7 +360,7 @@ class TestPasswordReset:
         )
         from h4ckrth0n.auth.service import create_password_reset_token
 
-        raw = create_password_reset_token(db_session, "nancy@example.com", expire_minutes=0)
+        raw = create_password_reset_token(db_session, "nancy@example.com", expire_minutes=30)
         assert raw is not None
         # Manually expire the token
         prt = (

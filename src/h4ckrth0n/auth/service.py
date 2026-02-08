@@ -87,7 +87,7 @@ def rotate_refresh_token(
         db.query(RefreshToken)
         .filter(
             RefreshToken.token_hash == hashed,
-            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.revoked.is_(False),
         )
         .first()
     )
@@ -135,7 +135,7 @@ def confirm_password_reset(db: Session, raw_token: str, new_password: str) -> No
         db.query(PasswordResetToken)
         .filter(
             PasswordResetToken.token_hash == hashed,
-            PasswordResetToken.used == False,  # noqa: E712
+            PasswordResetToken.used.is_(False),
         )
         .first()
     )
