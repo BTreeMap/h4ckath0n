@@ -1,123 +1,163 @@
 # h4ckrth0n
 
-A Python library to supercharge hackathon development by handling the boilerplate code for you.
+Ship hackathon products fast, with secure-by-default auth, RBAC, Postgres readiness, and built-in LLM tooling.
 
-## 🚀 Features
+**h4ckrth0n** is an opinionated Python library that makes it hard to accidentally ship insecure glue code during a hackathon.
 
-- **Authentication** - User registration, login, JWT tokens, password reset
-- **Database** - Easy ORM setup, migrations, and query builders
-- **API** - Rapid API development with automatic documentation
-- **Background Tasks** - Efficient task queues and scheduling
-- **Configuration** - Environment-based configuration management
-- **Testing** - Tools to make testing your hackathon project easier
+## What you get by default
 
-## 📦 Installation
+- **API**: FastAPI app bootstrap with docs
+- **Auth**: registration, login, JWT access tokens, refresh tokens (revocable), password reset
+- **AuthZ**: built-in RBAC with `user` and `admin`, plus scoped permissions via JWT claims
+- **Database**: SQLAlchemy + Alembic, works with SQLite (zero-config) and Postgres (driver included)
+- **LLM**: built-in LLM client wrapper (OpenAI SDK under the hood) with safe defaults and redaction hooks
+- **Config**: environment-driven settings
+
+Redis-based queues/caching are optional.
+
+## Installation
+
+### Recommended (uv)
+
+```bash
+uv add h4ckrth0n
+````
+
+Optional Redis support:
+
+```bash
+uv add "h4ckrth0n[redis]"
+```
+
+### pip
 
 ```bash
 pip install h4ckrth0n
 ```
 
-Or if you're using Poetry:
+## Quickstart
+
+```python
+from h4ckrth0n import create_app
+
+app = create_app()
+```
+
+Run:
 
 ```bash
-poetry add h4ckrth0n
+uv run uvicorn your_module:app --reload
 ```
 
-## 🔧 Quick Start
+Open docs:
+
+* Swagger UI: `/docs`
+
+## Secure-by-default endpoint protection
+
+Protect an endpoint (requires a logged-in user):
 
 ```python
-from h4ckrth0n import create_app, Database, Auth
+from h4ckrth0n import create_app
+from h4ckrth0n.auth import require_user
 
-# Initialize your app with auth and database
 app = create_app()
-db = Database(app)
-auth = Auth(app)
 
-# Create an API endpoint that requires authentication
-@app.route("/protected")
-@auth.require_login
-def protected_route():
-    return {"message": "This is a protected endpoint!"}
-
-# Run your app
-if __name__ == "__main__":
-    app.run()
+@app.get("/me")
+def me(user = require_user()):
+    return {"id": user.id, "email": user.email, "role": user.role}
 ```
 
-## 💡 Usage Examples
-
-### Database Operations
+Admin-only endpoint:
 
 ```python
-from h4ckrth0n.database import Model, Column, String, Integer
+from h4ckrth0n.auth import require_admin
 
-# Define your model
-class User(Model):
-    name = Column(String)
-    age = Column(Integer)
-
-# Create tables
-db.create_all()
-
-# Create a new user
-user = User(name="Hackathon Hero", age=25)
-db.session.add(user)
-db.session.commit()
-
-# Query users
-users = User.query.filter_by(name="Hackathon Hero").all()
+@app.get("/admin/dashboard")
+def admin_dashboard(user = require_admin()):
+    return {"ok": True}
 ```
 
-### Authentication
+Scoped privileges (JWT claim `scopes`):
 
 ```python
-from h4ckrth0n.auth import require_auth, current_user
+from h4ckrth0n.auth import require_scopes
 
-@app.route("/profile")
-@require_auth
-def profile():
-    return {
-        "user": current_user.to_dict(),
-        "message": f"Hello {current_user.username}!"
-    }
+@app.post("/billing/refund")
+def refund(user = require_scopes("billing:refund")):
+    return {"status": "queued"}
 ```
 
-### Background Tasks
+## Auth routes
+
+h4ckrth0n mounts auth routes under `/auth` by default:
+
+* `POST /auth/register`
+* `POST /auth/login`
+* `POST /auth/refresh`
+* `POST /auth/logout`
+* `POST /auth/password-reset/request`
+* `POST /auth/password-reset/confirm`
+
+## Database
+
+Zero-config default: SQLite is used if no database URL is provided.
+
+To use Postgres, set:
+
+* `H4CKRTH0N_DATABASE_URL=postgresql+psycopg://user:pass@host:5432/dbname`
+
+Migrations are powered by Alembic.
+
+## LLM
+
+h4ckrth0n includes LLM tooling by default. It uses the official OpenAI Python SDK and reads credentials from environment variables. ([OpenAI Platform][3])
+
+Example:
 
 ```python
-from h4ckrth0n.tasks import create_task
+from h4ckrth0n.llm import llm
 
-@create_task(schedule="every 10 minutes")
-def cleanup_old_sessions():
-    # Task logic here
-    pass
+client = llm()
+
+resp = client.chat(
+    system="You are a helpful assistant.",
+    user="Summarize this in one sentence: ...",
+)
+print(resp.text)
 ```
 
-## 📚 Documentation
+## Configuration
 
-Full documentation is available at [https://h4ckrth0n.readthedocs.io/](https://h4ckrth0n.readthedocs.io/)
+Everything is environment-driven.
 
-## 🧪 Development
+Minimum recommended settings for real deployments:
 
-Clone the repository:
+* `H4CKRTH0N_ENV=production`
+* `H4CKRTH0N_AUTH_SIGNING_KEY=...`
+* `H4CKRTH0N_DATABASE_URL=...`
+
+In development, h4ckrth0n can generate ephemeral secrets to reduce setup friction, but production mode should fail closed if secrets are missing.
+
+## Development
 
 ```bash
 git clone https://github.com/username/h4ckrth0n.git
 cd h4ckrth0n
+uv sync
+uv run pytest
 ```
 
-Install development dependencies:
+Quality gates:
 
 ```bash
-poetry install --with dev
+uv run ruff format .
+uv run ruff check .
+uv run mypy src
+uv run pytest
 ```
 
-Run the tests:
+## License
 
-```bash
-poetry run pytest
-```
+MIT. See `LICENSE`.
 
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
