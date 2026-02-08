@@ -139,6 +139,36 @@ Minimum recommended settings for real deployments:
 
 In development, h4ckrth0n can generate ephemeral secrets to reduce setup friction, but production mode should fail closed if secrets are missing.
 
+## Observability for agentic apps (opt-in)
+
+Troubleshooting agent runs is hardest when you cannot see the graph and tool/LLM steps. h4ckrth0n can enable end-to-end tracing across:
+- FastAPI request handling
+- LangGraph node execution (DAG)
+- tool calls
+- LLM calls
+- database work
+
+### Enable LangSmith tracing
+
+Set environment variables:
+
+- `LANGSMITH_TRACING=true`
+- `LANGSMITH_API_KEY=...`
+- `LANGSMITH_PROJECT=your-project-name`
+- `OPENAI_API_KEY=...`
+
+LangSmith can trace LangChain/LangGraph apps with minimal instrumentation. Traces are grouped into projects via `LANGSMITH_PROJECT`. :contentReference[oaicite:6]{index=6}
+
+### Enable OpenTelemetry export (optional)
+
+LangSmith supports OpenTelemetry-based tracing and can ingest OTEL traces. :contentReference[oaicite:7]{index=7}
+
+You can also configure OTEL exporters to your own backend using standard `OTEL_*` environment variables.
+
+### Trace IDs
+
+When observability is enabled, h4ckrth0n attaches a trace id to responses (header + JSON field) so you can jump from user bug reports to the exact agent run.
+
 ## Development
 
 ```bash
