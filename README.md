@@ -6,14 +6,15 @@ Ship hackathon products fast, with secure-by-default auth, RBAC, Postgres readin
 
 ## What you get by default
 
-- **API**: FastAPI app bootstrap with docs
-- **Auth**: registration, login, JWT access tokens, refresh tokens (revocable), password reset
-- **AuthZ**: built-in RBAC with `user` and `admin`, plus scoped permissions via JWT claims
-- **Database**: SQLAlchemy + Alembic, works with SQLite (zero-config) and Postgres (driver included)
-- **LLM**: built-in LLM client wrapper (OpenAI SDK under the hood) with safe defaults and redaction hooks
-- **Config**: environment-driven settings
+- **API**: FastAPI app bootstrap with OpenAPI docs
+- **Auth**: registration, login, JWT access tokens, refresh tokens (revocable), password reset (single-use, time-limited)
+- **AuthZ**: built-in RBAC with `user` and `admin` roles, plus scoped permissions via JWT claims
+- **Database**: SQLAlchemy 2.x + Alembic, works with SQLite (zero-config) and Postgres (driver included)
+- **LLM**: built-in LLM client wrapper (OpenAI SDK) with safe defaults and redaction hooks
+- **Observability**: opt-in LangSmith / OpenTelemetry tracing with trace ID propagation
+- **Config**: environment-driven settings via pydantic-settings
 
-Redis-based queues/caching are optional.
+Redis-based queues/caching are available as an optional extra.
 
 ## Installation
 
@@ -21,7 +22,7 @@ Redis-based queues/caching are optional.
 
 ```bash
 uv add h4ckrth0n
-````
+```
 
 Optional Redis support:
 
@@ -49,9 +50,7 @@ Run:
 uv run uvicorn your_module:app --reload
 ```
 
-Open docs:
-
-* Swagger UI: `/docs`
+Open docs at `/docs` (Swagger UI).
 
 ## Secure-by-default endpoint protection
 
@@ -64,7 +63,7 @@ from h4ckrth0n.auth import require_user
 app = create_app()
 
 @app.get("/me")
-def me(user = require_user()):
+def me(user=require_user()):
     return {"id": user.id, "email": user.email, "role": user.role}
 ```
 
@@ -74,7 +73,7 @@ Admin-only endpoint:
 from h4ckrth0n.auth import require_admin
 
 @app.get("/admin/dashboard")
-def admin_dashboard(user = require_admin()):
+def admin_dashboard(user=require_admin()):
     return {"ok": True}
 ```
 
@@ -84,7 +83,7 @@ Scoped privileges (JWT claim `scopes`):
 from h4ckrth0n.auth import require_scopes
 
 @app.post("/billing/refund")
-def refund(user = require_scopes("billing:refund")):
+def refund(user=require_scopes("billing:refund")):
     return {"status": "queued"}
 ```
 
@@ -92,12 +91,12 @@ def refund(user = require_scopes("billing:refund")):
 
 h4ckrth0n mounts auth routes under `/auth` by default:
 
-* `POST /auth/register`
-* `POST /auth/login`
-* `POST /auth/refresh`
-* `POST /auth/logout`
-* `POST /auth/password-reset/request`
-* `POST /auth/password-reset/confirm`
+- `POST /auth/register` – create account (returns access + refresh tokens)
+- `POST /auth/login` – authenticate (returns access + refresh tokens)
+- `POST /auth/refresh` – rotate refresh token, get new access token
+- `POST /auth/logout` – revoke refresh token
+- `POST /auth/password-reset/request` – request a password reset
+- `POST /auth/password-reset/confirm` – confirm reset with token + new password
 
 ## Database
 
@@ -105,21 +104,20 @@ Zero-config default: SQLite is used if no database URL is provided.
 
 To use Postgres, set:
 
-* `H4CKRTH0N_DATABASE_URL=postgresql+psycopg://user:pass@host:5432/dbname`
+```
+H4CKRTH0N_DATABASE_URL=postgresql+psycopg://user:pass@host:5432/dbname
+```
 
-Migrations are powered by Alembic.
+The `psycopg[binary]` driver is included by default – no extra install needed.
 
 ## LLM
 
-h4ckrth0n includes LLM tooling by default. It uses the official OpenAI Python SDK and reads credentials from environment variables. ([OpenAI Platform][3])
-
-Example:
+h4ckrth0n includes LLM tooling by default. Set `OPENAI_API_KEY` and use:
 
 ```python
 from h4ckrth0n.llm import llm
 
 client = llm()
-
 resp = client.chat(
     system="You are a helpful assistant.",
     user="Summarize this in one sentence: ...",
@@ -127,52 +125,52 @@ resp = client.chat(
 print(resp.text)
 ```
 
+Fails gracefully with a clear error message when `OPENAI_API_KEY` is not set.
+
 ## Configuration
 
-Everything is environment-driven.
+Everything is environment-driven (prefix `H4CKRTH0N_`):
 
-Minimum recommended settings for real deployments:
+| Variable | Default | Description |
+|---|---|---|
+| `H4CKRTH0N_ENV` | `development` | `development` or `production` |
+| `H4CKRTH0N_DATABASE_URL` | `sqlite:///./h4ckrth0n.db` | Database connection string |
+| `H4CKRTH0N_AUTH_SIGNING_KEY` | *(ephemeral in dev)* | JWT signing key (**required in production**) |
+| `H4CKRTH0N_BOOTSTRAP_ADMIN_EMAILS` | `[]` | JSON list of emails that get admin role on registration |
+| `H4CKRTH0N_FIRST_USER_IS_ADMIN` | `false` | First registered user becomes admin (dev convenience) |
+| `OPENAI_API_KEY` | — | OpenAI API key for the LLM module |
 
-* `H4CKRTH0N_ENV=production`
-* `H4CKRTH0N_AUTH_SIGNING_KEY=...`
-* `H4CKRTH0N_DATABASE_URL=...`
+In development mode, missing signing keys generate ephemeral secrets with a warning.
+In production mode, missing critical secrets cause a hard error.
 
-In development, h4ckrth0n can generate ephemeral secrets to reduce setup friction, but production mode should fail closed if secrets are missing.
+## Observability (opt-in)
 
-## Observability for agentic apps (opt-in)
-
-Troubleshooting agent runs is hardest when you cannot see the graph and tool/LLM steps. h4ckrth0n can enable end-to-end tracing across:
-- FastAPI request handling
-- LangGraph node execution (DAG)
-- tool calls
-- LLM calls
-- database work
+Enable end-to-end tracing across FastAPI requests, LangGraph nodes, tool calls, and LLM calls.
 
 ### Enable LangSmith tracing
 
-Set environment variables:
-
-- `LANGSMITH_TRACING=true`
-- `LANGSMITH_API_KEY=...`
-- `LANGSMITH_PROJECT=your-project-name`
-- `OPENAI_API_KEY=...`
-
-LangSmith can trace LangChain/LangGraph apps with minimal instrumentation. Traces are grouped into projects via `LANGSMITH_PROJECT`. :contentReference[oaicite:6]{index=6}
-
-### Enable OpenTelemetry export (optional)
-
-LangSmith supports OpenTelemetry-based tracing and can ingest OTEL traces. :contentReference[oaicite:7]{index=7}
-
-You can also configure OTEL exporters to your own backend using standard `OTEL_*` environment variables.
+```
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=...
+LANGSMITH_PROJECT=your-project-name
+```
 
 ### Trace IDs
 
-When observability is enabled, h4ckrth0n attaches a trace id to responses (header + JSON field) so you can jump from user bug reports to the exact agent run.
+When observability is enabled, h4ckrth0n attaches `X-Trace-Id` to all responses:
+
+```python
+from h4ckrth0n import create_app
+from h4ckrth0n.obs import init_observability
+
+app = create_app()
+init_observability(app)
+```
 
 ## Development
 
 ```bash
-git clone https://github.com/username/h4ckrth0n.git
+git clone https://github.com/BTreeMap/h4ckrth0n.git
 cd h4ckrth0n
 uv sync
 uv run pytest
@@ -181,10 +179,16 @@ uv run pytest
 Quality gates:
 
 ```bash
-uv run ruff format .
+uv run ruff format --check .
 uv run ruff check .
 uv run mypy src
 uv run pytest
+```
+
+Build:
+
+```bash
+uv build
 ```
 
 ## License
