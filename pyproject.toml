@@ -1,21 +1,79 @@
 [project]
 name = "h4ckrth0n"
-version = "0.0.0"
-description = "h4ckrth0n is a Python library that empowers you to code easily for hackathons. It manages user authentication, database operations (like setup and querying), API development, background task processing, and other common requirements, so you can dedicate your efforts to your primary application."
+version = "0.1.0"
+description = "Ship hackathon products fast with secure-by-default auth, RBAC, Postgres readiness, and built-in LLM tooling."
 authors = [
-    {name = "multiset",email = "h4ckrth0n@oss.joefang.org"}
+    {name = "multiset", email = "h4ckrth0n@oss.joefang.org"},
 ]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "sqlalchemy>=2.0",
+    "alembic>=1.14",
+    "psycopg[binary]>=3.2",
+    "argon2-cffi>=23.1",
+    "pyjwt[crypto]>=2.9",
+    "pydantic[email]>=2.10",
+    "pydantic-settings>=2.7",
+    "openai>=1.60",
+    "httpx>=0.28",
+    "langchain>=0.3",
+    "langchain-core>=0.3",
+    "langchain-openai>=0.3",
+    "langgraph>=0.2",
+    "langsmith>=0.2",
 ]
-
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 [project.optional-dependencies]
-dev = [
+redis = [
+    "redis>=5.0",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/h4ckrth0n"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9",
+    "mypy>=1.14",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "httpx>=0.28",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 99
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["B008"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = [
+    "argon2.*",
+    "langchain.*",
+    "langchain_core.*",
+    "langchain_openai.*",
+    "langgraph.*",
+    "langsmith.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
