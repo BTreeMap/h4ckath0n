@@ -2,7 +2,7 @@
 
 Scheme
 ------
-* Generate 20 random bytes → base32-encode (lowercase, no padding) → 32 chars.
+* Generate 20 random bytes → base32-encode (lowercase, strip padding) → 32 chars.
 * Replace the first character with a prefix:
   - ``'u'`` for user IDs
   - ``'k'`` for internal credential (key) IDs
@@ -15,15 +15,16 @@ from __future__ import annotations
 
 import base64
 import os
+import uuid
 
 _ID_LEN = 32
 _ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyz234567")
 
 
 def _random_base32() -> str:
-    """Return a 32-char lowercase base32 string from 20 random bytes (no padding)."""
+    """Return a 32-char lowercase base32 string from 20 random bytes."""
     raw = os.urandom(20)
-    return base64.b32encode(raw).decode("ascii").lower()
+    return base64.b32encode(raw).decode("ascii").lower().rstrip("=")
 
 
 def new_user_id() -> str:
@@ -36,6 +37,11 @@ def new_key_id() -> str:
     """Generate a credential key ID (32 chars, starts with ``'k'``)."""
     s = _random_base32()
     return "k" + s[1:]
+
+
+def new_token_id() -> str:
+    """Generate a generic token/row ID (UUID hex, 32 chars)."""
+    return uuid.uuid4().hex
 
 
 def is_user_id(value: str) -> bool:

@@ -22,7 +22,7 @@ from h4ckrth0n.config import Settings
 
 
 class LastPasskeyError(Exception):
-    """Raised when an operation would leave a user with no active passkeys."""
+    """Raised when attempting to revoke the last active passkey, which would prevent user login."""
 
 
 # ---------------------------------------------------------------------------
@@ -359,7 +359,10 @@ def revoke_passkey(db: Session, user: User, key_id: str) -> None:
         .count()
     )
     if active_count <= 1:
-        raise LastPasskeyError("Cannot revoke the last active passkey. Add another passkey first.")
+        raise LastPasskeyError(
+            "Cannot revoke the last active passkey. "
+            "Add another passkey via POST /auth/passkey/add/start first."
+        )
 
     cred.revoked_at = datetime.now(UTC)
     db.commit()

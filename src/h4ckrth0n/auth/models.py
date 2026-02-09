@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from sqlalchemy import Boolean, DateTime, Index, LargeBinary, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from h4ckrth0n.auth.passkeys.ids import new_key_id, new_user_id
+from h4ckrth0n.auth.passkeys.ids import new_key_id, new_token_id, new_user_id
 from h4ckrth0n.db.base import Base
 
 
@@ -93,7 +93,7 @@ class WebAuthnChallenge(Base):
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_user_id)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_token_id)
     user_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     token_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -109,7 +109,7 @@ class RefreshToken(Base):
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_user_id)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_token_id)
     user_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     token_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -176,7 +176,11 @@ def passkey_revoke(
     except LastPasskeyError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail={"code": "LAST_PASSKEY", "message": "Cannot revoke the last active passkey."},
+            detail={
+                "code": "LAST_PASSKEY",
+                "message": "Cannot revoke the last active passkey. "
+                "Add another passkey via POST /auth/passkey/add/start first.",
+            },
         ) from None
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from None
