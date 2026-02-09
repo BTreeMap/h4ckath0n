@@ -13,23 +13,25 @@ from webauthn import (
     verify_registration_response,
 )
 from webauthn.helpers.structs import (
+    AttestationConveyancePreference,
     AuthenticationCredential,
     AuthenticatorSelectionCriteria,
     PublicKeyCredentialDescriptor,
     RegistrationCredential,
     ResidentKeyRequirement,
+    UserVerificationRequirement,
 )
 
 from h4ckrth0n.config import Settings
 
 
-def _uv(settings: Settings) -> str:  # type: ignore[return]
+def _uv(settings: Settings) -> UserVerificationRequirement:
     """Map setting string to webauthn enum value."""
-    return settings.user_verification  # type: ignore[return-value]
+    return UserVerificationRequirement(settings.user_verification)
 
 
-def _att(settings: Settings) -> str:  # type: ignore[return]
-    return settings.attestation  # type: ignore[return-value]
+def _att(settings: Settings) -> AttestationConveyancePreference:
+    return AttestationConveyancePreference(settings.attestation)
 
 
 def bytes_to_base64url(b: bytes) -> str:
