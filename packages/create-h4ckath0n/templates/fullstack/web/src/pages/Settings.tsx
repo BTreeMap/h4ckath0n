@@ -1,19 +1,15 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fingerprint, Plus, Trash2, AlertCircle } from "lucide-react";
-import { apiFetch } from "../auth";
+import { apiClient } from "../api/client";
+import type { components } from "../api/generated/schema";
 import { toCreateOptions, serializeCreateResponse } from "../auth/webauthn";
 import { Card, CardContent, CardHeader } from "../components/Card";
 import { Button } from "../components/Button";
 import { Alert } from "../components/Alert";
 
-interface Passkey {
-  id: string;
-  label: string | null;
-  created_at: string;
-  last_used_at: string | null;
-  revoked_at: string | null;
-}
+/** Backend-derived type for a passkey record. */
+type PasskeyInfo = components["schemas"]["PasskeyInfo"];
 
 export function Settings() {
   const queryClient = useQueryClient();
@@ -21,26 +17,26 @@ export function Settings() {
   const [error, setError] = useState<string | null>(null);
   const [lastPasskeyError, setLastPasskeyError] = useState<string | null>(null);
 
-  const { data: passkeys, isLoading } = useQuery<Passkey[]>({
+  const { data: passkeys, isLoading } = useQuery<PasskeyInfo[]>({
     queryKey: ["passkeys"],
     queryFn: async () => {
-      const res = await apiFetch<{ passkeys: Passkey[] }>("/auth/passkeys");
-      if (!res.ok) throw new Error("Failed to load passkeys");
-      return res.data.passkeys;
+      const { data, error } = await apiClient.GET("/auth/passkeys");
+      if (error) throw new Error("Failed to load passkeys");
+      return data.passkeys;
     },
   });
 
   const revokeMutation = useMutation({
     mutationFn: async (passkeyId: string) => {
       setLastPasskeyError(null);
-      const res = await apiFetch(`/auth/passkeys/${passkeyId}/revoke`, {
-        method: "POST",
+      const { response } = await apiClient.POST("/auth/passkeys/{key_id}/revoke", {
+        params: { path: { key_id: passkeyId } },
       });
-      if (!res.ok) {
-        const data = res.data as { error?: string; detail?: string | { code?: string; message?: string } };
-        const detail = data.detail;
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({})) as { error?: string; detail?: string | { code?: string; message?: string } };
+        const detail = body.detail;
         if (
-          data.error === "LAST_PASSKEY" ||
+          body.error === "LAST_PASSKEY" ||
           (typeof detail === "string" && detail.includes("LAST_PASSKEY")) ||
           (typeof detail === "object" && detail?.code === "LAST_PASSKEY")
         ) {
@@ -68,28 +64,24 @@ export function Settings() {
     setAddLoading(true);
     setError(null);
     try {
-      const startRes = await apiFetch<{ options: Record<string, unknown>; flow_id: string }>(
-        "/auth/passkey/add/start",
-        { method: "POST" }
-      );
-      if (!startRes.ok) throw new Error("Failed to start passkey addition");
+      const { data: startData, error: startError } = await apiClient.POST("/auth/passkey/add/start");
+      if (startError || !startData) throw new Error("Failed to start passkey addition");
 
       const createOptions = toCreateOptions(
-        startRes.data.options as unknown as Parameters<typeof toCreateOptions>[0]
+        startData.options as unknown as Parameters<typeof toCreateOptions>[0]
       );
       const credential = (await navigator.credentials.create(
         createOptions
       )) as PublicKeyCredential | null;
       if (!credential) throw new Error("Passkey creation cancelled");
 
-      const finishRes = await apiFetch("/auth/passkey/add/finish", {
-        method: "POST",
-        body: JSON.stringify({
-          flow_id: startRes.data.flow_id,
+      const { error: finishError } = await apiClient.POST("/auth/passkey/add/finish", {
+        body: {
+          flow_id: startData.flow_id,
           credential: serializeCreateResponse(credential),
-        }),
+        },
       });
-      if (!finishRes.ok) throw new Error("Failed to add passkey");
+      if (finishError) throw new Error("Failed to add passkey");
 
       queryClient.invalidateQueries({ queryKey: ["passkeys"] });
     } catch (err) {

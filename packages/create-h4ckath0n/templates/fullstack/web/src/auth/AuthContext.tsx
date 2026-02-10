@@ -21,13 +21,19 @@ import {
   serializeGetResponse,
 } from "./webauthn";
 import { useNavigate } from "react-router";
+import type { components } from "../api/generated/schema";
 
-interface User {
+/** Backend-derived response type for passkey register/login finish. */
+type PasskeyFinishResponse = components["schemas"]["PasskeyFinishResponse"];
+
+/** Frontend-only: minimal user object for UI state (derived from auth state). */
+interface UserViewModel {
   id: string;
   role: string;
   scopes: string[];
 }
 
+/** Frontend-only: authentication state for the React context. */
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -36,11 +42,12 @@ interface AuthState {
   role: string | null;
   displayName: string | null;
   /** Backward-compatible user object for existing components */
-  user: User | null;
+  user: UserViewModel | null;
   /** Backward-compatible loading alias */
   loading: boolean;
 }
 
+/** Frontend-only: public API surface of the auth context. */
 interface AuthContextType extends AuthState {
   register: (displayName: string) => Promise<void>;
   login: () => Promise<void>;
@@ -53,13 +60,6 @@ export function useAuth(): AuthContextType {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
-}
-
-interface FinishResponse {
-  user_id: string;
-  device_id: string;
-  role?: string;
-  display_name?: string;
 }
 
 function buildState(
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       )) as PublicKeyCredential | null;
       if (!credential) throw new Error("Credential creation cancelled");
 
-      const finishRes = await publicFetch<FinishResponse>(
+      const finishRes = await publicFetch<PasskeyFinishResponse>(
         "/auth/passkey/register/finish",
         {
           method: "POST",
@@ -183,7 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )) as PublicKeyCredential | null;
     if (!credential) throw new Error("Login cancelled");
 
-    const finishRes = await publicFetch<FinishResponse>(
+    const finishRes = await publicFetch<PasskeyFinishResponse>(
       "/auth/passkey/login/finish",
       {
         method: "POST",

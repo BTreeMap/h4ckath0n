@@ -136,7 +136,11 @@ def add_start(
     return schemas.PasskeyAddStartResponse(flow_id=flow_id, options=options)
 
 
-@router.post("/add/finish", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/add/finish",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.PasskeyFinishResponse,
+)
 def add_finish(
     body: schemas.PasskeyAddFinishRequest,
     request: Request,
@@ -181,7 +185,7 @@ def passkeys_list(
     return schemas.PasskeyListResponse(passkeys=items)
 
 
-@passkeys_router.post("/{key_id}/revoke")
+@passkeys_router.post("/{key_id}/revoke", response_model=schemas.PasskeyRevokeResponse)
 def passkey_revoke(
     key_id: str,
     request: Request,
