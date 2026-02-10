@@ -1,6 +1,7 @@
 """Application entry point."""
 
 import asyncio
+import contextlib
 import json
 from datetime import UTC, datetime
 
@@ -122,10 +123,8 @@ async def demo_websocket(websocket: WebSocket) -> None:
         pass
     finally:
         hb_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await hb_task
-        except asyncio.CancelledError:
-            pass
 
 
 # ---------------------------------------------------------------------------
@@ -184,4 +183,3 @@ async def demo_sse(request: Request):  # type: ignore[no-untyped-def]
         }
 
     return sse_response(generate())
-
