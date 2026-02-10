@@ -1,4 +1,4 @@
-name: publish.yml
+name: Publish (quality, release, post-release E2E)
 
 on:
   push:
