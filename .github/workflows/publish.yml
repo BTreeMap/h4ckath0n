@@ -301,3 +301,169 @@ jobs:
       - name: Publish to npm
         working-directory: dist-npm
         run: npm publish ./*.tgz --provenance --access public --tag "${{ needs.compute-version.outputs.dist_tag }}"
+
+  post-release-e2e:
+    name: Post-release E2E (install from registries)
+    runs-on: ubuntu-latest
+    needs: [compute-version, check-existing, publish-npm, publish-python]
+    if: needs.check-existing.outputs.npm_exists != 'true' && needs.check-existing.outputs.pypi_exists != 'true'
+    env:
+      CI: "1"
+      DIST_TAG: ${{ needs.compute-version.outputs.dist_tag }}
+      EXPECTED_NPM_VERSION: ${{ needs.compute-version.outputs.npm_version }}
+      EXPECTED_PYPI_VERSION: ${{ needs.compute-version.outputs.pypi_version }}
+      H4CKATH0N_DATABASE_URL: "sqlite:///./e2e-test.db"
+      H4CKATH0N_RP_ID: "localhost"
+      H4CKATH0N_ORIGIN: "http://localhost:5173"
+      H4CKATH0N_AUTH_SIGNING_KEY: "e2e-ci-test-key-not-for-production"
+
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python (uv)
+        run: uv python install 3.11
+
+      - name: Wait for npm dist-tag to point to this release (registry lag)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Expect npm: h4ckath0n@${DIST_TAG} -> ${EXPECTED_NPM_VERSION}"
+          for i in {1..60}; do
+            v="$(npm view h4ckath0n@${DIST_TAG} version 2>/dev/null || true)"
+            if [ "${v}" = "${EXPECTED_NPM_VERSION}" ]; then
+              echo "OK on attempt ${i}: ${v}"
+              exit 0
+            fi
+            echo "Attempt ${i}: got '${v}', retrying in 5s"
+            sleep 5
+          done
+          echo "ERROR: npm tag '${DIST_TAG}' did not resolve to ${EXPECTED_NPM_VERSION} after 60 attempts" >&2
+          npm view h4ckath0n@${DIST_TAG} version || true
+          exit 1
+
+      - name: Wait for PyPI version to appear (registry lag)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Expect PyPI: h4ckath0n == ${EXPECTED_PYPI_VERSION}"
+          for i in {1..60}; do
+            ok="$(python - <<'PY'
+          import json, os, urllib.request
+          want = os.environ["EXPECTED_PYPI_VERSION"]
+          try:
+            with urllib.request.urlopen("https://pypi.org/pypi/h4ckath0n/json") as r:
+              data = json.load(r)
+            print("true" if want in data.get("releases", {}) else "false")
+          except Exception:
+            print("false")
+          PY
+            )"
+            if [ "${ok}" = "true" ]; then
+              echo "OK on attempt ${i}"
+              exit 0
+            fi
+            echo "Attempt ${i}: not visible yet, retrying in 5s"
+            sleep 5
+          done
+          echo "ERROR: PyPI did not show ${EXPECTED_PYPI_VERSION} after 60 attempts" >&2
+          exit 1
+
+      - name: Scaffold app from published CLI (dist-tag, not latest)
+        id: scaffold
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$(mktemp -d)"
+          APP="smoke-${GITHUB_RUN_ID}"
+          APP_DIR="${ROOT}/${APP}"
+
+          echo "APP_DIR=${APP_DIR}" >> "$GITHUB_ENV"
+          echo "app_dir=${APP_DIR}" >> "$GITHUB_OUTPUT"
+
+          cd "${ROOT}"
+          npx --yes h4ckath0n@${DIST_TAG} "${APP}"
+          test -d "${APP_DIR}"
+
+      - name: Verify expected scaffold outputs exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "${APP_DIR}/api/pyproject.toml"
+          test -f "${APP_DIR}/web/package.json"
+          test -f "${APP_DIR}/web/package-lock.json"
+
+      - name: Pin backend to the exact published PyPI version (uv add, retry)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${APP_DIR}/api"
+          echo "Pinning h4ckath0n==${EXPECTED_PYPI_VERSION}"
+
+          for i in {1..60}; do
+            if uv add --no-sync "h4ckath0n==${EXPECTED_PYPI_VERSION}"; then
+              echo "Pinned OK on attempt ${i}"
+              break
+            fi
+            echo "Attempt ${i} failed; sleeping 5s"
+            sleep 5
+            if [ "${i}" -eq 60 ]; then
+              echo "ERROR: Failed to pin h4ckath0n==${EXPECTED_PYPI_VERSION} after 60 attempts" >&2
+              exit 1
+            fi
+          done
+
+      - name: Install backend deps and assert h4ckath0n version
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${APP_DIR}/api"
+          uv sync --all-extras
+          uv run python - <<'PY'
+          import os
+          import h4ckath0n
+          got = getattr(h4ckath0n, "__version__", None)
+          want = os.environ["EXPECTED_PYPI_VERSION"]
+          print("h4ckath0n version:", got)
+          if got != want:
+            raise SystemExit(f"Expected h4ckath0n=={want}, got {got}")
+          PY
+
+      - name: Install web deps and generate OpenAPI types
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${APP_DIR}/web"
+          npm ci
+          npm run gen
+
+      - name: Install Playwright browsers (chromium only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${APP_DIR}/web"
+          npx playwright install --with-deps chromium
+
+      - name: Run E2E tests (same as CI)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${APP_DIR}/web"
+          npx playwright test
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: post-release-playwright-report
+          path: ${{ steps.scaffold.outputs.app_dir }}/web/playwright-report/
+          retention-days: 7
