@@ -10,10 +10,18 @@ Covers:
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    NoEncryption,
+    PrivateFormat,
+)
 from fastapi.testclient import TestClient
+from jwt.algorithms import ECAlgorithm
 
 from h4ckath0n.app import create_app
 from h4ckath0n.auth.models import User, WebAuthnChallenge, WebAuthnCredential
@@ -31,6 +39,7 @@ from h4ckath0n.auth.passkeys.service import (
     start_authentication,
     start_registration,
 )
+from h4ckath0n.auth.service import register_device
 from h4ckath0n.config import Settings
 
 _ALLOWED_BASE32 = set("abcdefghijklmnopqrstuvwxyz234567")
@@ -46,7 +55,6 @@ def settings(tmp_path):
     db_path = tmp_path / "passkey_test.db"
     return Settings(
         database_url=f"sqlite:///{db_path}",
-        auth_signing_key="test-secret-key-for-unit-tests-minimum-32-bytes",
         env="development",
     )
 
@@ -340,9 +348,12 @@ class TestPasskeyRoutes:
 
 
 class TestPasskeyRevokeRoute:
-    def _setup_user_with_token(self, client, db_session, settings, n_creds=2):
-        """Create a user with passkeys and return (user, creds, access_token)."""
-        from h4ckath0n.auth.jwt import create_access_token
+    def _setup_user_with_device_token(self, client, db_session, settings, n_creds=2):
+        """Create a user with passkeys and a device-signed JWT.
+
+        Returns (user, creds, token).
+        """
+        import jwt as pyjwt
 
         user = User()
         db_session.add(user)
@@ -363,18 +374,25 @@ class TestPasskeyRevokeRoute:
             db_session.refresh(c)
         db_session.refresh(user)
 
-        token = create_access_token(
-            user_id=user.id,
-            role=user.role,
-            scopes=[],
-            signing_key=settings.effective_signing_key(),
-            algorithm=settings.auth_algorithm,
-            expire_minutes=settings.access_token_expire_minutes,
+        # Create a device keypair and register it
+        private_key = ec.generate_private_key(ec.SECP256R1())
+        private_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+        public_key = private_key.public_key()
+        jwk_dict = json.loads(ECAlgorithm(ECAlgorithm.SHA256).to_jwk(public_key))
+
+        device_id = register_device(db_session, user.id, jwk_dict, "test")
+
+        now = datetime.now(UTC)
+        token = pyjwt.encode(
+            {"sub": user.id, "iat": now, "exp": now + timedelta(minutes=15)},
+            private_pem,
+            algorithm="ES256",
+            headers={"kid": device_id},
         )
         return user, creds, token
 
     def test_revoke_one_of_two_via_route(self, client, db_session, settings):
-        user, creds, token = self._setup_user_with_token(client, db_session, settings, 2)
+        user, creds, token = self._setup_user_with_device_token(client, db_session, settings, 2)
         r = client.post(
             f"/auth/passkeys/{creds[0].id}/revoke",
             headers={"Authorization": f"Bearer {token}"},
@@ -382,7 +400,7 @@ class TestPasskeyRevokeRoute:
         assert r.status_code == 200
 
     def test_revoke_last_passkey_blocked_via_route(self, client, db_session, settings):
-        user, creds, token = self._setup_user_with_token(client, db_session, settings, 1)
+        user, creds, token = self._setup_user_with_device_token(client, db_session, settings, 1)
         r = client.post(
             f"/auth/passkeys/{creds[0].id}/revoke",
             headers={"Authorization": f"Bearer {token}"},
@@ -392,7 +410,7 @@ class TestPasskeyRevokeRoute:
         assert body["detail"]["code"] == "LAST_PASSKEY"
 
     def test_list_passkeys_via_route(self, client, db_session, settings):
-        user, creds, token = self._setup_user_with_token(client, db_session, settings, 3)
+        user, creds, token = self._setup_user_with_device_token(client, db_session, settings, 3)
         r = client.get(
             "/auth/passkeys",
             headers={"Authorization": f"Bearer {token}"},
@@ -409,12 +427,12 @@ class TestPasskeyRevokeRoute:
 
 class TestWebAuthnConfig:
     def test_production_requires_rp_id(self):
-        s = Settings(env="production", rp_id="", auth_signing_key="x" * 32)
+        s = Settings(env="production", rp_id="")
         with pytest.raises(RuntimeError, match="H4CKATH0N_RP_ID"):
             s.effective_rp_id()
 
     def test_production_requires_origin(self):
-        s = Settings(env="production", origin="", auth_signing_key="x" * 32)
+        s = Settings(env="production", origin="")
         with pytest.raises(RuntimeError, match="H4CKATH0N_ORIGIN"):
             s.effective_origin()
 
@@ -435,7 +453,7 @@ class TestWebAuthnConfig:
             assert s.effective_origin() == "http://localhost:8000"
 
     def test_custom_rp_id(self):
-        s = Settings(env="production", rp_id="example.com", auth_signing_key="x" * 32)
+        s = Settings(env="production", rp_id="example.com")
         assert s.effective_rp_id() == "example.com"
 
 

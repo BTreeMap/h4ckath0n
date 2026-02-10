@@ -1,4 +1,9 @@
-"""FastAPI dependencies for endpoint protection."""
+"""FastAPI dependencies for endpoint protection.
+
+All request authentication uses device-signed ES256 JWTs.  Authorization
+(roles, scopes) is loaded from the database – the JWT carries no privilege
+claims.
+"""
 
 from __future__ import annotations
 
@@ -14,7 +19,6 @@ from sqlalchemy.orm import Session
 
 from h4ckath0n.auth.jwt import (
     JWTClaims,
-    decode_access_token,
     decode_device_token,
     get_unverified_kid,
 )
@@ -31,47 +35,38 @@ def _get_claims(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(_bearer),
 ) -> JWTClaims:
-    settings = request.app.state.settings
     token = credentials.credentials
 
-    # Try device-key verification first (ES256 with kid)
     kid = get_unverified_kid(token)
-    if kid:
-        db: Session = _get_db_from_request(request)
-        try:
-            device = db.query(Device).filter(Device.id == kid).first()
-            if device:
-                try:
-                    jwk_dict = json.loads(device.public_key_jwk)
-                    public_key = ECAlgorithm(ECAlgorithm.SHA256).from_jwk(jwk_dict)
-                    pem = public_key.public_bytes(  # type: ignore[union-attr]
-                        encoding=serialization.Encoding.PEM,
-                        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-                    ).decode()
-                except (ValueError, KeyError, TypeError):
-                    raise HTTPException(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="Invalid device key",
-                    ) from None
-                return decode_device_token(token, public_key_pem=pem)
-        except jwt.ExpiredSignatureError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
-            ) from None
-        except jwt.InvalidTokenError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-            ) from None
-        finally:
-            db.close()
-
-    # Fallback: try server-issued HMAC token
-    try:
-        return decode_access_token(
-            token,
-            signing_key=settings.effective_signing_key(),
-            algorithm=settings.auth_algorithm,
+    if not kid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing kid in JWT header",
         )
+
+    db: Session = _get_db_from_request(request)
+    try:
+        device = db.query(Device).filter(Device.id == kid).first()
+        if not device:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unknown device",
+            )
+
+        try:
+            jwk_dict = json.loads(device.public_key_jwk)
+            public_key = ECAlgorithm(ECAlgorithm.SHA256).from_jwk(jwk_dict)
+            pem = public_key.public_bytes(  # type: ignore[union-attr]
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            ).decode()
+        except (ValueError, KeyError, TypeError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid device key",
+            ) from None
+
+        return decode_device_token(token, public_key_pem=pem)
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
@@ -80,6 +75,8 @@ def _get_claims(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         ) from None
+    finally:
+        db.close()
 
 
 def _get_current_user(
@@ -113,17 +110,18 @@ def require_admin() -> Any:
 
 
 def require_scopes(*scopes: str) -> Any:
-    """Dependency that requires the user's JWT to carry specific scopes."""
+    """Dependency that requires the user to have specific scopes (from DB)."""
 
     needed: list[str] = list(scopes)
 
-    def _scoped(claims: JWTClaims = Depends(_get_claims)) -> JWTClaims:
+    def _scoped(user: User = Depends(_get_current_user)) -> User:
+        user_scopes = [s for s in user.scopes.split(",") if s]
         for s in needed:
-            if s not in claims.scopes:
+            if s not in user_scopes:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Missing scope: {s}",
                 )
-        return claims
+        return user
 
     return Depends(_scoped)

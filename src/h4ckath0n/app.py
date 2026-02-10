@@ -7,7 +7,6 @@ from sqlalchemy.orm import sessionmaker
 
 from h4ckath0n.auth.passkeys.router import passkeys_router
 from h4ckath0n.auth.passkeys.router import router as passkey_router
-from h4ckath0n.auth.router import router as auth_router
 from h4ckath0n.config import Settings
 from h4ckath0n.db.base import Base
 from h4ckath0n.db.engine import create_engine_from_settings
@@ -41,9 +40,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Passkey routes are always mounted (default auth).
     app.include_router(passkey_router)
     app.include_router(passkeys_router)
-
-    # Core auth routes (refresh, logout) are always mounted.
-    app.include_router(auth_router)
 
     # Password routes are only mounted when the extra is installed AND enabled.
     if settings.password_auth_enabled:

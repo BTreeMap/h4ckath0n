@@ -7,12 +7,13 @@ They will raise ``RuntimeError`` if called without the extra installed.
 from __future__ import annotations
 
 import hashlib
+import json
 import secrets
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from h4ckath0n.auth.models import PasswordResetToken, RefreshToken, User
+from h4ckath0n.auth.models import Device, PasswordResetToken, User
 from h4ckath0n.config import Settings
 
 
@@ -78,54 +79,24 @@ def authenticate_user(db: Session, email: str, password: str) -> User | None:
     return user
 
 
-def create_refresh_token(
+def register_device(
     db: Session,
     user_id: str,
-    expire_days: int = 30,
+    public_key_jwk: dict | None,
+    label: str | None = None,
 ) -> str:
-    """Create and store a refresh token. Returns the raw token string."""
-    raw = secrets.token_urlsafe(48)
-    rt = RefreshToken(
+    """Create a Device record and return its id, or empty string if no key."""
+    if not public_key_jwk:
+        return ""
+    device = Device(
         user_id=user_id,
-        token_hash=_hash_token(raw),
-        expires_at=datetime.now(UTC) + timedelta(days=expire_days),
+        public_key_jwk=json.dumps(public_key_jwk),
+        label=label,
     )
-    db.add(rt)
+    db.add(device)
     db.commit()
-    return raw
-
-
-def rotate_refresh_token(
-    db: Session,
-    raw_token: str,
-    expire_days: int = 30,
-) -> tuple[str, str]:
-    """Validate, revoke, and re-issue a refresh token. Returns (new_raw, user_id)."""
-    hashed = _hash_token(raw_token)
-    rt = (
-        db.query(RefreshToken)
-        .filter(
-            RefreshToken.token_hash == hashed,
-            RefreshToken.revoked.is_(False),
-        )
-        .first()
-    )
-    if rt is None:
-        raise ValueError("Invalid refresh token")
-    if rt.expires_at.replace(tzinfo=UTC) < datetime.now(UTC):
-        raise ValueError("Refresh token expired")
-    rt.revoked = True
-    db.commit()
-    new_raw = create_refresh_token(db, rt.user_id, expire_days=expire_days)
-    return new_raw, rt.user_id
-
-
-def revoke_refresh_token(db: Session, raw_token: str) -> None:
-    hashed = _hash_token(raw_token)
-    rt = db.query(RefreshToken).filter(RefreshToken.token_hash == hashed).first()
-    if rt:
-        rt.revoked = True
-        db.commit()
+    db.refresh(device)
+    return device.id
 
 
 def create_password_reset_token(
@@ -148,7 +119,8 @@ def create_password_reset_token(
     return raw
 
 
-def confirm_password_reset(db: Session, raw_token: str, new_password: str) -> None:
+def confirm_password_reset(db: Session, raw_token: str, new_password: str) -> User:
+    """Confirm a password reset and return the user."""
     hash_password, _verify = _require_password_extra()
     hashed = _hash_token(raw_token)
     prt = (
@@ -169,3 +141,4 @@ def confirm_password_reset(db: Session, raw_token: str, new_password: str) -> No
         raise ValueError("User not found")
     user.password_hash = hash_password(new_password)
     db.commit()
+    return user
