@@ -57,6 +57,43 @@ test.describe("Passkey auth flows", () => {
     expect(healthRes.ok()).toBe(true);
     const healthBody = await healthRes.json();
     expect(healthBody.status).toBe("healthy");
+
+    // ── Library endpoint: GET /auth/passkeys via the UI ───────────────
+    // The Settings page uses the typed openapi-fetch client to list passkeys.
+    await page.getByTestId("nav-settings").click();
+    await expect(page).toHaveURL(/\/settings/);
+    await expect(page.getByTestId("passkey-item")).toHaveCount(1, {
+      timeout: 10_000,
+    });
+
+    // ── User-defined endpoints: demo/ping + demo/echo ─────────────────
+    // The Dashboard renders the results of GET /demo/ping and POST /demo/echo.
+    await page.goto("/dashboard");
+    await expect(page.getByTestId("demo-ping")).toContainText("✓ ok", {
+      timeout: 10_000,
+    });
+    await expect(page.getByTestId("demo-echo")).toContainText('"hello" → "olleh"', {
+      timeout: 10_000,
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // 2) Demo endpoints return correct data via direct API calls
+  // -----------------------------------------------------------------------
+  test("demo endpoints return expected shapes", async ({ page }) => {
+    // GET /demo/ping – unauthenticated
+    const pingRes = await page.request.get("http://localhost:8000/demo/ping");
+    expect(pingRes.ok()).toBe(true);
+    const ping = await pingRes.json();
+    expect(ping).toEqual({ ok: true });
+
+    // POST /demo/echo – unauthenticated
+    const echoRes = await page.request.post("http://localhost:8000/demo/echo", {
+      data: { message: "hello" },
+    });
+    expect(echoRes.ok()).toBe(true);
+    const echo = await echoRes.json();
+    expect(echo).toEqual({ message: "hello", reversed: "olleh" });
   });
 
   // -----------------------------------------------------------------------
