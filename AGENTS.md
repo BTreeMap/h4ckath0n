@@ -98,8 +98,10 @@ Frontend (run from `packages/create-h4ckath0n/templates/fullstack/web/`):
 
 E2E (Playwright, run from `packages/create-h4ckath0n/templates/fullstack/web/`):
 
-- Must pass in CI and is a required local quality guard for agents.
-- Agents must run E2E locally before submitting work that touches auth, passkeys, device auth, or OpenAPI/type generation.
+- Must pass in CI when available.
+- Regardless of CI availability, it is a required local quality guard for agents.
+- Agents must run E2E locally before submitting work that touches auth, passkeys, device auth, scaffolding, or OpenAPI/type generation.
+- If the agent cannot run CI or add/modify CI jobs, the agent must run E2E locally in a CI-equivalent way (install browsers and deps, then run tests), matching the workflow steps.
 
 ## Release channels
 
@@ -213,7 +215,7 @@ Rules:
 The generated types must be demonstrated as usable:
 
 - At least one web template file must import types from `src/api/openapi.ts` and use them in the API client layer (not just in tests).
-- The web template must typecheck against the generated types in normal dev and CI paths.
+- The web template must typecheck against the generated types in normal dev and CI-equivalent local paths.
 
 ## Observability (killer feature)
 
@@ -347,12 +349,18 @@ When modifying files under `packages/create-h4ckath0n/templates/fullstack/web/`,
 
 Do not commit frontend template changes that fail these checks.
 
-### E2E quality guard (required)
+### E2E quality guard (required, CI-equivalent)
 
 When modifying auth, passkeys, device auth, scaffolding, or OpenAPI/type generation:
 
-- Run Playwright E2E locally and ensure it passes.
-- Ensure the CI `e2e` job also passes.
+Run E2E locally in a CI-equivalent way (install browsers and deps, then run tests):
+
+- From `packages/create-h4ckath0n/templates/fullstack/web/`:
+  - `npm ci`
+  - `npm exec --no -- playwright install --with-deps chromium`
+  - `npm exec --no -- playwright test`
+
+Ensure it passes before submitting work.
 
 ### Scaffold CLI checks
 
