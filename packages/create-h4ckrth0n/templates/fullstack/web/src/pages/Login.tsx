@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 
 export function Login() {
   const { login } = useAuth();
-  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -12,26 +10,7 @@ export function Login() {
     setError(null);
     setLoading(true);
     try {
-      // Step 1: Begin authentication – get options from server
-      const beginRes = await fetch("/api/auth/login/begin", { method: "POST" });
-      if (!beginRes.ok) throw new Error("Failed to begin login");
-      const options = await beginRes.json();
-
-      // Step 2: Get credential with WebAuthn API
-      const credential = await navigator.credentials.get({ publicKey: options });
-      if (!credential) throw new Error("Authentication cancelled");
-
-      // Step 3: Finish authentication – send assertion to server
-      const finishRes = await fetch("/api/auth/login/finish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credential),
-      });
-      if (!finishRes.ok) throw new Error("Login failed");
-      const data = await finishRes.json();
-
-      await login(data.access_token, data.refresh_token);
-      navigate("/dashboard");
+      await login();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

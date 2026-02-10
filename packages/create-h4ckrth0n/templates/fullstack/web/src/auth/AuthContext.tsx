@@ -1,6 +1,26 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { decodeJwt } from "jose";
-import { get, set, del } from "idb-keyval";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from "react";
+import {
+  ensureDeviceKeyMaterial,
+  getDeviceIdentity,
+  setDeviceIdentity,
+  clearDeviceKeyMaterial,
+} from "./deviceKey";
+import { clearCachedToken } from "./token";
+import { publicFetch } from "./api";
+import {
+  toCreateOptions,
+  toGetOptions,
+  serializeCreateResponse,
+  serializeGetResponse,
+} from "./webauthn";
+import { useNavigate } from "react-router";
 
 interface User {
   id: string;
@@ -9,96 +29,210 @@ interface User {
 }
 
 interface AuthState {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  userId: string | null;
+  deviceId: string | null;
+  role: string | null;
+  displayName: string | null;
+  /** Backward-compatible user object for existing components */
   user: User | null;
-  token: string | null;
+  /** Backward-compatible loading alias */
   loading: boolean;
 }
 
-interface AuthContextValue extends AuthState {
-  login: (token: string, refreshToken: string) => Promise<void>;
+interface AuthContextType extends AuthState {
+  register: (displayName: string) => Promise<void>;
+  login: () => Promise<void>;
   logout: () => Promise<void>;
-  refresh: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-const TOKEN_KEY = "h4ckrth0n_token";
-const REFRESH_KEY = "h4ckrth0n_refresh";
-
-function parseToken(token: string): User | null {
-  try {
-    const claims = decodeJwt(token);
-    // 30-second buffer to account for clock skew
-    if (claims.exp && claims.exp * 1000 < Date.now() + 30_000) return null;
-    return {
-      id: claims.sub as string,
-      role: (claims.role as string) ?? "user",
-      scopes: (claims.scopes as string[]) ?? [],
-    };
-  } catch {
-    return null;
-  }
-}
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    token: null,
-    loading: true,
-  });
-
-  useEffect(() => {
-    get<string>(TOKEN_KEY).then((token) => {
-      if (token) {
-        const user = parseToken(token);
-        setState({ user, token: user ? token : null, loading: false });
-      } else {
-        setState((s) => ({ ...s, loading: false }));
-      }
-    });
-  }, []);
-
-  const login = useCallback(async (token: string, refreshToken: string) => {
-    await Promise.all([set(TOKEN_KEY, token), set(REFRESH_KEY, refreshToken)]);
-    const user = parseToken(token);
-    setState({ user, token, loading: false });
-  }, []);
-
-  const logout = useCallback(async () => {
-    setState({ user: null, token: null, loading: false });
-    await del(TOKEN_KEY);
-    await del(REFRESH_KEY);
-  }, []);
-
-  const refresh = useCallback(async () => {
-    const refreshToken = await get<string>(REFRESH_KEY);
-    if (!refreshToken) {
-      await logout();
-      return;
-    }
-    try {
-      const res = await fetch("/api/auth/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
-      if (!res.ok) throw new Error("refresh failed");
-      const data = await res.json();
-      await login(data.access_token, data.refresh_token);
-    } catch {
-      await logout();
-    }
-  }, [login, logout]);
-
-  return (
-    <AuthContext.Provider value={{ ...state, login, logout, refresh }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth(): AuthContextValue {
+export function useAuth(): AuthContextType {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
+}
+
+interface FinishResponse {
+  user_id: string;
+  device_id: string;
+  role?: string;
+  display_name?: string;
+}
+
+function buildState(
+  partial: Omit<AuthState, "user" | "loading">,
+): AuthState {
+  const user = partial.isAuthenticated && partial.userId
+    ? { id: partial.userId, role: partial.role ?? "user", scopes: [] }
+    : null;
+  return { ...partial, user, loading: partial.isLoading };
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AuthState>(
+    buildState({
+      isAuthenticated: false,
+      isLoading: true,
+      userId: null,
+      deviceId: null,
+      role: null,
+      displayName: null,
+    }),
+  );
+  const navigate = useNavigate();
+
+  // Check existing device identity on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const identity = await getDeviceIdentity();
+        if (identity) {
+          setState(
+            buildState({
+              isAuthenticated: true,
+              isLoading: false,
+              userId: identity.userId,
+              deviceId: identity.deviceId,
+              role: null,
+              displayName: null,
+            }),
+          );
+        } else {
+          setState((s) => buildState({ ...s, isLoading: false }));
+        }
+      } catch {
+        setState((s) => buildState({ ...s, isLoading: false }));
+      }
+    })();
+  }, []);
+
+  const register = useCallback(
+    async (displayName: string) => {
+      const keyMaterial = await ensureDeviceKeyMaterial();
+
+      const startRes = await publicFetch<{
+        options: Record<string, unknown>;
+        flow_id: string;
+      }>("/auth/passkey/register/start", {
+        method: "POST",
+        body: JSON.stringify({ display_name: displayName }),
+      });
+      if (!startRes.ok) throw new Error("Registration start failed");
+
+      const createOptions = toCreateOptions(
+        startRes.data.options as Parameters<typeof toCreateOptions>[0],
+      );
+      const credential = (await navigator.credentials.create(
+        createOptions,
+      )) as PublicKeyCredential | null;
+      if (!credential) throw new Error("Credential creation cancelled");
+
+      const finishRes = await publicFetch<FinishResponse>(
+        "/auth/passkey/register/finish",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            flow_id: startRes.data.flow_id,
+            credential: serializeCreateResponse(credential),
+            device_public_key_jwk: keyMaterial.publicJwk,
+            device_label: navigator.userAgent.slice(0, 64),
+          }),
+        },
+      );
+      if (!finishRes.ok) throw new Error("Registration finish failed");
+
+      await setDeviceIdentity(
+        finishRes.data.device_id,
+        finishRes.data.user_id,
+      );
+      setState(
+        buildState({
+          isAuthenticated: true,
+          isLoading: false,
+          userId: finishRes.data.user_id,
+          deviceId: finishRes.data.device_id,
+          role: finishRes.data.role ?? "user",
+          displayName: finishRes.data.display_name ?? displayName,
+        }),
+      );
+      navigate("/dashboard");
+    },
+    [navigate],
+  );
+
+  const login = useCallback(async () => {
+    const keyMaterial = await ensureDeviceKeyMaterial();
+
+    const startRes = await publicFetch<{
+      options: Record<string, unknown>;
+      flow_id: string;
+    }>("/auth/passkey/login/start", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    if (!startRes.ok) throw new Error("Login start failed");
+
+    const getOptions = toGetOptions(
+      startRes.data.options as Parameters<typeof toGetOptions>[0],
+    );
+    const credential = (await navigator.credentials.get(
+      getOptions,
+    )) as PublicKeyCredential | null;
+    if (!credential) throw new Error("Login cancelled");
+
+    const finishRes = await publicFetch<FinishResponse>(
+      "/auth/passkey/login/finish",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          flow_id: startRes.data.flow_id,
+          credential: serializeGetResponse(credential),
+          device_public_key_jwk: keyMaterial.publicJwk,
+          device_label: navigator.userAgent.slice(0, 64),
+        }),
+      },
+    );
+    if (!finishRes.ok) throw new Error("Login finish failed");
+
+    await setDeviceIdentity(
+      finishRes.data.device_id,
+      finishRes.data.user_id,
+    );
+    setState(
+      buildState({
+        isAuthenticated: true,
+        isLoading: false,
+        userId: finishRes.data.user_id,
+        deviceId: finishRes.data.device_id,
+        role: finishRes.data.role ?? "user",
+        displayName: finishRes.data.display_name ?? null,
+      }),
+    );
+    navigate("/dashboard");
+  }, [navigate]);
+
+  const logout = useCallback(async () => {
+    clearCachedToken();
+    await clearDeviceKeyMaterial();
+    setState(
+      buildState({
+        isAuthenticated: false,
+        isLoading: false,
+        userId: null,
+        deviceId: null,
+        role: null,
+        displayName: null,
+      }),
+    );
+    navigate("/");
+  }, [navigate]);
+
+  return (
+    <AuthContext.Provider value={{ ...state, register, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

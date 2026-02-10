@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 
 export function Register() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { register } = useAuth();
+  const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -12,26 +11,7 @@ export function Register() {
     setError(null);
     setLoading(true);
     try {
-      // Step 1: Begin registration – get options from server
-      const beginRes = await fetch("/api/auth/register/begin", { method: "POST" });
-      if (!beginRes.ok) throw new Error("Failed to begin registration");
-      const options = await beginRes.json();
-
-      // Step 2: Create credential with WebAuthn API
-      const credential = await navigator.credentials.create({ publicKey: options });
-      if (!credential) throw new Error("Credential creation cancelled");
-
-      // Step 3: Finish registration – send credential to server
-      const finishRes = await fetch("/api/auth/register/finish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credential),
-      });
-      if (!finishRes.ok) throw new Error("Registration failed");
-      const data = await finishRes.json();
-
-      await login(data.access_token, data.refresh_token);
-      navigate("/dashboard");
+      await register(displayName || "User");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -48,10 +28,17 @@ export function Register() {
       {error && (
         <p className="mt-4 rounded-md bg-danger/10 p-3 text-sm text-danger">{error}</p>
       )}
+      <input
+        type="text"
+        placeholder="Display name"
+        value={displayName}
+        onChange={(e) => setDisplayName(e.target.value)}
+        className="mt-6 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm"
+      />
       <button
         onClick={() => void handleRegister()}
         disabled={loading}
-        className="mt-6 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+        className="mt-4 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
       >
         {loading ? "Creating…" : "Register with passkey"}
       </button>
