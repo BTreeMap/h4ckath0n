@@ -43,6 +43,30 @@ def update_package_lock_version(path: Path, version: str) -> None:
     path.write_text(json.dumps(data, indent=2) + "\n")
 
 
+def update_python_fallback_version(path: Path, version: str) -> None:
+    """
+    Update __fallback_version__ in src/h4ckath0n/__init__.py.
+
+    We derive __version__ from importlib.metadata when installed.
+    The fallback is only used when running from source without metadata.
+    """
+    if not path.exists():
+        raise ValueError(f"Missing expected file: {path}")
+
+    content = path.read_text()
+
+    updated, count = re.subn(
+        r'^__fallback_version__\s*=\s*".*"$',
+        f'__fallback_version__ = "{version}"',
+        content,
+        count=1,
+        flags=re.M,
+    )
+    if count != 1:
+        raise ValueError(f"Failed to update __fallback_version__ in {path}")
+    path.write_text(updated)
+
+
 def validate_versions(pyproject_path: Path, package_json_path: Path, version: str) -> None:
     pyproject_version = read_pyproject_version(pyproject_path)
     package_version = read_package_version(package_json_path)
@@ -63,6 +87,7 @@ def main() -> None:
 
     root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parents[1]
     pyproject_path = root / "pyproject.toml"
+    init_path = root / "src" / "h4ckath0n" / "__init__.py"
     package_dir = root / "packages" / "create-h4ckath0n"
     package_json_path = package_dir / "package.json"
     package_lock_path = package_dir / "package-lock.json"
@@ -72,6 +97,7 @@ def main() -> None:
         return
 
     update_pyproject_version(pyproject_path, args.pypi_version)
+    update_python_fallback_version(init_path, args.pypi_version)
     update_package_json_version(package_json_path, args.npm_version)
     update_package_lock_version(package_lock_path, args.npm_version)
 
