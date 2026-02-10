@@ -1,6 +1,7 @@
 """h4ckath0n - ship hackathon products fast, securely."""
 
-from importlib.metadata import PackageNotFoundError, version as _pkg_version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 
 # Used only when running from source without installed package metadata.
 __fallback_version__ = "0.1.1"
