@@ -89,6 +89,9 @@ def verify_device_jwt(
     if not device:
         raise AuthError("Unknown device")
 
+    if device.revoked_at is not None:
+        raise AuthError("Device revoked")
+
     try:
         jwk_dict = json.loads(device.public_key_jwk)
         public_key = ECAlgorithm(ECAlgorithm.SHA256).from_jwk(jwk_dict)

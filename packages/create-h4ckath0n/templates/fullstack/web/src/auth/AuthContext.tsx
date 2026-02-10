@@ -10,7 +10,7 @@ import {
   ensureDeviceKeyMaterial,
   getDeviceIdentity,
   setDeviceIdentity,
-  clearDeviceKeyMaterial,
+  clearDeviceAuthorization,
 } from "./deviceKey";
 import { clearCachedToken } from "./token";
 import { publicFetch } from "./api";
@@ -216,7 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     clearCachedToken();
-    await clearDeviceKeyMaterial();
+    await clearDeviceAuthorization();
     setState(
       buildState({
         isAuthenticated: false,

@@ -112,5 +112,9 @@ class Device(Base):
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_device_id)
     user_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     public_key_jwk: Mapped[str] = mapped_column(Text, nullable=False)  # JSON-serialized JWK
+    fingerprint: Mapped[str | None] = mapped_column(
+        String(64), unique=True, nullable=True, index=True
+    )  # SHA-256 hex of canonical JWK
     label: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
