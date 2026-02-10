@@ -1,57 +1,25 @@
-"""JWT helpers for device-key (ES256) and server (HS256) tokens."""
+"""JWT helpers for device-key (ES256) verification."""
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
-from typing import Any
+from datetime import datetime
 
 import jwt
 from pydantic import BaseModel
 
 
 class JWTClaims(BaseModel):
-    """Typed representation of JWT payload."""
+    """Typed representation of device-signed JWT payload.
+
+    Contains only identity and time claims.  No privilege claims (role/scopes)
+    are read from the JWT – authorization is computed server-side.
+    """
 
     sub: str
     iat: datetime
     exp: datetime
     aud: str | None = None
     iss: str | None = None
-    # Device-signed JWTs omit role/scopes; defaults match the "user" role.
-    role: str = "user"
-    scopes: list[str] = []
-
-
-def create_access_token(
-    *,
-    user_id: str,
-    role: str,
-    scopes: list[str],
-    signing_key: str,
-    algorithm: str = "HS256",
-    expire_minutes: int = 15,
-) -> str:
-    """Create a server-issued HMAC access token (used internally/tests)."""
-    now = datetime.now(UTC)
-    claims: dict[str, Any] = {
-        "sub": user_id,
-        "role": role,
-        "scopes": scopes,
-        "iat": now,
-        "exp": now + timedelta(minutes=expire_minutes),
-    }
-    return jwt.encode(claims, signing_key, algorithm=algorithm)
-
-
-def decode_access_token(
-    token: str,
-    *,
-    signing_key: str,
-    algorithm: str = "HS256",
-) -> JWTClaims:
-    """Decode a server-issued HMAC token."""
-    payload = jwt.decode(token, signing_key, algorithms=[algorithm])
-    return JWTClaims(**payload)
 
 
 def decode_device_token(

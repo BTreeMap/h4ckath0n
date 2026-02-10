@@ -86,22 +86,6 @@ class WebAuthnChallenge(Base):
 
 
 # ---------------------------------------------------------------------------
-# RefreshToken  (unchanged – server-side, rotated, revocable)
-# ---------------------------------------------------------------------------
-
-
-class RefreshToken(Base):
-    __tablename__ = "refresh_tokens"
-
-    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_token_id)
-    user_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
-    token_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-
-
-# ---------------------------------------------------------------------------
 # PasswordResetToken  (only used with password extra)
 # ---------------------------------------------------------------------------
 

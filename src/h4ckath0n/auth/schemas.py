@@ -8,25 +8,21 @@ from pydantic import BaseModel, EmailStr
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
+    device_public_key_jwk: dict | None = None
+    device_label: str | None = None
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+    device_public_key_jwk: dict | None = None
+    device_label: str | None = None
 
 
-class TokenResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-
-
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
-class LogoutRequest(BaseModel):
-    refresh_token: str
+class DeviceBindingResponse(BaseModel):
+    user_id: str
+    device_id: str
+    role: str
 
 
 class PasswordResetRequestSchema(BaseModel):
@@ -36,6 +32,8 @@ class PasswordResetRequestSchema(BaseModel):
 class PasswordResetConfirmSchema(BaseModel):
     token: str
     new_password: str
+    device_public_key_jwk: dict | None = None
+    device_label: str | None = None
 
 
 class MessageResponse(BaseModel):

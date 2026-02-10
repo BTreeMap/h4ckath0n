@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    NoEncryption,
+    PrivateFormat,
+)
 from fastapi.testclient import TestClient
+from jwt.algorithms import ECAlgorithm
 
 from h4ckath0n.app import create_app
 from h4ckath0n.auth.models import PasswordResetToken, User
@@ -15,12 +23,44 @@ from h4ckath0n.auth.service import _hash_token
 from h4ckath0n.config import Settings
 
 
+def _make_device_token(
+    user_id: str,
+    device_id: str,
+    private_key_pem: bytes,
+    expire_minutes: int = 15,
+) -> str:
+    """Create a device-signed ES256 JWT for testing."""
+    import jwt as pyjwt
+
+    now = datetime.now(UTC)
+    payload = {
+        "sub": user_id,
+        "iat": now,
+        "exp": now + timedelta(minutes=expire_minutes),
+    }
+    return pyjwt.encode(
+        payload,
+        private_key_pem,
+        algorithm="ES256",
+        headers={"kid": device_id},
+    )
+
+
+def _create_device_keypair() -> tuple[bytes, dict]:
+    """Generate an EC P-256 keypair. Returns (private_key_pem, public_key_jwk_dict)."""
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    private_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+    public_key = private_key.public_key()
+    # Export as JWK via PyJWT helper
+    jwk_dict = json.loads(ECAlgorithm(ECAlgorithm.SHA256).to_jwk(public_key))
+    return private_pem, jwk_dict
+
+
 @pytest.fixture()
 def settings(tmp_path):
     db_path = tmp_path / "test.db"
     return Settings(
         database_url=f"sqlite:///{db_path}",
-        auth_signing_key="test-secret-key-for-unit-tests-minimum-32-bytes",
         env="development",
         first_user_is_admin=False,
         password_auth_enabled=True,
@@ -46,6 +86,28 @@ def db_session(app):
         session.close()
 
 
+def _register_user_with_device(
+    client: TestClient, db_session, email: str, password: str
+) -> tuple[str, str, bytes]:
+    """Register a user via password route and bind a device key.
+
+    Returns (user_id, device_id, private_key_pem).
+    """
+    private_pem, public_jwk = _create_device_keypair()
+    r = client.post(
+        "/auth/register",
+        json={
+            "email": email,
+            "password": password,
+            "device_public_key_jwk": public_jwk,
+            "device_label": "test",
+        },
+    )
+    assert r.status_code == 201
+    body = r.json()
+    return body["user_id"], body["device_id"], private_pem
+
+
 # ---------------------------------------------------------------------------
 # Password hashing
 # ---------------------------------------------------------------------------
@@ -59,49 +121,86 @@ class TestPasswordHashing:
 
 
 # ---------------------------------------------------------------------------
-# Signup / Login happy path
+# Signup / Login happy path (password, device-binding)
 # ---------------------------------------------------------------------------
 
 
 class TestSignupLogin:
-    def test_register_returns_tokens(self, client: TestClient):
+    def test_register_returns_device_binding(self, client: TestClient):
+        private_pem, public_jwk = _create_device_keypair()
         r = client.post(
             "/auth/register",
-            json={"email": "alice@example.com", "password": "strongP@ss1"},
+            json={
+                "email": "alice@example.com",
+                "password": "strongP@ss1",
+                "device_public_key_jwk": public_jwk,
+                "device_label": "test",
+            },
         )
         assert r.status_code == 201
         body = r.json()
-        assert "access_token" in body
-        assert "refresh_token" in body
-        assert body["token_type"] == "bearer"
+        assert "user_id" in body
+        assert "device_id" in body
+        assert body["role"] == "user"
+        # No access/refresh tokens
+        assert "access_token" not in body
+        assert "refresh_token" not in body
 
     def test_duplicate_register(self, client: TestClient):
+        private_pem, public_jwk = _create_device_keypair()
         client.post(
             "/auth/register",
-            json={"email": "bob@example.com", "password": "strongP@ss1"},
+            json={
+                "email": "bob@example.com",
+                "password": "strongP@ss1",
+                "device_public_key_jwk": public_jwk,
+            },
         )
         r = client.post(
             "/auth/register",
-            json={"email": "bob@example.com", "password": "strongP@ss1"},
+            json={
+                "email": "bob@example.com",
+                "password": "strongP@ss1",
+                "device_public_key_jwk": public_jwk,
+            },
         )
         assert r.status_code == 409
 
     def test_login_success(self, client: TestClient):
+        private_pem, public_jwk = _create_device_keypair()
         client.post(
             "/auth/register",
-            json={"email": "carol@example.com", "password": "strongP@ss1"},
+            json={
+                "email": "carol@example.com",
+                "password": "strongP@ss1",
+                "device_public_key_jwk": public_jwk,
+            },
         )
+        private_pem2, public_jwk2 = _create_device_keypair()
         r = client.post(
             "/auth/login",
-            json={"email": "carol@example.com", "password": "strongP@ss1"},
+            json={
+                "email": "carol@example.com",
+                "password": "strongP@ss1",
+                "device_public_key_jwk": public_jwk2,
+            },
         )
         assert r.status_code == 200
-        assert "access_token" in r.json()
+        body = r.json()
+        assert "user_id" in body
+        assert "device_id" in body
+        assert "access_token" not in body
+        assert "refresh_token" not in body
 
     def test_login_bad_password(self, client: TestClient):
+        private_pem, public_jwk = _create_device_keypair()
         client.post(
             "/auth/register",
-            json={"email": "dave@example.com", "password": "strongP@ss1"},
+            json={
+                "email": "dave@example.com",
+                "password": "strongP@ss1",
+                "device_public_key_jwk": public_jwk,
+            },
         )
         r = client.post(
             "/auth/login",
@@ -111,7 +210,7 @@ class TestSignupLogin:
 
 
 # ---------------------------------------------------------------------------
-# Access token protects endpoint
+# Device-signed JWT protects endpoint
 # ---------------------------------------------------------------------------
 
 
@@ -124,20 +223,19 @@ class TestProtectedEndpoint:
             return {"id": user.id}
 
         r = client.get("/protected")
-        assert r.status_code == 401
+        assert r.status_code in (401, 403)
 
-    def test_valid_token_accepted(self, client: TestClient, app, settings):
+    def test_valid_device_token_accepted(self, client: TestClient, app, db_session):
         from h4ckath0n.auth import require_user
 
         @app.get("/protected2")
         def protected2(user=require_user()):
             return {"id": user.id, "email": user.email}
 
-        reg = client.post(
-            "/auth/register",
-            json={"email": "eve@example.com", "password": "strongP@ss1"},
+        user_id, device_id, private_pem = _register_user_with_device(
+            client, db_session, "eve@example.com", "strongP@ss1"
         )
-        token = reg.json()["access_token"]
+        token = _make_device_token(user_id, device_id, private_pem)
         r = client.get("/protected2", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 200
         assert r.json()["email"] == "eve@example.com"
@@ -149,129 +247,96 @@ class TestProtectedEndpoint:
 
 
 class TestAdminGate:
-    def test_non_admin_rejected(self, client: TestClient, app):
+    def test_non_admin_rejected(self, client: TestClient, app, db_session):
         from h4ckath0n.auth import require_admin
 
         @app.get("/admin-only")
         def admin_only(user=require_admin()):
             return {"ok": True}
 
-        reg = client.post(
-            "/auth/register",
-            json={"email": "frank@example.com", "password": "strongP@ss1"},
+        user_id, device_id, private_pem = _register_user_with_device(
+            client, db_session, "frank@example.com", "strongP@ss1"
         )
-        token = reg.json()["access_token"]
+        token = _make_device_token(user_id, device_id, private_pem)
         r = client.get("/admin-only", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 403
 
-    def test_admin_accepted(self, client: TestClient, app, settings, db_session):
+    def test_admin_accepted(self, client: TestClient, app, db_session):
         from h4ckath0n.auth import require_admin
 
         @app.get("/admin-only2")
         def admin_only2(user=require_admin()):
             return {"ok": True}
 
-        client.post(
-            "/auth/register",
-            json={"email": "grace@example.com", "password": "strongP@ss1"},
+        user_id, device_id, private_pem = _register_user_with_device(
+            client, db_session, "grace@example.com", "strongP@ss1"
         )
         # Promote to admin directly in DB
         user = db_session.query(User).filter(User.email == "grace@example.com").first()
         user.role = "admin"
         db_session.commit()
 
-        # Re-login to get new token with admin role
-        login = client.post(
-            "/auth/login",
-            json={"email": "grace@example.com", "password": "strongP@ss1"},
-        )
-        token = login.json()["access_token"]
+        token = _make_device_token(user_id, device_id, private_pem)
         r = client.get("/admin-only2", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 200
 
 
 # ---------------------------------------------------------------------------
-# Scope gate
+# Scope gate (from DB, not JWT)
 # ---------------------------------------------------------------------------
 
 
 class TestScopeGate:
-    def test_missing_scope_rejected(self, client: TestClient, app):
+    def test_missing_scope_rejected(self, client: TestClient, app, db_session):
         from h4ckath0n.auth import require_scopes
 
         @app.post("/billing/refund")
-        def refund(claims=require_scopes("billing:refund")):
+        def refund(user=require_scopes("billing:refund")):
             return {"status": "ok"}
 
-        reg = client.post(
-            "/auth/register",
-            json={"email": "heidi@example.com", "password": "strongP@ss1"},
+        user_id, device_id, private_pem = _register_user_with_device(
+            client, db_session, "heidi@example.com", "strongP@ss1"
         )
-        token = reg.json()["access_token"]
+        token = _make_device_token(user_id, device_id, private_pem)
         r = client.post("/billing/refund", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 403
 
-    def test_present_scope_accepted(self, client: TestClient, app, settings, db_session):
+    def test_present_scope_accepted(self, client: TestClient, app, db_session):
         from h4ckath0n.auth import require_scopes
 
         @app.post("/billing/refund2")
-        def refund2(claims=require_scopes("billing:refund")):
+        def refund2(user=require_scopes("billing:refund")):
             return {"status": "ok"}
 
-        client.post(
-            "/auth/register",
-            json={"email": "ivan@example.com", "password": "strongP@ss1"},
+        user_id, device_id, private_pem = _register_user_with_device(
+            client, db_session, "ivan@example.com", "strongP@ss1"
         )
         user = db_session.query(User).filter(User.email == "ivan@example.com").first()
         user.scopes = "billing:refund"
         db_session.commit()
 
-        login = client.post(
-            "/auth/login",
-            json={"email": "ivan@example.com", "password": "strongP@ss1"},
-        )
-        token = login.json()["access_token"]
+        token = _make_device_token(user_id, device_id, private_pem)
         r = client.post("/billing/refund2", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 200
 
 
 # ---------------------------------------------------------------------------
-# Refresh token rotation
+# No refresh/logout routes
 # ---------------------------------------------------------------------------
 
 
-class TestRefreshRotation:
-    def test_refresh_rotates(self, client: TestClient):
-        reg = client.post(
-            "/auth/register",
-            json={"email": "judy@example.com", "password": "strongP@ss1"},
-        )
-        rt1 = reg.json()["refresh_token"]
+class TestNoRefreshRoutes:
+    def test_refresh_route_removed(self, client: TestClient):
+        r = client.post("/auth/refresh", json={"refresh_token": "x"})
+        assert r.status_code in (404, 405)
 
-        r = client.post("/auth/refresh", json={"refresh_token": rt1})
-        assert r.status_code == 200
-        body = r.json()
-        rt2 = body["refresh_token"]
-        assert rt2 != rt1  # rotated
-
-        # Old token should be revoked.
-        r2 = client.post("/auth/refresh", json={"refresh_token": rt1})
-        assert r2.status_code == 401
-
-    def test_logout_revokes(self, client: TestClient):
-        reg = client.post(
-            "/auth/register",
-            json={"email": "karl@example.com", "password": "strongP@ss1"},
-        )
-        rt = reg.json()["refresh_token"]
-        client.post("/auth/logout", json={"refresh_token": rt})
-
-        r = client.post("/auth/refresh", json={"refresh_token": rt})
-        assert r.status_code == 401
+    def test_logout_route_removed(self, client: TestClient):
+        r = client.post("/auth/logout", json={"refresh_token": "x"})
+        assert r.status_code in (404, 405)
 
 
 # ---------------------------------------------------------------------------
-# Password reset – time-limited & single-use
+# Password reset – time-limited & single-use (now binds device)
 # ---------------------------------------------------------------------------
 
 
@@ -285,36 +350,39 @@ class TestPasswordReset:
         assert r.status_code == 200
 
     def test_full_reset_flow(self, client: TestClient, db_session):
+        _private_pem, public_jwk = _create_device_keypair()
         client.post(
             "/auth/register",
-            json={"email": "luna@example.com", "password": "oldP@ss1"},
+            json={
+                "email": "luna@example.com",
+                "password": "oldP@ss1",
+                "device_public_key_jwk": public_jwk,
+            },
         )
         # Request reset
         client.post(
             "/auth/password-reset/request",
             json={"email": "luna@example.com"},
         )
-        # Get the raw token from DB (in real life it would be emailed).
-        prt = (
-            db_session.query(PasswordResetToken)
-            .join(User, PasswordResetToken.user_id == User.id)
-            .filter(User.email == "luna@example.com")
-            .first()
-        )
-        assert prt is not None
-        # We need the raw token. Since we stored a hash, we must re-create one
-        # for testing. Let's directly create one via the service.
         from h4ckath0n.auth.service import create_password_reset_token
 
         raw = create_password_reset_token(db_session, "luna@example.com")
         assert raw is not None
 
-        # Confirm reset
+        new_pem, new_jwk = _create_device_keypair()
+        # Confirm reset – also binds a new device
         r = client.post(
             "/auth/password-reset/confirm",
-            json={"token": raw, "new_password": "newP@ss1"},
+            json={
+                "token": raw,
+                "new_password": "newP@ss1",
+                "device_public_key_jwk": new_jwk,
+            },
         )
         assert r.status_code == 200
+        body = r.json()
+        assert "user_id" in body
+        assert "device_id" in body
 
         # Old password should no longer work
         r2 = client.post(
@@ -331,9 +399,14 @@ class TestPasswordReset:
         assert r3.status_code == 200
 
     def test_single_use(self, client: TestClient, db_session):
+        _p, jwk = _create_device_keypair()
         client.post(
             "/auth/register",
-            json={"email": "mike@example.com", "password": "oldP@ss1"},
+            json={
+                "email": "mike@example.com",
+                "password": "oldP@ss1",
+                "device_public_key_jwk": jwk,
+            },
         )
         from h4ckath0n.auth.service import create_password_reset_token
 
@@ -355,9 +428,14 @@ class TestPasswordReset:
         assert r2.status_code == 400
 
     def test_expired_token_rejected(self, client: TestClient, db_session):
+        _p, jwk = _create_device_keypair()
         client.post(
             "/auth/register",
-            json={"email": "nancy@example.com", "password": "oldP@ss1"},
+            json={
+                "email": "nancy@example.com",
+                "password": "oldP@ss1",
+                "device_public_key_jwk": jwk,
+            },
         )
         from h4ckath0n.auth.service import create_password_reset_token
 
@@ -389,15 +467,19 @@ class TestBootstrapAdmin:
         db_path = tmp_path / "admin_test.db"
         s = Settings(
             database_url=f"sqlite:///{db_path}",
-            auth_signing_key="test-key-minimum-32-bytes-for-safety",
             first_user_is_admin=True,
             password_auth_enabled=True,
         )
         app = create_app(s)
         c = TestClient(app)
+        _p, jwk = _create_device_keypair()
         reg = c.post(
             "/auth/register",
-            json={"email": "first@example.com", "password": "P@ss1"},
+            json={
+                "email": "first@example.com",
+                "password": "P@ss1",
+                "device_public_key_jwk": jwk,
+            },
         )
         assert reg.status_code == 201
         # Verify role in DB
@@ -410,19 +492,28 @@ class TestBootstrapAdmin:
         db_path = tmp_path / "admin_test2.db"
         s = Settings(
             database_url=f"sqlite:///{db_path}",
-            auth_signing_key="test-key-minimum-32-bytes-for-safety",
             bootstrap_admin_emails=["boss@example.com"],
             password_auth_enabled=True,
         )
         app = create_app(s)
         c = TestClient(app)
+        _p1, jwk1 = _create_device_keypair()
         c.post(
             "/auth/register",
-            json={"email": "regular@example.com", "password": "P@ss1"},
+            json={
+                "email": "regular@example.com",
+                "password": "P@ss1",
+                "device_public_key_jwk": jwk1,
+            },
         )
+        _p2, jwk2 = _create_device_keypair()
         c.post(
             "/auth/register",
-            json={"email": "boss@example.com", "password": "P@ss1"},
+            json={
+                "email": "boss@example.com",
+                "password": "P@ss1",
+                "device_public_key_jwk": jwk2,
+            },
         )
         session = app.state.session_factory()
         regular = session.query(User).filter(User.email == "regular@example.com").first()
@@ -444,7 +535,6 @@ class TestObservability:
         db_path = tmp_path / "obs_test.db"
         s = Settings(
             database_url=f"sqlite:///{db_path}",
-            auth_signing_key="test-key-minimum-32-bytes-for-safety",
         )
         app = create_app(s)
         init_observability(app, ObservabilitySettings())
@@ -495,21 +585,33 @@ class TestLLMClient:
 
 
 # ---------------------------------------------------------------------------
-# Config
+# Device-signed JWT verification
 # ---------------------------------------------------------------------------
 
 
-class TestConfig:
-    def test_production_requires_signing_key(self):
-        s = Settings(env="production", auth_signing_key="")
-        with pytest.raises(RuntimeError, match="H4CKATH0N_AUTH_SIGNING_KEY"):
-            s.effective_signing_key()
+class TestDeviceJWTVerification:
+    def test_expired_device_token_rejected(self, client: TestClient, app, db_session):
+        from h4ckath0n.auth import require_user
 
-    def test_dev_generates_ephemeral_key(self):
-        s = Settings(env="development", auth_signing_key="")
-        import warnings
+        @app.get("/verify-exp")
+        def verify_exp(user=require_user()):
+            return {"id": user.id}
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            key = s.effective_signing_key()
-        assert len(key) > 10
+        user_id, device_id, private_pem = _register_user_with_device(
+            client, db_session, "exp-test@example.com", "P@ss1"
+        )
+        token = _make_device_token(user_id, device_id, private_pem, expire_minutes=-1)
+        r = client.get("/verify-exp", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 401
+
+    def test_unknown_device_rejected(self, client: TestClient, app, db_session):
+        from h4ckath0n.auth import require_user
+
+        @app.get("/verify-kid")
+        def verify_kid(user=require_user()):
+            return {"id": user.id}
+
+        private_pem, _public_jwk = _create_device_keypair()
+        token = _make_device_token("u" + "a" * 31, "d" + "a" * 31, private_pem)
+        r = client.get("/verify-kid", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 401

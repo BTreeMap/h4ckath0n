@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import json
-
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from h4ckath0n.auth.dependencies import _get_current_user
-from h4ckath0n.auth.models import Device, User
+from h4ckath0n.auth.models import User
 from h4ckath0n.auth.passkeys import schemas
 from h4ckath0n.auth.passkeys.service import (
     LastPasskeyError,
@@ -21,6 +19,7 @@ from h4ckath0n.auth.passkeys.service import (
     start_authentication,
     start_registration,
 )
+from h4ckath0n.auth.service import register_device
 
 router = APIRouter(prefix="/auth/passkey", tags=["passkey"])
 
@@ -36,26 +35,6 @@ def _db_dep(request: Request):  # type: ignore[no-untyped-def]
         yield db
     finally:
         db.close()
-
-
-def _register_device(
-    db: Session,
-    user_id: str,
-    public_key_jwk: dict | None,
-    label: str | None,
-) -> str:
-    """Create a Device record and return its id, or empty string if no key."""
-    if not public_key_jwk:
-        return ""
-    device = Device(
-        user_id=user_id,
-        public_key_jwk=json.dumps(public_key_jwk),
-        label=label,
-    )
-    db.add(device)
-    db.commit()
-    db.refresh(device)
-    return device.id
 
 
 # ---------------------------------------------------------------------------
@@ -86,7 +65,7 @@ def register_finish(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from None
 
-    device_id = _register_device(db, user.id, body.device_public_key_jwk, body.device_label)
+    device_id = register_device(db, user.id, body.device_public_key_jwk, body.device_label)
 
     return schemas.PasskeyFinishResponse(user_id=user.id, device_id=device_id, role=user.role)
 
@@ -115,7 +94,7 @@ def login_finish(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from None
 
-    device_id = _register_device(db, user.id, body.device_public_key_jwk, body.device_label)
+    device_id = register_device(db, user.id, body.device_public_key_jwk, body.device_label)
 
     return schemas.PasskeyFinishResponse(user_id=user.id, device_id=device_id, role=user.role)
 
@@ -149,7 +128,7 @@ def add_finish(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from None
 
-    device_id = _register_device(db, user.id, body.device_public_key_jwk, body.device_label)
+    device_id = register_device(db, user.id, body.device_public_key_jwk, body.device_label)
 
     return schemas.PasskeyFinishResponse(user_id=user.id, device_id=device_id, role=user.role)
 
