@@ -69,3 +69,14 @@ export async function clearDeviceKeyMaterial(): Promise<void> {
   await del(DB_DEVICE_ID);
   await del(DB_USER_ID);
 }
+
+/**
+ * Clear only the authorization binding (device_id + user_id) while
+ * preserving the device key pair.  Logout should call this instead of
+ * {@link clearDeviceKeyMaterial} so the same key identity can be
+ * reused on next login.
+ */
+export async function clearDeviceAuthorization(): Promise<void> {
+  await del(DB_DEVICE_ID);
+  await del(DB_USER_ID);
+}

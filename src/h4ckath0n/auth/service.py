@@ -79,18 +79,48 @@ def authenticate_user(db: Session, email: str, password: str) -> User | None:
     return user
 
 
+def _jwk_fingerprint(jwk: dict) -> str:
+    """Compute a deterministic SHA-256 fingerprint of a JWK.
+
+    Uses only the essential key-material fields (kty, crv, x, y) in sorted
+    order so the fingerprint is stable regardless of extra metadata the
+    client might include.
+
+    Raises :class:`ValueError` when required fields are missing.
+    """
+    required = ("crv", "kty", "x", "y")
+    missing = [k for k in required if k not in jwk]
+    if missing:
+        raise ValueError(f"JWK missing required fields: {', '.join(missing)}")
+    canonical = {k: jwk[k] for k in required}
+    raw = json.dumps(canonical, separators=(",", ":"), sort_keys=True)
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
 def register_device(
     db: Session,
     user_id: str,
     public_key_jwk: dict | None,
     label: str | None = None,
 ) -> str:
-    """Create a Device record and return its id, or empty string if no key."""
+    """Return a Device id for the given public key, creating one if needed.
+
+    If a device with the same JWK fingerprint already exists the existing
+    ``device_id`` is returned (stable identity).  A new record is only
+    created when the fingerprint has never been seen before.
+    """
     if not public_key_jwk:
         return ""
+    fp = _jwk_fingerprint(public_key_jwk)
+
+    existing = db.query(Device).filter(Device.fingerprint == fp).first()
+    if existing:
+        return existing.id
+
     device = Device(
         user_id=user_id,
         public_key_jwk=json.dumps(public_key_jwk),
+        fingerprint=fp,
         label=label,
     )
     db.add(device)

@@ -91,7 +91,10 @@ def _seed_user_and_device(db_session) -> tuple[str, str, bytes]:
     uid = new_user_id()
     did = new_device_id()
     user = User(id=uid, role="user")
-    device = Device(id=did, user_id=uid, public_key_jwk=json.dumps(jwk_dict))
+    from h4ckath0n.auth.service import _jwk_fingerprint
+
+    fp = _jwk_fingerprint(jwk_dict)
+    device = Device(id=did, user_id=uid, public_key_jwk=json.dumps(jwk_dict), fingerprint=fp)
     db_session.add(user)
     db_session.add(device)
     db_session.commit()
@@ -193,3 +196,72 @@ class TestHttpAudEnforcement:
         token = _make_token(uid, did, pem, aud=AUD_WS)
         r = c.get("/rt-test2", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Stable device identity
+# ---------------------------------------------------------------------------
+
+
+class TestStableDeviceIdentity:
+    """register_device() must reuse the same device_id for the same JWK."""
+
+    def test_same_jwk_returns_same_device_id(self, db_session):
+        from h4ckath0n.auth.service import register_device
+
+        _pem, jwk = _create_device_keypair()
+        uid = new_user_id()
+        db_session.add(User(id=uid, role="user"))
+        db_session.commit()
+
+        did1 = register_device(db_session, uid, jwk, "first")
+        did2 = register_device(db_session, uid, jwk, "second")
+        assert did1 == did2
+        assert did1.startswith("d")
+
+    def test_different_jwk_gets_different_device_id(self, db_session):
+        from h4ckath0n.auth.service import register_device
+
+        _pem1, jwk1 = _create_device_keypair()
+        _pem2, jwk2 = _create_device_keypair()
+        uid = new_user_id()
+        db_session.add(User(id=uid, role="user"))
+        db_session.commit()
+
+        did1 = register_device(db_session, uid, jwk1, "a")
+        did2 = register_device(db_session, uid, jwk2, "b")
+        assert did1 != did2
+
+    def test_no_jwk_returns_empty_string(self, db_session):
+        from h4ckath0n.auth.service import register_device
+
+        uid = new_user_id()
+        db_session.add(User(id=uid, role="user"))
+        db_session.commit()
+
+        assert register_device(db_session, uid, None) == ""
+
+
+# ---------------------------------------------------------------------------
+# Revoked device
+# ---------------------------------------------------------------------------
+
+
+class TestRevokedDevice:
+    """Tokens signed by a revoked device must be rejected."""
+
+    def test_revoked_device_rejected(self, db_session):
+        uid, did, pem = _seed_user_and_device(db_session)
+        device = db_session.query(Device).filter(Device.id == did).one()
+        device.revoked_at = datetime.now(UTC)
+        db_session.commit()
+
+        token = _make_token(uid, did, pem, aud=AUD_HTTP)
+        with pytest.raises(AuthError, match="Device revoked"):
+            verify_device_jwt(token, expected_aud=AUD_HTTP, db=db_session)
+
+    def test_non_revoked_device_accepted(self, db_session):
+        uid, did, pem = _seed_user_and_device(db_session)
+        token = _make_token(uid, did, pem, aud=AUD_HTTP)
+        ctx = verify_device_jwt(token, expected_aud=AUD_HTTP, db=db_session)
+        assert ctx.device_id == did
