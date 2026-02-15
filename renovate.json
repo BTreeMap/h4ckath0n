@@ -55,6 +55,26 @@
       "automerge": true
     },
     {
+      "groupName": "Python runtime (pyenv)",
+      "matchManagers": [
+        "pyenv"
+      ],
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true
+    },
+    {
+      "matchManagers": [
+        "pyenv"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "major"
+      ],
+      "automerge": false
+    },
+    {
       "matchUpdateTypes": [
         "major"
       ],
