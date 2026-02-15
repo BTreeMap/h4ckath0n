@@ -1,3 +1,4 @@
+#!/usr/bin/env -S uv run python
 from __future__ import annotations
 
 import argparse
@@ -67,7 +68,9 @@ def update_python_fallback_version(path: Path, version: str) -> None:
     path.write_text(updated)
 
 
-def validate_versions(pyproject_path: Path, package_json_path: Path, version: str) -> None:
+def validate_versions(
+    pyproject_path: Path, package_json_path: Path, version: str
+) -> None:
     pyproject_version = read_pyproject_version(pyproject_path)
     package_version = read_package_version(package_json_path)
     if pyproject_version != version or package_version != version:
@@ -81,11 +84,15 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--npm-version", required=True)
     parser.add_argument("--pypi-version", required=True)
-    parser.add_argument("--channel", choices=["dev", "nightly", "stable"], required=True)
+    parser.add_argument(
+        "--channel", choices=["dev", "nightly", "stable"], required=True
+    )
     parser.add_argument("--root", default=None)
     args = parser.parse_args()
 
-    root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parents[1]
+    root = (
+        Path(args.root).resolve() if args.root else Path(__file__).resolve().parents[1]
+    )
     pyproject_path = root / "pyproject.toml"
     init_path = root / "src" / "h4ckath0n" / "__init__.py"
     package_dir = root / "packages" / "create-h4ckath0n"
