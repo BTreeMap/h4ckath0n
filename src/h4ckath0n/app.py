@@ -14,6 +14,7 @@ from h4ckath0n.auth.passkeys.router import router as passkey_router
 from h4ckath0n.config import Settings
 from h4ckath0n.db.base import Base
 from h4ckath0n.db.engine import create_async_engine_from_settings
+from h4ckath0n.version import __version__ as H4CKATH0N_VERSION
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -39,7 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="h4ckath0n",
         description="Hackathon app powered by h4ckath0n",
-        version="0.1.1",
+        version=H4CKATH0N_VERSION,
         lifespan=lifespan,
     )
 
