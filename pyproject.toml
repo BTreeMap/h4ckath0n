@@ -39,12 +39,18 @@ password = [
     "argon2-cffi>=23.1",
 ]
 
+[project.scripts]
+h4ckath0n = "h4ckath0n.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/h4ckath0n"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/h4ckath0n/db/migrations/script.py.mako" = "h4ckath0n/db/migrations/script.py.mako"
 
 [dependency-groups]
 dev = [
