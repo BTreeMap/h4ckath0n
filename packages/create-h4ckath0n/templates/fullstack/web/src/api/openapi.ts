@@ -164,6 +164,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/passkeys/{key_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Rename a passkey
+         * @description Update the user-facing name of a passkey.
+         */
+        patch: operations["passkey_rename_auth_passkeys__key_id__patch"];
+        trace?: never;
+    };
     "/auth/passkeys/{key_id}/revoke": {
         parameters: {
             query?: never;
@@ -422,15 +442,15 @@ export interface components {
              */
             id: string;
             /**
-             * Label
-             * @description Optional passkey nickname.
-             */
-            label?: string | null;
-            /**
              * Last Used At
              * @description Last successful use timestamp.
              */
             last_used_at?: string | null;
+            /**
+             * Name
+             * @description User-provided passkey name.
+             */
+            name?: string | null;
             /**
              * Revoked At
              * @description Revocation timestamp, if revoked.
@@ -528,6 +548,27 @@ export interface components {
             options: {
                 [key: string]: unknown;
             };
+        };
+        /** PasskeyRenameRequest */
+        PasskeyRenameRequest: {
+            /**
+             * Name
+             * @description New passkey name. Null or empty to clear.
+             */
+            name?: string | null;
+        };
+        /** PasskeyRenameResponse */
+        PasskeyRenameResponse: {
+            /**
+             * Id
+             * @description Internal passkey ID.
+             */
+            id: string;
+            /**
+             * Name
+             * @description Updated passkey name.
+             */
+            name?: string | null;
         };
         /** PasskeyRevokeResponse */
         PasskeyRevokeResponse: {
@@ -828,6 +869,68 @@ export interface operations {
             };
             /** @description Missing or invalid token. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    passkey_rename_auth_passkeys__key_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasskeyRenameRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyRenameResponse"];
+                };
+            };
+            /** @description Missing or invalid token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Passkey not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Cannot rename a revoked passkey. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

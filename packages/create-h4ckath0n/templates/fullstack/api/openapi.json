@@ -219,18 +219,6 @@
             "title": "Id",
             "type": "string"
           },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Optional passkey nickname.",
-            "title": "Label"
-          },
           "last_used_at": {
             "anyOf": [
               {
@@ -243,6 +231,18 @@
             ],
             "description": "Last successful use timestamp.",
             "title": "Last Used At"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User-provided passkey name.",
+            "title": "Name"
           },
           "revoked_at": {
             "anyOf": [
@@ -414,6 +414,51 @@
           "options"
         ],
         "title": "PasskeyRegisterStartResponse",
+        "type": "object"
+      },
+      "PasskeyRenameRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New passkey name. Null or empty to clear.",
+            "title": "Name"
+          }
+        },
+        "title": "PasskeyRenameRequest",
+        "type": "object"
+      },
+      "PasskeyRenameResponse": {
+        "properties": {
+          "id": {
+            "description": "Internal passkey ID.",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Updated passkey name.",
+            "title": "Name"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "PasskeyRenameResponse",
         "type": "object"
       },
       "PasskeyRevokeResponse": {
@@ -827,6 +872,94 @@
           }
         ],
         "summary": "List passkeys",
+        "tags": [
+          "passkey"
+        ]
+      }
+    },
+    "/auth/passkeys/{key_id}": {
+      "patch": {
+        "description": "Update the user-facing name of a passkey.",
+        "operationId": "passkey_rename_auth_passkeys__key_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key_id",
+            "required": true,
+            "schema": {
+              "title": "Key Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRenameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyRenameResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid token."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Passkey not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cannot rename a revoked passkey."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error."
+          }
+        },
+        "security": [
+          {
+            "DeviceJWT": []
+          }
+        ],
+        "summary": "Rename a passkey",
         "tags": [
           "passkey"
         ]
