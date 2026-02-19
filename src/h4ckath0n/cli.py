@@ -6,13 +6,23 @@ Provides ``h4ckath0n`` console script and ``python -m h4ckath0n`` entry point.
 from __future__ import annotations
 
 import argparse
-import importlib.resources
 import json
 import os
 import sys
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
+
+from alembic import command as alembic_command
+from alembic.config import Config
+
+from h4ckath0n.db.migrations.runtime import (
+    PackagedMigrationsError,
+    create_sync_engine,
+    get_schema_status,
+    normalize_db_url_for_sync,
+    packaged_migrations_dir,
+    run_upgrade_to_head,
+)
 
 # ---------------------------------------------------------------------------
 # Exit codes
@@ -100,16 +110,8 @@ def _passkey_dict(cred: Any) -> dict:
 
 
 def _normalize_db_url_for_sync(url: str) -> str:
-    """Normalize a database URL to a synchronous driver for Alembic."""
-    if url.startswith("sqlite+aiosqlite"):
-        return url.replace("sqlite+aiosqlite", "sqlite", 1)
-    if url.startswith("postgresql+asyncpg"):
-        return url.replace("postgresql+asyncpg", "postgresql+psycopg", 1)
-    if url.startswith("postgresql://"):
-        return url.replace("postgresql://", "postgresql+psycopg://", 1)
-    if url.startswith("postgres://"):
-        return url.replace("postgres://", "postgresql+psycopg://", 1)
-    return url
+    """Backwards-compatible wrapper for tests and callers."""
+    return normalize_db_url_for_sync(url)
 
 
 def _get_db_url(args: argparse.Namespace) -> str:
@@ -120,12 +122,7 @@ def _get_db_url(args: argparse.Namespace) -> str:
 
 
 def _make_sync_engine(url: str):  # type: ignore[no-untyped-def]
-    from sqlalchemy import create_engine
-
-    connect_args: dict = {}
-    if url.startswith("sqlite"):
-        connect_args["check_same_thread"] = False
-    return create_engine(url, connect_args=connect_args, pool_pre_ping=True)
+    return create_sync_engine(url)
 
 
 def _normalize_scopes(raw: str) -> str:
@@ -166,25 +163,6 @@ def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-un
     return session.execute(stmt).scalars().first()
 
 
-def _get_migrations_path() -> Path | None:
-    """Return the path to packaged migrations, or None if not found."""
-    try:
-        migrations = importlib.resources.files("h4ckath0n.db.migrations")
-        # Convert to a concrete path
-        env_py = migrations / "env.py"
-        versions = migrations / "versions"
-        if (
-            hasattr(env_py, "is_file")
-            and env_py.is_file()
-            and hasattr(versions, "is_dir")
-            and versions.is_dir()
-        ):
-            return Path(str(migrations))
-    except (ModuleNotFoundError, TypeError):
-        pass
-    return None
-
-
 # ---------------------------------------------------------------------------
 # DB commands
 # ---------------------------------------------------------------------------
@@ -196,7 +174,22 @@ def _cmd_db_ping(args: argparse.Namespace) -> int:
     try:
         with engine.connect() as conn:
             conn.execute(__import__("sqlalchemy").text("SELECT 1"))
-        _output({"ok": True}, fmt=args.format, pretty=args.pretty)
+        try:
+            status = get_schema_status(url)
+            _output(
+                {
+                    "ok": True,
+                    "schema_state": status.state,
+                    "current_revisions": list(status.current_revisions),
+                    "head_revisions": list(status.head_revisions),
+                    "warning": status.warning,
+                },
+                fmt=args.format,
+                pretty=args.pretty,
+            )
+        except PackagedMigrationsError:
+            _err("packaged migrations not found; installation may be broken")
+            return EXIT_MIGRATIONS_MISSING
         return EXIT_OK
     finally:
         engine.dispose()
@@ -230,127 +223,85 @@ def _cmd_db_migrate_upgrade(args: argparse.Namespace) -> int:
     if not _require_yes(args):
         return EXIT_BAD_ARGS
 
-    migrations_path = _get_migrations_path()
-    if migrations_path is None:
-        _err("packaged migrations not found; installation may be broken")
-        return EXIT_MIGRATIONS_MISSING
-
     url = _normalize_db_url_for_sync(_get_db_url(args))
-    engine = _make_sync_engine(url)
-
+    revision = getattr(args, "to", "head")
     try:
-        from sqlalchemy import inspect as sa_inspect
-
-        inspector = sa_inspect(engine)
-        table_names = inspector.get_table_names()
-        has_alembic = "alembic_version" in table_names
-
-        import h4ckath0n.auth.models  # noqa: F401
-        from h4ckath0n.db.base import Base
-
-        h4ckath0n_tables = set(Base.metadata.tables.keys())
-        existing_h4ckath0n_tables = h4ckath0n_tables & set(table_names)
-
-        if not has_alembic and existing_h4ckath0n_tables:
-            _err(
-                "database appears initialized without alembic;"
-                " run db migrate stamp --to <rev> first"
-            )
-            return EXIT_STAMP_REQUIRED
-
-        from alembic.config import Config
-
-        from alembic import command as alembic_command
-
-        cfg = Config()
-        cfg.set_main_option("script_location", str(migrations_path))
-        cfg.set_main_option("sqlalchemy.url", url)
-
-        revision = getattr(args, "to", "head")
-        alembic_command.upgrade(cfg, revision)
+        if revision == "head":
+            status = run_upgrade_to_head(url)
+            if status.state == "stamp_required":
+                _err(
+                    "database appears initialized without alembic; "
+                    "run db migrate stamp --to <rev> first"
+                )
+                return EXIT_STAMP_REQUIRED
+        else:
+            with packaged_migrations_dir() as migrations_path:
+                cfg = Config()
+                cfg.set_main_option("script_location", str(migrations_path))
+                cfg.set_main_option("sqlalchemy.url", url)
+                alembic_command.upgrade(cfg, revision)
         _output({"ok": True, "revision": revision}, fmt=args.format, pretty=args.pretty)
         return EXIT_OK
-    finally:
-        engine.dispose()
+    except PackagedMigrationsError:
+        _err("packaged migrations not found; installation may be broken")
+        return EXIT_MIGRATIONS_MISSING
 
 
 def _cmd_db_migrate_downgrade(args: argparse.Namespace) -> int:
     if not _require_yes(args):
         return EXIT_BAD_ARGS
 
-    migrations_path = _get_migrations_path()
-    if migrations_path is None:
-        _err("packaged migrations not found; installation may be broken")
-        return EXIT_MIGRATIONS_MISSING
-
     url = _normalize_db_url_for_sync(_get_db_url(args))
-
-    from alembic.config import Config
-
-    from alembic import command as alembic_command
-
-    cfg = Config()
-    cfg.set_main_option("script_location", str(migrations_path))
-    cfg.set_main_option("sqlalchemy.url", url)
 
     revision = getattr(args, "to", None)
     if not revision:
         _err("--to is required for downgrade")
         return EXIT_BAD_ARGS
 
-    alembic_command.downgrade(cfg, revision)
-    _output({"ok": True, "revision": revision}, fmt=args.format, pretty=args.pretty)
-    return EXIT_OK
+    try:
+        with packaged_migrations_dir() as migrations_path:
+            cfg = Config()
+            cfg.set_main_option("script_location", str(migrations_path))
+            cfg.set_main_option("sqlalchemy.url", url)
+            alembic_command.downgrade(cfg, revision)
+        _output({"ok": True, "revision": revision}, fmt=args.format, pretty=args.pretty)
+        return EXIT_OK
+    except PackagedMigrationsError:
+        _err("packaged migrations not found; installation may be broken")
+        return EXIT_MIGRATIONS_MISSING
 
 
 def _cmd_db_migrate_current(args: argparse.Namespace) -> int:
-    migrations_path = _get_migrations_path()
-    if migrations_path is None:
+    url = _normalize_db_url_for_sync(_get_db_url(args))
+    try:
+        with packaged_migrations_dir() as migrations_path:
+            cfg = Config()
+            cfg.set_main_option("script_location", str(migrations_path))
+            cfg.set_main_option("sqlalchemy.url", url)
+            alembic_command.current(cfg)
+        return EXIT_OK
+    except PackagedMigrationsError:
         _err("packaged migrations not found; installation may be broken")
         return EXIT_MIGRATIONS_MISSING
-
-    url = _normalize_db_url_for_sync(_get_db_url(args))
-
-    from alembic.config import Config
-
-    from alembic import command as alembic_command
-
-    cfg = Config()
-    cfg.set_main_option("script_location", str(migrations_path))
-    cfg.set_main_option("sqlalchemy.url", url)
-
-    alembic_command.current(cfg)
-    return EXIT_OK
 
 
 def _cmd_db_migrate_heads(args: argparse.Namespace) -> int:
-    migrations_path = _get_migrations_path()
-    if migrations_path is None:
+    url = _normalize_db_url_for_sync(_get_db_url(args))
+    try:
+        with packaged_migrations_dir() as migrations_path:
+            cfg = Config()
+            cfg.set_main_option("script_location", str(migrations_path))
+            cfg.set_main_option("sqlalchemy.url", url)
+            alembic_command.heads(cfg)
+        return EXIT_OK
+    except PackagedMigrationsError:
         _err("packaged migrations not found; installation may be broken")
         return EXIT_MIGRATIONS_MISSING
-
-    url = _normalize_db_url_for_sync(_get_db_url(args))
-
-    from alembic.config import Config
-
-    from alembic import command as alembic_command
-
-    cfg = Config()
-    cfg.set_main_option("script_location", str(migrations_path))
-    cfg.set_main_option("sqlalchemy.url", url)
-
-    alembic_command.heads(cfg)
-    return EXIT_OK
 
 
 def _cmd_db_migrate_stamp(args: argparse.Namespace) -> int:
     if not _require_yes(args):
         return EXIT_BAD_ARGS
-
-    migrations_path = _get_migrations_path()
-    if migrations_path is None:
-        _err("packaged migrations not found; installation may be broken")
-        return EXIT_MIGRATIONS_MISSING
 
     url = _normalize_db_url_for_sync(_get_db_url(args))
 
@@ -359,17 +310,17 @@ def _cmd_db_migrate_stamp(args: argparse.Namespace) -> int:
         _err("--to is required for stamp")
         return EXIT_BAD_ARGS
 
-    from alembic.config import Config
-
-    from alembic import command as alembic_command
-
-    cfg = Config()
-    cfg.set_main_option("script_location", str(migrations_path))
-    cfg.set_main_option("sqlalchemy.url", url)
-
-    alembic_command.stamp(cfg, revision)
-    _output({"ok": True, "revision": revision}, fmt=args.format, pretty=args.pretty)
-    return EXIT_OK
+    try:
+        with packaged_migrations_dir() as migrations_path:
+            cfg = Config()
+            cfg.set_main_option("script_location", str(migrations_path))
+            cfg.set_main_option("sqlalchemy.url", url)
+            alembic_command.stamp(cfg, revision)
+        _output({"ok": True, "revision": revision}, fmt=args.format, pretty=args.pretty)
+        return EXIT_OK
+    except PackagedMigrationsError:
+        _err("packaged migrations not found; installation may be broken")
+        return EXIT_MIGRATIONS_MISSING
 
 
 # ---------------------------------------------------------------------------

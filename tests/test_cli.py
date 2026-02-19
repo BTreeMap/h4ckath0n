@@ -49,6 +49,11 @@ class TestPackagedMigrations:
         assert len(migration_files) >= 1
         assert any("0001" in f for f in migration_files)
 
+    def test_script_template_exists(self):
+        migrations = importlib.resources.files("h4ckath0n.db.migrations")
+        script_template = migrations / "script.py.mako"
+        assert hasattr(script_template, "is_file") and script_template.is_file()
+
 
 # ---------------------------------------------------------------------------
 # URL normalization
@@ -141,6 +146,7 @@ class TestCLIDbPing:
         assert result.returncode == 0
         data = json.loads(result.stdout)
         assert data["ok"] is True
+        assert data["schema_state"] == "fresh"
 
 
 class TestCLIDbInit:
@@ -183,18 +189,10 @@ class TestCLIDbMigrate:
         result = _run_cli("db", "migrate", "upgrade", "--db", db_url)
         assert result.returncode == EXIT_BAD_ARGS
 
-    def test_upgrade_after_init_and_stamp(self, tmp_path):
-        """Correct workflow: init → stamp → upgrade succeeds."""
+    def test_upgrade_on_fresh_db(self, tmp_path):
         db_url = f"sqlite:///{tmp_path}/mig_test.db"
-        # Create tables
-        r1 = _run_cli("db", "init", "--db", db_url, "--yes")
-        assert r1.returncode == 0
-        # Stamp as at current head
-        r2 = _run_cli("db", "migrate", "stamp", "--to", "head", "--db", db_url, "--yes")
-        assert r2.returncode == 0
-        # Now upgrade should succeed (no-op since already at head)
-        r3 = _run_cli("db", "migrate", "upgrade", "--to", "head", "--db", db_url, "--yes")
-        assert r3.returncode == 0
+        result = _run_cli("db", "migrate", "upgrade", "--to", "head", "--db", db_url, "--yes")
+        assert result.returncode == 0, result.stderr
 
     def test_stamp_requires_yes(self, tmp_path):
         db_url = f"sqlite:///{tmp_path}/stamp_test.db"

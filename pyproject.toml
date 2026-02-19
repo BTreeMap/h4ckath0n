@@ -48,9 +48,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/h4ckath0n"]
+artifacts = ["src/h4ckath0n/db/migrations/**"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"src/h4ckath0n/db/migrations/script.py.mako" = "h4ckath0n/db/migrations/script.py.mako"
+[tool.hatch.build.targets.sdist]
+artifacts = ["src/h4ckath0n/db/migrations/**"]
 
 [dependency-groups]
 dev = [
