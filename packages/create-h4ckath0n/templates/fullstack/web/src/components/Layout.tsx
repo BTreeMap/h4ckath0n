@@ -3,18 +3,54 @@ import { useAuth } from "../auth";
 import { Sun, Moon, Shield, LogOut, LayoutDashboard, Settings, Radio } from "lucide-react";
 import { useState, useEffect } from "react";
 
+const THEME_STORAGE_KEY = "theme-preference";
+const THEME_ORDER = ["system", "light", "dark"] as const;
+type ThemePreference = (typeof THEME_ORDER)[number];
+
+function getThemePreference(): ThemePreference {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  return THEME_ORDER.includes(stored as ThemePreference)
+    ? (stored as ThemePreference)
+    : "system";
+}
+
+function getEffectiveTheme(theme: ThemePreference): "light" | "dark" {
+  return theme === "system"
+    ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    : theme;
+}
+
 export function Layout() {
   const { isAuthenticated, logout } = useAuth();
-  const [dark, setDark] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return document.documentElement.getAttribute("data-theme") === "dark" ||
-      (!document.documentElement.getAttribute("data-theme") &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches);
-  });
+  const [theme, setTheme] = useState<ThemePreference>(() =>
+    typeof window === "undefined" ? "system" : getThemePreference()
+  );
+  const [effectiveTheme, setEffectiveTheme] = useState<"light" | "dark">(() =>
+    typeof window === "undefined" ? "light" : getEffectiveTheme(getThemePreference())
+  );
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
-  }, [dark]);
+    const applyTheme = (nextTheme: ThemePreference) => {
+      const nextEffectiveTheme = getEffectiveTheme(nextTheme);
+      document.documentElement.setAttribute("data-theme", nextEffectiveTheme);
+      setEffectiveTheme(nextEffectiveTheme);
+    };
+
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    applyTheme(theme);
+
+    if (theme !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => applyTheme("system");
+
+    mediaQuery.addEventListener?.("change", onChange);
+    mediaQuery.addListener?.(onChange);
+    return () => {
+      mediaQuery.removeEventListener?.("change", onChange);
+      mediaQuery.removeListener?.(onChange);
+    };
+  }, [theme]);
 
   return (
     <div className="min-h-screen bg-surface">
@@ -28,11 +64,14 @@ export function Layout() {
 
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setDark(!dark)}
+                onClick={() => {
+                  const current = THEME_ORDER.indexOf(theme);
+                  setTheme(THEME_ORDER[(current + 1) % THEME_ORDER.length]!);
+                }}
                 className="p-2 rounded-xl hover:bg-surface-alt transition-colors"
-                aria-label="Toggle dark mode"
+                aria-label={`Theme: ${theme}`}
               >
-                {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {effectiveTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
 
               {isAuthenticated ? (
