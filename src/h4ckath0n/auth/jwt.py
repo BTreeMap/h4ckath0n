@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import jwt
 from pydantic import BaseModel
@@ -33,6 +33,7 @@ def decode_device_token(
         public_key_pem,
         algorithms=["ES256"],
         options={"verify_aud": False},
+        leeway=timedelta(seconds=30),  # allow some clock skew
     )
     return JWTClaims(**payload)
 
