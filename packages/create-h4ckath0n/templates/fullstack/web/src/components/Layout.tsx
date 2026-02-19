@@ -3,6 +3,7 @@ import { useAuth } from "../auth";
 import { Sun, Moon, Shield, LogOut, LayoutDashboard, Settings, Radio } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
+  applyEffectiveThemeForPreference,
   applyThemePreference,
   getEffectiveTheme,
   readThemePreference,
@@ -26,8 +27,8 @@ export function Layout() {
     applyThemePreference(themePreference);
     if (themePreference !== "system") return;
     return subscribeToSystemThemeChanges(() => {
-      applyThemePreference("system");
-      setSystemIsDark(getEffectiveTheme("system") === "dark");
+      const effective = applyEffectiveThemeForPreference("system");
+      setSystemIsDark(effective === "dark");
     });
   }, [themePreference]);
 

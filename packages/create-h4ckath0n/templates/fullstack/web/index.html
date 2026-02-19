@@ -5,7 +5,10 @@
     <script>
       (() => {
         const key = "theme-preference";
-        const stored = localStorage.getItem(key);
+        let stored = null;
+        try {
+          stored = localStorage.getItem(key);
+        } catch {}
         const theme = stored === "light" || stored === "dark" || stored === "system"
           ? stored
           : "system";

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { Layout } from "./Layout";
@@ -41,28 +41,32 @@ beforeEach(() => {
 });
 
 describe("Layout theme preference", () => {
-  it("defaults to system preference and applies dark from system settings", () => {
+  it("defaults to system preference and applies dark from system settings", async () => {
     mockMatchMedia(true);
     renderLayout();
 
-    expect(localStorage.getItem("theme-preference")).toBe("system");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    expect(screen.getByRole("button", { name: "Theme: system (dark)" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(localStorage.getItem("theme-preference")).toBe("system");
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      expect(screen.getByRole("button", { name: "Theme: system (dark)" })).toBeInTheDocument();
+    });
   });
 
-  it("toggle from system exits system and flips effective theme", () => {
+  it("toggle from system exits system and flips effective theme", async () => {
     mockMatchMedia(true);
     renderLayout();
 
     const button = screen.getByRole("button", { name: "Theme: system (dark)" });
     fireEvent.click(button);
 
-    expect(localStorage.getItem("theme-preference")).toBe("light");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(screen.getByRole("button", { name: "Theme: light" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(localStorage.getItem("theme-preference")).toBe("light");
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(screen.getByRole("button", { name: "Theme: light" })).toBeInTheDocument();
+    });
   });
 
-  it("toggle switches only between explicit light and dark", () => {
+  it("toggle switches only between explicit light and dark", async () => {
     mockMatchMedia(false);
     localStorage.setItem("theme-preference", "light");
     renderLayout();
@@ -70,13 +74,17 @@ describe("Layout theme preference", () => {
     const button = screen.getByRole("button", { name: "Theme: light" });
 
     fireEvent.click(button);
-    expect(localStorage.getItem("theme-preference")).toBe("dark");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    expect(screen.getByRole("button", { name: "Theme: dark" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(localStorage.getItem("theme-preference")).toBe("dark");
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      expect(screen.getByRole("button", { name: "Theme: dark" })).toBeInTheDocument();
+    });
 
     fireEvent.click(button);
-    expect(localStorage.getItem("theme-preference")).toBe("light");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(screen.queryByRole("button", { name: /Theme: system/ })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(localStorage.getItem("theme-preference")).toBe("light");
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(screen.queryByRole("button", { name: /Theme: system/ })).not.toBeInTheDocument();
+    });
   });
 });

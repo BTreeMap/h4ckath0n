@@ -4,12 +4,21 @@ export const THEME_STORAGE_KEY = "theme-preference";
 
 export function readThemePreference(): ThemePreference {
   if (typeof window === "undefined") return "system";
-  const stored = localStorage.getItem(THEME_STORAGE_KEY);
-  return stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    return stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+  } catch {
+    return "system";
+  }
 }
 
 export function writeThemePreference(pref: ThemePreference): void {
-  localStorage.setItem(THEME_STORAGE_KEY, pref);
+  let wrote = false;
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, pref);
+    wrote = true;
+  } catch {}
+  if (!wrote) return;
   window.dispatchEvent(new CustomEvent("theme-preference-change", { detail: pref }));
 }
 
@@ -19,11 +28,15 @@ export function getEffectiveTheme(pref: ThemePreference): "light" | "dark" {
     : pref;
 }
 
-export function applyThemePreference(pref: ThemePreference): "light" | "dark" {
-  writeThemePreference(pref);
+export function applyEffectiveThemeForPreference(pref: ThemePreference): "light" | "dark" {
   const effective = getEffectiveTheme(pref);
   document.documentElement.setAttribute("data-theme", effective);
   return effective;
+}
+
+export function applyThemePreference(pref: ThemePreference): "light" | "dark" {
+  writeThemePreference(pref);
+  return applyEffectiveThemeForPreference(pref);
 }
 
 export function subscribeToSystemThemeChanges(cb: () => void): () => void {
