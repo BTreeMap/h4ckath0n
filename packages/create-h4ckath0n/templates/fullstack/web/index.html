@@ -1,29 +1,32 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <script>
-      (() => {
-        const key = "theme-preference";
-        let stored = null;
-        try {
-          stored = localStorage.getItem(key);
-        } catch {}
-        const theme = stored === "light" || stored === "dark" || stored === "system"
-          ? stored
-          : "system";
-        const effective = theme === "system"
-          ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    (() => {
+      const effective = (() => {
+        const stored = (() => {
+          try { return localStorage.getItem("theme-preference"); } catch { return null; }
+        })();
+
+        const theme = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+        return theme === "system"
+          ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
           : theme;
-        document.documentElement.setAttribute("data-theme", effective);
       })();
-    </script>
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{PROJECT_NAME}}</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+      document.documentElement.dataset.theme = effective;
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{PROJECT_NAME}}</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
