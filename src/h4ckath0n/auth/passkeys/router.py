@@ -17,6 +17,7 @@ from h4ckath0n.auth.passkeys.service import (
     finish_authentication,
     finish_registration,
     list_passkeys,
+    rename_passkey,
     revoke_passkey,
     start_add_credential,
     start_authentication,
@@ -227,7 +228,7 @@ async def passkeys_list(
     items = [
         schemas.PasskeyInfo(
             id=c.id,
-            label=c.nickname,
+            name=c.name,
             created_at=c.created_at,
             last_used_at=c.last_used_at,
             revoked_at=c.revoked_at,
@@ -286,3 +287,35 @@ async def passkey_revoke(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from None
     return schemas.PasskeyRevokeResponse(message="Passkey revoked")
+
+
+@passkeys_router.patch(
+    "/{key_id}",
+    response_model=schemas.PasskeyRenameResponse,
+    summary="Rename a passkey",
+    description="Update the user-facing name of a passkey.",
+    responses={
+        401: {"model": auth_schemas.ErrorResponse, "description": "Missing or invalid token."},
+        404: {"model": auth_schemas.ErrorResponse, "description": "Passkey not found."},
+        409: {
+            "model": auth_schemas.ErrorResponse,
+            "description": "Cannot rename a revoked passkey.",
+        },
+        422: {"model": auth_schemas.ErrorResponse, "description": "Validation error."},
+    },
+)
+async def passkey_rename(
+    key_id: str,
+    body: schemas.PasskeyRenameRequest,
+    request: Request,
+    user: User = Depends(_get_current_user),
+    db: AsyncSession = Depends(_db_dep),
+):
+    try:
+        cred = await rename_passkey(db, user, key_id, body.name)
+    except ValueError as exc:
+        msg = str(exc)
+        if "revoked" in msg.lower():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg) from None
+    return schemas.PasskeyRenameResponse(id=cred.id, name=cred.name)

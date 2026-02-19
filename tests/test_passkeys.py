@@ -37,6 +37,7 @@ from h4ckath0n.auth.passkeys.service import (
     LastPasskeyError,
     cleanup_expired_challenges,
     list_passkeys,
+    rename_passkey,
     revoke_passkey,
     start_authentication,
     start_registration,
@@ -515,3 +516,231 @@ class TestPasswordAuthDisabled:
             json={"email": "test@example.com"},
         )
         assert r.status_code in (404, 405)
+
+
+# ---------------------------------------------------------------------------
+# Passkey name / rename tests (service layer)
+# ---------------------------------------------------------------------------
+
+
+class TestPasskeyRename:
+    async def _create_user_with_passkeys(self, db_session: AsyncSession, count: int = 1):
+        """Helper to create a user with *count* active passkeys."""
+        user = User()
+        db_session.add(user)
+        await db_session.flush()
+
+        creds = []
+        for i in range(count):
+            cred = WebAuthnCredential(
+                user_id=user.id,
+                credential_id=f"rename-cred-{user.id}-{i}",
+                public_key=b"\x00" * 32,
+                sign_count=0,
+            )
+            db_session.add(cred)
+            creds.append(cred)
+        await db_session.commit()
+        for c in creds:
+            await db_session.refresh(c)
+        await db_session.refresh(user)
+        return user, creds
+
+    async def test_rename_success(self, db_session: AsyncSession):
+        user, creds = await self._create_user_with_passkeys(db_session)
+        cred = await rename_passkey(db_session, user, creds[0].id, "My Laptop")
+        assert cred.name == "My Laptop"
+
+    async def test_rename_trims_whitespace(self, db_session: AsyncSession):
+        user, creds = await self._create_user_with_passkeys(db_session)
+        cred = await rename_passkey(db_session, user, creds[0].id, "  Padded  ")
+        assert cred.name == "Padded"
+
+    async def test_rename_empty_stores_null(self, db_session: AsyncSession):
+        user, creds = await self._create_user_with_passkeys(db_session)
+        # First set a name
+        await rename_passkey(db_session, user, creds[0].id, "Name")
+        # Clear it
+        cred = await rename_passkey(db_session, user, creds[0].id, "")
+        assert cred.name is None
+
+    async def test_rename_whitespace_only_stores_null(self, db_session: AsyncSession):
+        user, creds = await self._create_user_with_passkeys(db_session)
+        cred = await rename_passkey(db_session, user, creds[0].id, "   ")
+        assert cred.name is None
+
+    async def test_rename_none_stores_null(self, db_session: AsyncSession):
+        user, creds = await self._create_user_with_passkeys(db_session)
+        cred = await rename_passkey(db_session, user, creds[0].id, None)
+        assert cred.name is None
+
+    async def test_rename_too_long_rejected(self, db_session: AsyncSession):
+        user, creds = await self._create_user_with_passkeys(db_session)
+        with pytest.raises(ValueError, match="64 characters"):
+            await rename_passkey(db_session, user, creds[0].id, "x" * 65)
+
+    async def test_rename_64_chars_accepted(self, db_session: AsyncSession):
+        user, creds = await self._create_user_with_passkeys(db_session)
+        cred = await rename_passkey(db_session, user, creds[0].id, "x" * 64)
+        assert cred.name == "x" * 64
+
+    async def test_rename_not_owned_rejected(self, db_session: AsyncSession):
+        user1, creds1 = await self._create_user_with_passkeys(db_session)
+        user2, _ = await self._create_user_with_passkeys(db_session)
+        with pytest.raises(ValueError, match="not found"):
+            await rename_passkey(db_session, user2, creds1[0].id, "Nope")
+
+    async def test_rename_revoked_rejected(self, db_session: AsyncSession):
+        user, creds = await self._create_user_with_passkeys(db_session, count=2)
+        await revoke_passkey(db_session, user, creds[0].id)
+        with pytest.raises(ValueError, match="revoked"):
+            await rename_passkey(db_session, user, creds[0].id, "Renamed")
+
+    async def test_name_field_in_model(self, db_session: AsyncSession):
+        user, creds = await self._create_user_with_passkeys(db_session)
+        assert creds[0].name is None  # default
+
+    async def test_list_includes_name(self, db_session: AsyncSession):
+        user, creds = await self._create_user_with_passkeys(db_session)
+        await rename_passkey(db_session, user, creds[0].id, "My Key")
+        listed = await list_passkeys(db_session, user)
+        assert listed[0].name == "My Key"
+
+
+# ---------------------------------------------------------------------------
+# Passkey rename route tests (via HTTP)
+# ---------------------------------------------------------------------------
+
+
+class TestPasskeyRenameRoute:
+    async def _setup_user_with_device_token(
+        self, client, db_session: AsyncSession, settings, n_creds=1
+    ):
+        """Create a user with passkeys and a device-signed JWT."""
+        import jwt as pyjwt
+
+        user = User()
+        db_session.add(user)
+        await db_session.flush()
+
+        creds = []
+        for i in range(n_creds):
+            cred = WebAuthnCredential(
+                user_id=user.id,
+                credential_id=f"rename-route-{user.id}-{i}",
+                public_key=b"\x00" * 32,
+                sign_count=0,
+            )
+            db_session.add(cred)
+            creds.append(cred)
+        await db_session.commit()
+        for c in creds:
+            await db_session.refresh(c)
+        await db_session.refresh(user)
+
+        private_key = ec.generate_private_key(ec.SECP256R1())
+        private_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+        public_key = private_key.public_key()
+        jwk_dict = json.loads(ECAlgorithm(ECAlgorithm.SHA256).to_jwk(public_key))
+
+        device_id = await register_device(db_session, user.id, jwk_dict, "test")
+
+        now = datetime.now(UTC)
+        token = pyjwt.encode(
+            {
+                "sub": user.id,
+                "iat": now,
+                "exp": now + timedelta(minutes=15),
+                "aud": "h4ckath0n:http",
+            },
+            private_pem,
+            algorithm="ES256",
+            headers={"kid": device_id},
+        )
+        return user, creds, token
+
+    async def test_rename_via_route(self, client, db_session, settings):
+        user, creds, token = await self._setup_user_with_device_token(client, db_session, settings)
+        r = client.patch(
+            f"/auth/passkeys/{creds[0].id}",
+            json={"name": "My Laptop"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["name"] == "My Laptop"
+        assert body["id"] == creds[0].id
+
+    async def test_rename_clear_name_via_route(self, client, db_session, settings):
+        user, creds, token = await self._setup_user_with_device_token(client, db_session, settings)
+        # Set name first
+        client.patch(
+            f"/auth/passkeys/{creds[0].id}",
+            json={"name": "Temp"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        # Clear it
+        r = client.patch(
+            f"/auth/passkeys/{creds[0].id}",
+            json={"name": ""},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert r.status_code == 200
+        assert r.json()["name"] is None
+
+    async def test_rename_too_long_via_route(self, client, db_session, settings):
+        user, creds, token = await self._setup_user_with_device_token(client, db_session, settings)
+        r = client.patch(
+            f"/auth/passkeys/{creds[0].id}",
+            json={"name": "x" * 65},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert r.status_code == 422
+
+    async def test_rename_not_found_via_route(self, client, db_session, settings):
+        _, _, token = await self._setup_user_with_device_token(client, db_session, settings)
+        r = client.patch(
+            "/auth/passkeys/knonexistent00000000000000000000",
+            json={"name": "No"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert r.status_code == 404
+
+    async def test_rename_revoked_via_route(self, client, db_session, settings):
+        user, creds, token = await self._setup_user_with_device_token(
+            client, db_session, settings, n_creds=2
+        )
+        # Revoke first
+        client.post(
+            f"/auth/passkeys/{creds[0].id}/revoke",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        r = client.patch(
+            f"/auth/passkeys/{creds[0].id}",
+            json={"name": "Nope"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert r.status_code == 409
+
+    async def test_rename_requires_auth(self, client):
+        r = client.patch(
+            "/auth/passkeys/k00000000000000000000000000000000",
+            json={"name": "X"},
+        )
+        assert r.status_code in (401, 403)
+
+    async def test_list_passkeys_includes_name_via_route(self, client, db_session, settings):
+        user, creds, token = await self._setup_user_with_device_token(client, db_session, settings)
+        # Set a name
+        client.patch(
+            f"/auth/passkeys/{creds[0].id}",
+            json={"name": "Work Key"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        r = client.get(
+            "/auth/passkeys",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["passkeys"][0]["name"] == "Work Key"

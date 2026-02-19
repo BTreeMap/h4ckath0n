@@ -330,6 +330,37 @@ async def list_passkeys(db: AsyncSession, user: User) -> list[WebAuthnCredential
     return list(result.scalars().all())
 
 
+async def rename_passkey(
+    db: AsyncSession, user: User, key_id: str, name: str | None
+) -> WebAuthnCredential:
+    """Rename a passkey. *name* is trimmed; empty-after-trim stored as NULL.
+
+    Raises ValueError if not found / not owned / revoked.
+    """
+    result = await db.execute(
+        select(WebAuthnCredential).filter(
+            WebAuthnCredential.id == key_id,
+            WebAuthnCredential.user_id == user.id,
+        )
+    )
+    cred = result.scalars().first()
+    if cred is None:
+        raise ValueError("Credential not found")
+    if cred.revoked_at is not None:
+        raise ValueError("Cannot rename a revoked passkey")
+
+    clean: str | None = name.strip() if name else None
+    if clean == "":
+        clean = None
+    if clean is not None and len(clean) > 64:
+        raise ValueError("Name must be 64 characters or fewer")
+
+    cred.name = clean
+    await db.commit()
+    await db.refresh(cred)
+    return cred
+
+
 async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
     """Revoke a credential by its internal key id.
 

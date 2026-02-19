@@ -204,4 +204,50 @@ test.describe("Passkey auth flows", () => {
     // Only 1 revoke button should remain (the other passkey is revoked)
     await expect(page.getByTestId("revoke-passkey-btn")).toHaveCount(1);
   });
+
+  // -----------------------------------------------------------------------
+  // 5) Rename passkey + persistence across refresh
+  // -----------------------------------------------------------------------
+  test("rename passkey and verify persistence", async ({ page }) => {
+    // Register
+    await page.goto("/register");
+    await page.getByTestId("register-display-name").fill("E2E Rename User");
+    await page.getByTestId("register-submit").click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
+
+    // Go to settings
+    await page.getByTestId("nav-settings").click();
+    await expect(page).toHaveURL(/\/settings/);
+
+    // Wait for passkey list to load
+    await expect(page.getByTestId("passkey-item")).toHaveCount(1, {
+      timeout: 10_000,
+    });
+
+    // Passkey should show fallback name
+    await expect(page.getByTestId("passkey-name")).toHaveText("Unnamed passkey");
+
+    // Click edit button
+    await page.getByTestId("passkey-edit-btn").click();
+    await expect(page.getByTestId("passkey-name-input")).toBeVisible();
+
+    // Type new name and save
+    await page.getByTestId("passkey-name-input").fill("My Laptop");
+    await page.getByTestId("passkey-name-save").click();
+
+    // Wait for rename to complete – edit form should disappear
+    await expect(page.getByTestId("passkey-name-input")).not.toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Name should be updated
+    await expect(page.getByTestId("passkey-name")).toHaveText("My Laptop");
+
+    // Refresh page and verify name persists
+    await page.reload();
+    await expect(page.getByTestId("passkey-item")).toHaveCount(1, {
+      timeout: 10_000,
+    });
+    await expect(page.getByTestId("passkey-name")).toHaveText("My Laptop");
+  });
 });
