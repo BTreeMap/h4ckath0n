@@ -101,7 +101,9 @@ class TestAutoUpgradeStartup:
 
 
 class TestAsyncMigrationHelper:
-    def test_normalize_db_url_for_sync_preserves_password_and_strips_asyncpg_query_keys():
+    def test_normalize_db_url_for_sync_preserves_password_and_strips_asyncpg_query_keys(
+        self,
+    ):
         url = (
             "postgresql+asyncpg://flow:flow@localhost:5432/flow_test"
             "?prepared_statement_cache_size=0&sslmode=disable"
