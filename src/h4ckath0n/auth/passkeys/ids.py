@@ -94,8 +94,10 @@ def random_base32(nbytes: int = 20) -> str:
     """
     if nbytes <= 0:
         raise ValueError("nbytes must be > 0")
+    if nbytes % 5 != 0:
+        raise ValueError("nbytes must be a multiple of 5 to avoid base32 padding")
     raw = _thread_reader().read(nbytes)
-    return base64.b32encode(raw).decode("ascii").lower().rstrip("=")
+    return base64.b32encode(raw).decode("ascii").lower()
 
 
 def new_user_id() -> str:
