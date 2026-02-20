@@ -5,7 +5,13 @@ import { existsSync, readdirSync } from "node:fs";
 import { resolve, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { copyDir, dirExists, generateSecret, validateProjectName, writeEnvFiles } from "../lib/scaffold.js";
+import {
+  copyDir,
+  dirExists,
+  generateSecret,
+  validateProjectName,
+  writeEnvFiles,
+} from "../lib/scaffold.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -58,7 +64,9 @@ function parseArgs(argv) {
       i++;
       const val = args[i];
       if (val !== "postgres" && val !== "sqlite") {
-        console.error(`Error: --db must be "postgres" or "sqlite", got "${val}".`);
+        console.error(
+          `Error: --db must be "postgres" or "sqlite", got "${val}".`,
+        );
         process.exit(1);
       }
       opts.db = val;
@@ -70,7 +78,9 @@ function parseArgs(argv) {
     } else if (!opts.name) {
       opts.name = arg;
     } else {
-      console.error(`Error: Unexpected argument "${arg}". Only one project name allowed.`);
+      console.error(
+        `Error: Unexpected argument "${arg}". Only one project name allowed.`,
+      );
       process.exit(1);
     }
   }
@@ -105,7 +115,9 @@ function main() {
   const projectDir = resolve(process.cwd(), opts.name);
 
   if (dirExists(projectDir) && readdirSync(projectDir).length > 0) {
-    console.error(`Error: Directory "${opts.name}" already exists and is not empty.`);
+    console.error(
+      `Error: Directory "${opts.name}" already exists and is not empty.`,
+    );
     process.exit(1);
   }
 
@@ -158,7 +170,10 @@ function main() {
     if (opts.node && existsSync(join(projectDir, "web"))) {
       console.log("📦 Installing Node dependencies (npm install)...");
       try {
-        execSync("npm install", { cwd: join(projectDir, "web"), stdio: "inherit" });
+        execSync("npm install", {
+          cwd: join(projectDir, "web"),
+          stdio: "inherit",
+        });
         console.log("✅ Node dependencies installed.");
       } catch {
         console.warn("⚠️  npm install failed. You can run it manually later.");

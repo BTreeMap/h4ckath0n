@@ -48,7 +48,9 @@ describe("Layout theme preference", () => {
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("system");
       expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-      expect(screen.getByRole("button", { name: "Theme: system (dark)" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Theme: system (dark)" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -62,7 +64,9 @@ describe("Layout theme preference", () => {
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("light");
       expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-      expect(screen.getByRole("button", { name: "Theme: light" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Theme: light" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -77,14 +81,18 @@ describe("Layout theme preference", () => {
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("dark");
       expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-      expect(screen.getByRole("button", { name: "Theme: dark" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Theme: dark" }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.click(button);
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("light");
       expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-      expect(screen.queryByRole("button", { name: /Theme: system/ })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /Theme: system/ }),
+      ).not.toBeInTheDocument();
     });
   });
 });

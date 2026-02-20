@@ -50,21 +50,24 @@ export function Landing() {
           <Fingerprint className="w-8 h-8 text-primary mb-3" />
           <h3 className="font-semibold text-text mb-1">Passkey Auth</h3>
           <p className="text-sm text-text-muted">
-            No passwords. Register and login with device biometrics or security keys.
+            No passwords. Register and login with device biometrics or security
+            keys.
           </p>
         </div>
         <div className="p-6 bg-surface-alt rounded-2xl border border-border">
           <Lock className="w-8 h-8 text-primary mb-3" />
           <h3 className="font-semibold text-text mb-1">Device-Bound Keys</h3>
           <p className="text-sm text-text-muted">
-            Each device has a non-extractable P-256 keypair. Tokens are signed locally and verified server-side.
+            Each device has a non-extractable P-256 keypair. Tokens are signed
+            locally and verified server-side.
           </p>
         </div>
         <div className="p-6 bg-surface-alt rounded-2xl border border-border">
           <Zap className="w-8 h-8 text-primary mb-3" />
           <h3 className="font-semibold text-text mb-1">Ship Fast</h3>
           <p className="text-sm text-text-muted">
-            Built on FastAPI + React + Vite. Secure defaults so you can focus on building.
+            Built on FastAPI + React + Vite. Secure defaults so you can focus on
+            building.
           </p>
         </div>
       </div>

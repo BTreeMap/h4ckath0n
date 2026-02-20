@@ -6,7 +6,9 @@ export function readThemePreference(): ThemePreference {
   if (typeof window === "undefined") return "system";
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    return stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+    return stored === "light" || stored === "dark" || stored === "system"
+      ? stored
+      : "system";
   } catch {
     return "system";
   }
@@ -19,17 +21,23 @@ export function writeThemePreference(pref: ThemePreference): void {
     return;
   }
   window.dispatchEvent(
-    new CustomEvent<ThemePreference>("theme-preference-change", { detail: pref }),
+    new CustomEvent<ThemePreference>("theme-preference-change", {
+      detail: pref,
+    }),
   );
 }
 
 export function getEffectiveTheme(pref: ThemePreference): "light" | "dark" {
   return pref === "system"
-    ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    ? window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light"
     : pref;
 }
 
-export function applyEffectiveThemeForPreference(pref: ThemePreference): "light" | "dark" {
+export function applyEffectiveThemeForPreference(
+  pref: ThemePreference,
+): "light" | "dark" {
   const effective = getEffectiveTheme(pref);
   document.documentElement.setAttribute("data-theme", effective);
   return effective;

@@ -33,7 +33,12 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-text" data-testid="dashboard-heading">Dashboard</h1>
+        <h1
+          className="text-2xl font-bold text-text"
+          data-testid="dashboard-heading"
+        >
+          Dashboard
+        </h1>
         <p className="text-text-muted">
           Welcome{displayName ? `, ${displayName}` : ""}!
         </p>
@@ -47,7 +52,9 @@ export function Dashboard() {
             </div>
             <div>
               <p className="text-xs text-text-muted">User ID</p>
-              <p className="text-sm font-mono text-text truncate max-w-[160px]">{userId}</p>
+              <p className="text-sm font-mono text-text truncate max-w-[160px]">
+                {userId}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -59,7 +66,9 @@ export function Dashboard() {
             </div>
             <div>
               <p className="text-xs text-text-muted">Device ID</p>
-              <p className="text-sm font-mono text-text truncate max-w-[160px]">{deviceId}</p>
+              <p className="text-sm font-mono text-text truncate max-w-[160px]">
+                {deviceId}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -71,7 +80,9 @@ export function Dashboard() {
             </div>
             <div>
               <p className="text-xs text-text-muted">Role</p>
-              <p className="text-sm font-medium text-text capitalize">{role || "user"}</p>
+              <p className="text-sm font-medium text-text capitalize">
+                {role || "user"}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -98,15 +109,17 @@ export function Dashboard() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-text-muted">
           <p>
-            Your device has a unique P-256 keypair stored in IndexedDB. The private key is
-            non-extractable and never leaves this browser.
+            Your device has a unique P-256 keypair stored in IndexedDB. The
+            private key is non-extractable and never leaves this browser.
           </p>
           <p>
-            API requests are authenticated with short-lived JWTs (15 min) signed by your device
-            key. The server verifies each request using your registered public key.
+            API requests are authenticated with short-lived JWTs (15 min) signed
+            by your device key. The server verifies each request using your
+            registered public key.
           </p>
           <p>
-            Visit <strong>Settings</strong> to manage your passkeys, or start building your app!
+            Visit <strong>Settings</strong> to manage your passkeys, or start
+            building your app!
           </p>
         </CardContent>
       </Card>

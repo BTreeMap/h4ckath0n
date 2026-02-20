@@ -1,5 +1,12 @@
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -13,7 +20,10 @@ export function validateProjectName(name) {
     return { valid: false, reason: "Project name is required." };
   }
   if (name.length > 214) {
-    return { valid: false, reason: "Project name must be 214 characters or fewer." };
+    return {
+      valid: false,
+      reason: "Project name must be 214 characters or fewer.",
+    };
   }
   if (!/^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(name)) {
     return {
@@ -36,11 +46,26 @@ export function generateSecret(bytes = 32) {
 
 // Binary file extensions that should be copied without placeholder replacement.
 const BINARY_EXTENSIONS = new Set([
-  ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg",
-  ".woff", ".woff2", ".ttf", ".eot",
-  ".zip", ".gz", ".tar", ".bz2",
-  ".pdf", ".mp3", ".mp4", ".webm",
-  ".wasm", ".bin",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".ico",
+  ".svg",
+  ".woff",
+  ".woff2",
+  ".ttf",
+  ".eot",
+  ".zip",
+  ".gz",
+  ".tar",
+  ".bz2",
+  ".pdf",
+  ".mp3",
+  ".mp4",
+  ".webm",
+  ".wasm",
+  ".bin",
 ]);
 
 /**
@@ -128,8 +153,16 @@ function buildEnvExampleContent(dbType) {
  * @param {string} projectName
  */
 export function writeEnvFiles(dest, dbType, projectName) {
-  writeFileSync(join(dest, ".env"), buildEnvContent(dbType, projectName), "utf8");
-  writeFileSync(join(dest, ".env.example"), buildEnvExampleContent(dbType), "utf8");
+  writeFileSync(
+    join(dest, ".env"),
+    buildEnvContent(dbType, projectName),
+    "utf8",
+  );
+  writeFileSync(
+    join(dest, ".env.example"),
+    buildEnvExampleContent(dbType),
+    "utf8",
+  );
 }
 
 /**
