@@ -30,36 +30,36 @@ _ID_LEN = 32
 _ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyz234567")
 
 # Domain separation for this particular PRNG stream.
-_DOMAIN = b"h4ckath0n:idgen:v1"
+_DOMAIN = b"h4ckath0n:idgen:v1\x00"
 
 # No env override: always generate from OS at startup/import time.
 _MASTER_KEY = os.urandom(32)
 
 _tls = threading.local()
 
+_U64_MASK = (1 << 64) - 1
+
 
 def _u64le(x: int) -> bytes:
     # os.getpid() and threading.get_ident() are expected to be non-negative in practice.
-    return x.to_bytes(8, "little", signed=False)
+    # Mask defensively so we never raise OverflowError for unusually large thread id values.
+    return (x & _U64_MASK).to_bytes(8, "little", signed=False)
 
 
 class _ShakeXOFReader:
     __slots__ = ("_xof",)
 
     def __init__(self, pid: int, tid: int) -> None:
-        # SHAKE128 is plenty for "unpredictable IDs" and typically faster than SHAKE256.
-        # digest_size here is the maximum total bytes that can be squeezed.
         alg = hashes.SHAKE128(digest_size=sys.maxsize)
         xof = hashes.XOFHash(alg)
 
-        # Bind this per-thread stream to: domain || master_key || pid || tid
+        # Bind this per-thread stream to: domain || master_key || pid || tid || randombytes(16)
         xof.update(_DOMAIN)
         xof.update(_MASTER_KEY)
         xof.update(_u64le(pid))
         xof.update(_u64le(tid))
+        xof.update(os.urandom(16))  # Add some extra per-reader randomness from the OS.
 
-        # After squeeze() is called once, XOFHash cannot be updated anymore.
-        # This reader only calls squeeze(), so it's safe.
         self._xof = xof
 
     def read(self, nbytes: int) -> bytes:
@@ -124,25 +124,19 @@ def new_token_id() -> str:
 def is_user_id(value: str) -> bool:
     """Return ``True`` when *value* looks like a valid user ID."""
     return (
-        len(value) == _ID_LEN
-        and value[:1] == "u"
-        and all(c in _ALLOWED_CHARS for c in value[1:])
+        len(value) == _ID_LEN and value[:1] == "u" and all(c in _ALLOWED_CHARS for c in value[1:])
     )
 
 
 def is_key_id(value: str) -> bool:
     """Return ``True`` when *value* looks like a valid key ID."""
     return (
-        len(value) == _ID_LEN
-        and value[:1] == "k"
-        and all(c in _ALLOWED_CHARS for c in value[1:])
+        len(value) == _ID_LEN and value[:1] == "k" and all(c in _ALLOWED_CHARS for c in value[1:])
     )
 
 
 def is_device_id(value: str) -> bool:
     """Return ``True`` when *value* looks like a valid device ID."""
     return (
-        len(value) == _ID_LEN
-        and value[:1] == "d"
-        and all(c in _ALLOWED_CHARS for c in value[1:])
+        len(value) == _ID_LEN and value[:1] == "d" and all(c in _ALLOWED_CHARS for c in value[1:])
     )
