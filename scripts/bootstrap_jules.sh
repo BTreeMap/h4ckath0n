@@ -73,23 +73,9 @@ install_uv() {
   uv --version
 }
 
-install_python_with_fallback() {
-  # Try requested version first, then fall back if needed.
-  log "Installing Python via uv (requested: $PYTHON_VERSION)"
-  if uv python install "$PYTHON_VERSION"; then
-    return 0
-  fi
-
-  warn "uv could not install Python $PYTHON_VERSION. Falling back to a stable version."
-  for v in 3.13 3.12 3.11; do
-    if uv python install "$v"; then
-      warn "Using Python $v instead of $PYTHON_VERSION"
-      return 0
-    fi
-  done
-
-  warn "Could not install any fallback Python versions via uv. Continuing."
-  return 0
+install_python() {
+  log "Installing Python $PYTHON_VERSION via uv"
+  uv python install "$PYTHON_VERSION"
 }
 
 install_fnm_node_npm() {
@@ -119,7 +105,7 @@ install_fnm_node_npm() {
 }
 
 install_python_deps_with_uv() {
-  log "Installing Python dependencies with uv.lock (locked), including dev deps (default), and all extras"
+  log "Installing Python dependencies with uv.lock (locked), dev deps, and all extras"
 
   local py_project_dir=""
   if [[ -f "$ROOT_DIR/pyproject.toml" ]]; then
@@ -142,7 +128,7 @@ install_python_deps_with_uv() {
 
   # Notes:
   # - --locked enforces that uv.lock matches pyproject.toml
-  # - dev dependency group is synced by default by uv sync
+  # - dev group is synced by default by uv sync
   # - --all-extras installs every optional dependency extra
   uv sync --locked --all-extras
 
@@ -169,10 +155,10 @@ install_node_deps_upstream_or_downstream() {
   if [[ "$is_upstream" == "true" ]]; then
     log "Detected upstream h4ckath0n repo layout under $ROOT_DIR"
 
-    # Install deps for the scaffolder
+    # Scaffolder deps
     npm_install_dir "$upstream_scaffolder_dir"
 
-    # Install deps for the fullstack web template and run type generation if present
+    # Fullstack web template deps + OpenAPI typegen (if present)
     npm_install_dir "$upstream_template_web_dir"
     npm_run_if_script_exists "$upstream_template_web_dir" "gen"
   fi
@@ -181,7 +167,6 @@ install_node_deps_upstream_or_downstream() {
     log "Detected downstream project layout (frontend in $downstream_web_dir)"
 
     npm_install_dir "$downstream_web_dir"
-    # Some downstream web apps might have a gen step (for OpenAPI types, etc.)
     npm_run_if_script_exists "$downstream_web_dir" "gen"
   fi
 
@@ -198,12 +183,12 @@ main() {
   log "Ensuring basic OS tools (best effort)"
   if have apt-get; then
     if have sudo; then
-      run_or_warn sudo apt-get update
+      run_or_warn sudo apt-get update -y
       run_or_warn sudo env DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
       run_or_warn sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates curl git unzip jq ripgrep build-essential
     else
-      run_or_warn apt-get update
+      run_or_warn apt-get update -y
       run_or_warn env DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
       run_or_warn env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates curl git unzip jq ripgrep build-essential
@@ -215,8 +200,8 @@ main() {
   # 1) uv
   install_uv
 
-  # 2) Python via uv (with fallback)
-  install_python_with_fallback
+  # 2) Python via uv (no fallback)
+  install_python
 
   # 3) fnm + Node LTS + npm latest
   install_fnm_node_npm
