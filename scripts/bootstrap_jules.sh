@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PYTHON_VERSION="${PYTHON_VERSION:-3.11}"
+PYTHON_VERSION="${PYTHON_VERSION:-3.14}"
 
 # Keep installs per-user and avoid editing shell profiles (good for ephemeral CI/Jules envs)
 UV_BIN_DIR="${UV_BIN_DIR:-$HOME/.local/bin}"
@@ -16,10 +16,12 @@ log "Ensuring basic OS tools (best effort)"
 if have apt-get; then
   if have sudo; then
     sudo apt-get update -y
+    sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
     sudo apt-get install -y --no-install-recommends \
       ca-certificates curl git unzip jq ripgrep build-essential
   else
     apt-get update -y || true
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y || true
     apt-get install -y --no-install-recommends \
       ca-certificates curl git unzip jq ripgrep build-essential || true
   fi
@@ -37,7 +39,7 @@ export PATH="$UV_BIN_DIR:$PATH"
 log "uv version"
 uv --version
 
-# 2) Install Python 3.11 (managed by uv)
+# 2) Install Python 3.14 (managed by uv)
 log "Installing Python $PYTHON_VERSION via uv"
 uv python install "$PYTHON_VERSION" || true
 
