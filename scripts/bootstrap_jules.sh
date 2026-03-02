@@ -90,7 +90,7 @@ install_fnm_node_npm() {
   eval "$(fnm env --use-on-cd --shell bash)"
 
   log "Installing Node LTS and using it immediately"
-  fnm install --lts --use
+  fnm use lts/latest --install-if-missing
 
   log "Node and npm versions (pre-upgrade)"
   node -v
