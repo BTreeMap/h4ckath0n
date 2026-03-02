@@ -73,10 +73,10 @@ npm -v
 log "Installing Python dependencies with uv.lock, dev deps, and all extras"
 
 PY_PROJECT_DIR=""
-if [[ -f "pyproject.toml" ]]; then
-  PY_PROJECT_DIR="."
-elif [[ -f "api/pyproject.toml" ]]; then
-  PY_PROJECT_DIR="api"
+if [[ -f "/app/pyproject.toml" ]]; then
+  PY_PROJECT_DIR="/app"
+elif [[ -f "/app/api/pyproject.toml" ]]; then
+  PY_PROJECT_DIR="/app/api"
 fi
 
 if [[ -n "$PY_PROJECT_DIR" ]]; then
@@ -99,11 +99,11 @@ fi
 # 5) Node deps for this repo (scaffolder + web template)
 log "Installing Node dependencies (npm ci where lockfiles exist)"
 
-if [[ -f "packages/create-h4ckath0n/package-lock.json" ]]; then
-  ( cd packages/create-h4ckath0n && npm ci )
+if [[ -f "/app/packages/create-h4ckath0n/package-lock.json" ]]; then
+  ( cd /app/packages/create-h4ckath0n && npm ci )
 fi
 
-WEB_TEMPLATE_DIR="packages/create-h4ckath0n/templates/fullstack/web"
+WEB_TEMPLATE_DIR="/app/packages/create-h4ckath0n/templates/fullstack/web"
 if [[ -f "$WEB_TEMPLATE_DIR/package-lock.json" ]]; then
   ( cd "$WEB_TEMPLATE_DIR" && npm ci && npm run gen )
 fi
@@ -113,6 +113,6 @@ cat <<'EOF'
   - Backend:  uv run --locked pytest -v
   - Lint:     uv run --locked ruff check .
   - Types:    uv run --locked mypy src
-  - Web:      (cd packages/create-h4ckath0n/templates/fullstack/web && npm run check)
-  - E2E:      (cd packages/create-h4ckath0n/templates/fullstack/web && npx playwright install --with-deps chromium && npx playwright test)
+  - Web:      (cd /app/packages/create-h4ckath0n/templates/fullstack/web && npm run check)
+  - E2E:      (cd /app/packages/create-h4ckath0n/templates/fullstack/web && npx playwright install --with-deps chromium && npx playwright test)
 EOF
