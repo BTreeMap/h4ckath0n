@@ -21,6 +21,32 @@ import {
   serializeGetResponse,
 } from "./webauthn";
 import { useNavigate } from "react-router";
+import type { components } from "../api/openapi";
+
+// ---------------------------------------------------------------------------
+// Types derived from the generated OpenAPI schema
+// ---------------------------------------------------------------------------
+
+/** Backend auth response shape (passkey finish / add finish). */
+type PasskeyFinishResponse = components["schemas"]["PasskeyFinishResponse"];
+
+/** Backend auth response shape (password register / login / reset). */
+type DeviceBindingResponse = components["schemas"]["DeviceBindingResponse"];
+
+/** Union of all auth response shapes the frontend needs to handle. */
+type AuthResponse = PasskeyFinishResponse | DeviceBindingResponse;
+
+/** Passkey register start response. */
+type PasskeyRegisterStartResponse =
+  components["schemas"]["PasskeyRegisterStartResponse"];
+
+/** Passkey login start response. */
+type PasskeyLoginStartResponse =
+  components["schemas"]["PasskeyLoginStartResponse"];
+
+// ---------------------------------------------------------------------------
+// Auth state
+// ---------------------------------------------------------------------------
 
 interface User {
   id: string;
@@ -40,10 +66,10 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   loginPasskey: () => Promise<void>;
-  loginPassword: (username: string, password: string) => Promise<void>;
-  registerPasskey: (username: string) => Promise<void>;
+  loginPassword: (email: string, password: string) => Promise<void>;
+  registerPasskey: (displayName: string) => Promise<void>;
   registerPassword: (
-    username: string,
+    displayName: string,
     email: string,
     password: string,
   ) => Promise<void>;
@@ -58,11 +84,13 @@ export function useAuth(): AuthContextType {
   return ctx;
 }
 
-interface FinishResponse {
-  user_id: string;
-  device_id: string;
-  role?: string;
-  display_name?: string;
+// ---------------------------------------------------------------------------
+// Provider
+// ---------------------------------------------------------------------------
+
+/** Extract display_name from either auth response type. */
+function extractDisplayName(data: AuthResponse): string | null {
+  return data.display_name ?? null;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -118,13 +146,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginPasskey = useCallback(async () => {
     const keyMaterial = await ensureDeviceKeyMaterial();
-    const startRes = await publicFetch<{
-      options: Record<string, unknown>;
-      flow_id: string;
-    }>("/auth/passkey/login/start", {
-      method: "POST",
-      body: JSON.stringify({}),
-    });
+    const startRes = await publicFetch<PasskeyLoginStartResponse>(
+      "/auth/passkey/login/start",
+      {
+        method: "POST",
+        body: JSON.stringify({}),
+      },
+    );
     if (!startRes.ok) throw new Error("Login start failed");
 
     const getOptions = toGetOptions(
@@ -135,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )) as PublicKeyCredential | null;
     if (!credential) throw new Error("Login cancelled");
 
-    const finishRes = await publicFetch<FinishResponse>(
+    const finishRes = await publicFetch<PasskeyFinishResponse>(
       "/auth/passkey/login/finish",
       {
         method: "POST",
@@ -153,31 +181,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       finishRes.data.user_id,
       finishRes.data.device_id,
       finishRes.data.role,
-      finishRes.data.display_name,
+      extractDisplayName(finishRes.data),
     );
   }, []);
 
   const loginPassword = useCallback(
-    async (username: string, password: string) => {
+    async (email: string, password: string) => {
       const keyMaterial = await ensureDeviceKeyMaterial();
-      const res = await publicFetch<FinishResponse>("/auth/login", {
+      const res = await publicFetch<DeviceBindingResponse>("/auth/login", {
         method: "POST",
         body: JSON.stringify({
-          username,
+          email,
           password,
           device_public_key_jwk: keyMaterial.publicJwk,
           device_label: navigator.userAgent.slice(0, 64),
         }),
       });
       if (!res.ok) {
-        const error = res.data as { detail?: string };
+        const error = res.data as unknown as { detail?: string };
         throw new Error(error.detail || "Login failed");
       }
       updateState(
         res.data.user_id,
         res.data.device_id,
         res.data.role,
-        res.data.display_name,
+        extractDisplayName(res.data),
       );
     },
     [],
@@ -185,13 +213,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerPasskey = useCallback(async (displayName: string) => {
     const keyMaterial = await ensureDeviceKeyMaterial();
-    const startRes = await publicFetch<{
-      options: Record<string, unknown>;
-      flow_id: string;
-    }>("/auth/passkey/register/start", {
-      method: "POST",
-      body: JSON.stringify({ display_name: displayName }),
-    });
+    const startRes = await publicFetch<PasskeyRegisterStartResponse>(
+      "/auth/passkey/register/start",
+      {
+        method: "POST",
+        body: JSON.stringify({ display_name: displayName }),
+      },
+    );
     if (!startRes.ok) throw new Error("Registration start failed");
 
     const createOptions = toCreateOptions(
@@ -204,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )) as PublicKeyCredential | null;
     if (!credential) throw new Error("Credential creation cancelled");
 
-    const finishRes = await publicFetch<FinishResponse>(
+    const finishRes = await publicFetch<PasskeyFinishResponse>(
       "/auth/passkey/register/finish",
       {
         method: "POST",
@@ -222,17 +250,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       finishRes.data.user_id,
       finishRes.data.device_id,
       finishRes.data.role,
-      finishRes.data.display_name ?? displayName,
+      extractDisplayName(finishRes.data),
     );
   }, []);
 
   const registerPassword = useCallback(
-    async (username: string, email: string, password: string) => {
+    async (displayName: string, email: string, password: string) => {
       const keyMaterial = await ensureDeviceKeyMaterial();
-      const res = await publicFetch<FinishResponse>("/auth/register", {
+      const res = await publicFetch<DeviceBindingResponse>("/auth/register", {
         method: "POST",
         body: JSON.stringify({
-          username,
+          display_name: displayName,
           email,
           password,
           device_public_key_jwk: keyMaterial.publicJwk,
@@ -240,14 +268,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       });
       if (!res.ok) {
-        const error = res.data as { detail?: string };
+        const error = res.data as unknown as { detail?: string };
         throw new Error(error.detail || "Registration failed");
       }
       updateState(
         res.data.user_id,
         res.data.device_id,
         res.data.role,
-        res.data.display_name ?? username,
+        extractDisplayName(res.data),
       );
     },
     [],

@@ -15,7 +15,7 @@ import { Alert } from "../components/Alert";
 import { Fingerprint, Loader2 } from "lucide-react";
 
 export function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,12 +37,12 @@ export function Login() {
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password) return;
+    if (!email || !password) return;
 
     setError(null);
     setIsLoading(true);
     try {
-      await loginPassword(username, password);
+      await loginPassword(email, password);
       navigate("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed");
@@ -95,15 +95,15 @@ export function Login() {
 
           <form onSubmit={handlePasswordLogin} className="space-y-4">
             <Input
-              id="username"
-              label="Username"
-              type="text"
-              placeholder="johndoe"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              label="Email"
+              type="email"
+              placeholder="m@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
-              data-testid="login-username-input"
-              autoComplete="username"
+              data-testid="login-email-input"
+              autoComplete="email"
             />
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -133,7 +133,7 @@ export function Login() {
             <Button
               type="submit"
               variant="secondary"
-              disabled={isLoading || !username || !password}
+              disabled={isLoading || !email || !password}
               className="w-full"
               data-testid="login-password-btn"
             >
