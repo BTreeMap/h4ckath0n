@@ -60,4 +60,19 @@ describe("Register page", () => {
     const input = screen.getByTestId("register-display-name");
     expect(input).toHaveAttribute("autoComplete", "name");
   });
+
+  it("uses the shared PasswordField component for the password input", () => {
+    render(<Register />);
+    const input = screen.getByTestId("register-password-input");
+    expect(input).toHaveAttribute("type", "password");
+    expect(
+      screen.getByRole("button", { name: "Show password" }),
+    ).toBeInTheDocument();
+  });
+
+  it("has distinct passkey and password submit elements", () => {
+    render(<Register />);
+    expect(screen.getByTestId("register-submit")).toBeInTheDocument();
+    expect(screen.getByTestId("register-password-btn")).toBeInTheDocument();
+  });
 });

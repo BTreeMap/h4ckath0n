@@ -8,3 +8,4 @@ export * from "./Layout";
 export * from "./ProtectedRoute";
 export * from "./Skeleton";
 export * from "./Alert";
+export * from "./PasswordField";

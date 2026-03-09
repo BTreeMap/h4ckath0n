@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { useAuth } from "../auth";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
+import { PasswordField } from "../components/PasswordField";
 import {
   Card,
   CardHeader,
@@ -21,37 +22,43 @@ export function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const { registerPasskey, registerPassword } = useAuth();
   const navigate = useNavigate();
 
+  const isLoading = passkeyLoading || passwordLoading;
+
   const handlePasskeyRegister = async () => {
-    if (!displayName.trim()) return;
+    const trimmedName = displayName.trim();
+    if (!trimmedName) return;
     setError(null);
-    setIsLoading(true);
+    setPasskeyLoading(true);
     try {
-      await registerPasskey(displayName);
+      await registerPasskey(trimmedName);
       navigate("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Passkey registration failed");
     } finally {
-      setIsLoading(false);
+      setPasskeyLoading(false);
     }
   };
 
   const handlePasswordRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!displayName.trim() || !email || !password) return;
+    const trimmedName = displayName.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedName || !trimmedEmail || !password) return;
 
     setError(null);
-    setIsLoading(true);
+    setPasswordLoading(true);
     try {
-      await registerPassword(displayName, email, password);
+      await registerPassword(trimmedName, trimmedEmail, password);
       navigate("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Registration failed");
     } finally {
-      setIsLoading(false);
+      setPasswordLoading(false);
     }
   };
 
@@ -85,6 +92,7 @@ export function Register() {
               data-testid="register-display-name"
               autoComplete="name"
               maxLength={DISPLAY_NAME_MAX_LENGTH}
+              autoFocus
             />
 
             <Button
@@ -94,7 +102,7 @@ export function Register() {
               size="lg"
               data-testid="register-submit"
             >
-              {isLoading ? (
+              {passkeyLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Fingerprint className="mr-2 h-5 w-5" />
@@ -125,11 +133,11 @@ export function Register() {
               disabled={isLoading}
               data-testid="register-email-input"
               autoComplete="email"
+              autoCapitalize="none"
             />
-            <Input
+            <PasswordField
               id="password"
               label="Password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
@@ -139,11 +147,18 @@ export function Register() {
             <Button
               type="submit"
               variant="secondary"
-              disabled={isLoading || !displayName.trim() || !email || !password}
+              disabled={
+                isLoading ||
+                !displayName.trim() ||
+                !email.trim() ||
+                !password
+              }
               className="w-full"
               data-testid="register-password-btn"
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {passwordLoading && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Sign Up
             </Button>
           </form>

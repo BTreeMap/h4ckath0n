@@ -11,6 +11,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, label, error, id, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id || generatedId;
+    const errorId = `${inputId}-error`;
 
     return (
       <div className="space-y-2">
@@ -18,6 +19,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           id={inputId}
           type={type}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           className={cn(
             "flex h-10 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm ring-offset-surface file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
             error && "border-danger focus-visible:ring-danger",
@@ -26,7 +29,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           {...props}
         />
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && (
+          <p id={errorId} className="text-sm text-danger">
+            {error}
+          </p>
+        )}
       </div>
     );
   },
