@@ -88,6 +88,20 @@ export function useAuth(): AuthContextType {
 // Provider
 // ---------------------------------------------------------------------------
 
+/** Standard error envelope returned by auth routes on failure. */
+interface ErrorDetail {
+  detail?: string;
+}
+
+/** Extract a human-readable message from a failed auth response. */
+function extractError(data: unknown, fallback: string): string {
+  if (data && typeof data === "object" && "detail" in data) {
+    const d = (data as ErrorDetail).detail;
+    if (typeof d === "string") return d;
+  }
+  return fallback;
+}
+
 /** Extract display_name from either auth response type. */
 function extractDisplayName(data: AuthResponse): string | null {
   return data.display_name ?? null;
@@ -198,8 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       });
       if (!res.ok) {
-        const error = res.data as unknown as { detail?: string };
-        throw new Error(error.detail || "Login failed");
+        throw new Error(extractError(res.data, "Login failed"));
       }
       updateState(
         res.data.user_id,
@@ -268,8 +281,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       });
       if (!res.ok) {
-        const error = res.data as unknown as { detail?: string };
-        throw new Error(error.detail || "Registration failed");
+        throw new Error(extractError(res.data, "Registration failed"));
       }
       updateState(
         res.data.user_id,
