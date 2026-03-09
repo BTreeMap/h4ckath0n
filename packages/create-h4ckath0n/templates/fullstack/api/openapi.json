@@ -1,6 +1,44 @@
 {
   "components": {
     "schemas": {
+      "DeviceBindingResponse": {
+        "properties": {
+          "device_id": {
+            "description": "Device ID that starts with the d prefix, empty when no device key is bound.",
+            "title": "Device Id",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Human-facing display name for the user.",
+            "title": "Display Name"
+          },
+          "role": {
+            "description": "Server-side role for the user.",
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "User ID that starts with the u prefix.",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "device_id",
+          "role"
+        ],
+        "title": "DeviceBindingResponse",
+        "type": "object"
+      },
       "EchoRequest": {
         "properties": {
           "message": {
@@ -99,6 +137,66 @@
           "status"
         ],
         "title": "HealthzResponse",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "properties": {
+          "device_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional label for the device.",
+            "title": "Device Label"
+          },
+          "device_public_key_jwk": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional device public key in JWK format to bind a device identity.",
+            "title": "Device Public Key Jwk"
+          },
+          "email": {
+            "description": "Account email for password-based login.",
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "description": "Plaintext password to verify.",
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "description": "Human-readable response message.",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse",
         "type": "object"
       },
       "PasskeyAddFinishRequest": {
@@ -395,6 +493,21 @@
         "title": "PasskeyRegisterFinishRequest",
         "type": "object"
       },
+      "PasskeyRegisterStartRequest": {
+        "properties": {
+          "display_name": {
+            "description": "Human-facing display name for the new account.",
+            "maxLength": 200,
+            "title": "Display Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name"
+        ],
+        "title": "PasskeyRegisterStartRequest",
+        "type": "object"
+      },
       "PasskeyRegisterStartResponse": {
         "properties": {
           "flow_id": {
@@ -475,6 +588,66 @@
         "title": "PasskeyRevokeResponse",
         "type": "object"
       },
+      "PasswordResetConfirmSchema": {
+        "properties": {
+          "device_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional label for the device.",
+            "title": "Device Label"
+          },
+          "device_public_key_jwk": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional device public key in JWK format to bind a device identity.",
+            "title": "Device Public Key Jwk"
+          },
+          "new_password": {
+            "description": "New password to set for the account.",
+            "title": "New Password",
+            "type": "string"
+          },
+          "token": {
+            "description": "Password reset token issued by the server.",
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "new_password"
+        ],
+        "title": "PasswordResetConfirmSchema",
+        "type": "object"
+      },
+      "PasswordResetRequestSchema": {
+        "properties": {
+          "email": {
+            "description": "Account email to send a reset token.",
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "PasswordResetRequestSchema",
+        "type": "object"
+      },
       "PingResponse": {
         "properties": {
           "ok": {
@@ -487,6 +660,59 @@
           "ok"
         ],
         "title": "PingResponse",
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "properties": {
+          "device_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional label for the device.",
+            "title": "Device Label"
+          },
+          "device_public_key_jwk": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional device public key in JWK format to bind a device identity.",
+            "title": "Device Public Key Jwk"
+          },
+          "display_name": {
+            "description": "Human-facing display name for the account.",
+            "maxLength": 200,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "description": "Account email for password-based signup.",
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "description": "Plaintext password, hashed server-side.",
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "display_name"
+        ],
+        "title": "RegisterRequest",
         "type": "object"
       },
       "RootResponse": {
@@ -576,6 +802,59 @@
           }
         },
         "summary": "Welcome"
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "description": "Verify email and password, then bind an optional device key.",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceBindingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid email or password."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login with password",
+        "tags": [
+          "password-auth",
+          "password-auth"
+        ]
       }
     },
     "/auth/passkey/add/finish": {
@@ -812,6 +1091,16 @@
       "post": {
         "description": "Begin a passkey registration ceremony. Creates a new user and a single-use challenge flow, then returns WebAuthn registration options.",
         "operationId": "register_start_auth_passkey_register_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -832,6 +1121,16 @@
               }
             },
             "description": "Invalid request or WebAuthn configuration error."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Start passkey registration",
@@ -1046,6 +1345,155 @@
         "summary": "Revoke a passkey",
         "tags": [
           "passkey"
+        ]
+      }
+    },
+    "/auth/password-reset/confirm": {
+      "post": {
+        "description": "Confirm a password reset token, set a new password, and bind an optional device key.",
+        "operationId": "password_reset_confirm_auth_password_reset_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetConfirmSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceBindingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid or expired reset token."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm password reset",
+        "tags": [
+          "password-auth",
+          "password-auth"
+        ]
+      }
+    },
+    "/auth/password-reset/request": {
+      "post": {
+        "description": "Request a password reset token for the account. Returns the same message even when the email is unknown.",
+        "operationId": "password_reset_request_auth_password_reset_request_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request a password reset",
+        "tags": [
+          "password-auth",
+          "password-auth"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "description": "Create a new account using email and password, then bind an optional device key.",
+        "operationId": "register_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceBindingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Email already registered."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register with password",
+        "tags": [
+          "password-auth",
+          "password-auth"
         ]
       }
     },

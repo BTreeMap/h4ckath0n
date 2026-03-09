@@ -14,8 +14,10 @@ import {
 import { Alert } from "../components/Alert";
 import { Fingerprint, Loader2 } from "lucide-react";
 
+const DISPLAY_NAME_MAX_LENGTH = 200;
+
 export function Register() {
-  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,11 +26,11 @@ export function Register() {
   const navigate = useNavigate();
 
   const handlePasskeyRegister = async () => {
-    if (!username) return;
+    if (!displayName.trim()) return;
     setError(null);
     setIsLoading(true);
     try {
-      await registerPasskey(username);
+      await registerPasskey(displayName);
       navigate("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Passkey registration failed");
@@ -39,12 +41,12 @@ export function Register() {
 
   const handlePasswordRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !email || !password) return;
+    if (!displayName.trim() || !email || !password) return;
 
     setError(null);
     setIsLoading(true);
     try {
-      await registerPassword(username, email, password);
+      await registerPassword(displayName, email, password);
       navigate("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Registration failed");
@@ -73,20 +75,21 @@ export function Register() {
 
           <div className="space-y-4">
             <Input
-              id="username"
-              label="Username"
+              id="displayName"
+              label="Display Name"
               type="text"
-              placeholder="johndoe"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Jane Doe"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
               disabled={isLoading}
               data-testid="register-display-name"
-              autoComplete="username"
+              autoComplete="name"
+              maxLength={DISPLAY_NAME_MAX_LENGTH}
             />
 
             <Button
               onClick={handlePasskeyRegister}
-              disabled={isLoading || !username}
+              disabled={isLoading || !displayName.trim()}
               className="w-full h-12 text-base font-semibold"
               size="lg"
               data-testid="register-submit"
@@ -136,7 +139,7 @@ export function Register() {
             <Button
               type="submit"
               variant="secondary"
-              disabled={isLoading || !username || !email || !password}
+              disabled={isLoading || !displayName.trim() || !email || !password}
               className="w-full"
               data-testid="register-password-btn"
             >

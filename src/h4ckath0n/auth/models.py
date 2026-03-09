@@ -34,6 +34,9 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Human-facing display name, set during registration.
+    display_name: Mapped[str | None] = mapped_column(String(200), nullable=True, default=None)
+
     # Optional password fields (only when password extra enabled)
     email: Mapped[str | None] = mapped_column(
         String(320), unique=True, nullable=True, index=True, default=None

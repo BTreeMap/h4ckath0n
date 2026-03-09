@@ -4,12 +4,17 @@ Usage:
     python -m scripts.dump_openapi [--out path/to/openapi.json]
 
 Default output: ../api/openapi.json (relative to repo root).
+
+The schema includes *all* auth routes (passkey + password) regardless of
+the runtime ``H4CKATH0N_PASSWORD_AUTH_ENABLED`` flag so that the generated
+TypeScript types cover the full API surface.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 
@@ -22,6 +27,9 @@ def main() -> None:
         help="Output path for the OpenAPI JSON file",
     )
     args = parser.parse_args()
+
+    # Ensure password auth routes are included in the generated schema.
+    os.environ.setdefault("H4CKATH0N_PASSWORD_AUTH_ENABLED", "true")
 
     # Import the app to extract its OpenAPI schema
     from app.main import app  # noqa: E402
