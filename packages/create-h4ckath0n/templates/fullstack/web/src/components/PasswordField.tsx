@@ -50,7 +50,8 @@ const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
         try {
           input.setSelectionRange(start, end, dir ?? undefined);
         } catch {
-          // Some browsers restrict setSelectionRange on certain types
+          // setSelectionRange throws on some input types in certain browsers
+          // (e.g. mobile Safari). Safe to ignore since focus is still restored.
         }
       });
     }, []);
@@ -90,7 +91,6 @@ const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             onClick={handleToggle}
             onPointerDown={handlePointerDown}
             onMouseDown={handlePointerDown}
-            tabIndex={0}
             className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-text-muted hover:text-text transition-colors disabled:pointer-events-none disabled:opacity-50"
             disabled={props.disabled}
           >
