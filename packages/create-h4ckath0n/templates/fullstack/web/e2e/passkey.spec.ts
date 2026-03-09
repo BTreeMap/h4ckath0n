@@ -47,6 +47,7 @@ test.describe("Passkey auth flows", () => {
     // Should redirect to dashboard
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
     await expect(page.getByTestId("dashboard-heading")).toBeVisible();
+    await expect(page.getByTestId("dashboard-username")).toHaveText("E2E Test User");
 
     // Verify backend auth works – hit /api/health (library-provided)
     const healthRes = await page.request.get("http://localhost:8000/health");
@@ -109,6 +110,7 @@ test.describe("Passkey auth flows", () => {
     // Should redirect to dashboard
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
     await expect(page.getByTestId("dashboard-heading")).toBeVisible();
+    await expect(page.getByTestId("dashboard-username")).toHaveText("E2E Login User");
   });
 
   // -----------------------------------------------------------------------

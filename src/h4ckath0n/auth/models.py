@@ -29,6 +29,7 @@ class User(Base):
     __tablename__ = "h4ckath0n_users"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_user_id)
+    display_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
     scopes: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

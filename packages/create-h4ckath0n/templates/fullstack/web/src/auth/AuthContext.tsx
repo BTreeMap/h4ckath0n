@@ -26,6 +26,7 @@ interface User {
   id: string;
   role: string;
   scopes: string[];
+  displayName?: string | null;
 }
 
 interface AuthState {
@@ -112,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       deviceId,
       role,
       displayName,
-      user: { id: userId, role, scopes: [] },
+      user: { id: userId, role, scopes: [], displayName },
     });
   };
 
@@ -232,7 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await publicFetch<FinishResponse>("/auth/register", {
         method: "POST",
         body: JSON.stringify({
-          username,
+          display_name: username,
           email,
           password,
           device_public_key_jwk: keyMaterial.publicJwk,

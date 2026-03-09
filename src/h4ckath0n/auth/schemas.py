@@ -14,6 +14,9 @@ class DeviceBindingMixin(BaseModel):
 
 
 class RegisterRequest(DeviceBindingMixin):
+    display_name: str | None = Field(
+        None, description="Optional display name for the user.", max_length=64
+    )
     email: EmailStr = Field(..., description="Account email for password-based signup.")
     password: str = Field(..., description="Plaintext password, hashed server-side.")
 
@@ -30,6 +33,7 @@ class DeviceBindingResponse(BaseModel):
         description="Device ID that starts with the d prefix, empty when no device key is bound.",
     )
     role: str = Field(..., description="Server-side role for the user.")
+    display_name: str | None = Field(None, description="Optional display name for the user.")
 
 
 class PasswordResetRequestSchema(BaseModel):
