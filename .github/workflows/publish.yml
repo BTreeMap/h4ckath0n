@@ -14,8 +14,8 @@ on:
         default: ""
 
 concurrency:
-  group: publish
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
