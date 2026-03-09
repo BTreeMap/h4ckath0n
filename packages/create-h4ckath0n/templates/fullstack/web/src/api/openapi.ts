@@ -24,6 +24,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login with password
+         * @description Verify email and password, then bind an optional device key.
+         */
+        post: operations["login_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/passkey/add/finish": {
         parameters: {
             query?: never;
@@ -204,7 +224,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/demo/echo": {
+    "/auth/password-reset/confirm": {
         parameters: {
             query?: never;
             header?: never;
@@ -214,50 +234,50 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Demo echo
-         * @description Echo back the message along with its reverse.
+         * Confirm password reset
+         * @description Confirm a password reset token, set a new password, and bind an optional device key.
          */
-        post: operations["demo_echo_demo_echo_post"];
+        post: operations["password_reset_confirm_auth_password_reset_confirm_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/demo/ping": {
+    "/auth/password-reset/request": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Demo ping
-         * @description Simple liveness ping for the demo namespace.
-         */
-        get: operations["demo_ping_demo_ping_get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Request a password reset
+         * @description Request a password reset token for the account. Returns the same message even when the email is unknown.
+         */
+        post: operations["password_reset_request_auth_password_reset_request_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/demo/sse": {
+    "/auth/register": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Demo SSE stream
-         * @description Authenticated SSE stream that simulates chunked output. Requires a device JWT with aud set to h4ckath0n:sse.
-         */
-        get: operations["demo_sse_demo_sse_get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Register with password
+         * @description Create a new account using email and password, then bind an optional device key.
+         */
+        post: operations["register_auth_register_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -284,50 +304,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/healthz": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Health check
-         * @description Readiness check for E2E and deployment probes.
-         */
-        get: operations["healthz_healthz_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** EchoRequest */
-        EchoRequest: {
+        /** DeviceBindingResponse */
+        DeviceBindingResponse: {
             /**
-             * Message
-             * @description Message to echo back.
+             * Device Id
+             * @description Device ID that starts with the d prefix, empty when no device key is bound.
              */
-            message: string;
-        };
-        /** EchoResponse */
-        EchoResponse: {
+            device_id: string;
             /**
-             * Message
-             * @description Original message.
+             * Display Name
+             * @description Optional display name for the user.
              */
-            message: string;
+            display_name?: string | null;
             /**
-             * Reversed
-             * @description Reversed message.
+             * Role
+             * @description Server-side role for the user.
              */
-            reversed: string;
+            role: string;
+            /**
+             * User Id
+             * @description User ID that starts with the u prefix.
+             */
+            user_id: string;
         };
         /**
          * ErrorResponse
@@ -355,13 +357,39 @@ export interface components {
              */
             status: string;
         };
-        /** HealthzResponse */
-        HealthzResponse: {
+        /** LoginRequest */
+        LoginRequest: {
             /**
-             * Status
-             * @description Health check status.
+             * Device Label
+             * @description Optional label for the device.
              */
-            status: string;
+            device_label?: string | null;
+            /**
+             * Device Public Key Jwk
+             * @description Optional device public key in JWK format to bind a device identity.
+             */
+            device_public_key_jwk?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Email
+             * Format: email
+             * @description Account email for password-based login.
+             */
+            email: string;
+            /**
+             * Password
+             * @description Plaintext password to verify.
+             */
+            password: string;
+        };
+        /** MessageResponse */
+        MessageResponse: {
+            /**
+             * Message
+             * @description Human-readable response message.
+             */
+            message: string;
         };
         /** PasskeyAddFinishRequest */
         PasskeyAddFinishRequest: {
@@ -586,13 +614,70 @@ export interface components {
              */
             message: string;
         };
-        /** PingResponse */
-        PingResponse: {
+        /** PasswordResetConfirmSchema */
+        PasswordResetConfirmSchema: {
             /**
-             * Ok
-             * @description True when the service is reachable.
+             * Device Label
+             * @description Optional label for the device.
              */
-            ok: boolean;
+            device_label?: string | null;
+            /**
+             * Device Public Key Jwk
+             * @description Optional device public key in JWK format to bind a device identity.
+             */
+            device_public_key_jwk?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * New Password
+             * @description New password to set for the account.
+             */
+            new_password: string;
+            /**
+             * Token
+             * @description Password reset token issued by the server.
+             */
+            token: string;
+        };
+        /** PasswordResetRequestSchema */
+        PasswordResetRequestSchema: {
+            /**
+             * Email
+             * Format: email
+             * @description Account email to send a reset token.
+             */
+            email: string;
+        };
+        /** RegisterRequest */
+        RegisterRequest: {
+            /**
+             * Device Label
+             * @description Optional label for the device.
+             */
+            device_label?: string | null;
+            /**
+             * Device Public Key Jwk
+             * @description Optional device public key in JWK format to bind a device identity.
+             */
+            device_public_key_jwk?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Display Name
+             * @description Optional display name for the user.
+             */
+            display_name?: string | null;
+            /**
+             * Email
+             * Format: email
+             * @description Account email for password-based signup.
+             */
+            email: string;
+            /**
+             * Password
+             * @description Plaintext password, hashed server-side.
+             */
+            password: string;
         };
         /** RootResponse */
         RootResponse: {
@@ -640,6 +725,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RootResponse"];
+                };
+            };
+        };
+    };
+    login_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceBindingResponse"];
+                };
+            };
+            /** @description Invalid email or password. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1027,7 +1154,7 @@ export interface operations {
             };
         };
     };
-    demo_echo_demo_echo_post: {
+    password_reset_confirm_auth_password_reset_confirm_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1036,7 +1163,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EchoRequest"];
+                "application/json": components["schemas"]["PasswordResetConfirmSchema"];
             };
         };
         responses: {
@@ -1046,7 +1173,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EchoResponse"];
+                    "application/json": components["schemas"]["DeviceBindingResponse"];
+                };
+            };
+            /** @description Invalid or expired reset token. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1060,14 +1196,18 @@ export interface operations {
             };
         };
     };
-    demo_ping_demo_ping_get: {
+    password_reset_request_auth_password_reset_request_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequestSchema"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1075,42 +1215,67 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PingResponse"];
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    demo_sse_demo_sse_get: {
+    register_auth_register_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
         responses: {
-            /** @description Event stream with chunk and done events. */
-            200: {
+            /** @description Successful Response */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
-                    "text/event-stream": string;
+                    "application/json": components["schemas"]["DeviceBindingResponse"];
                 };
             };
-            /** @description Missing or invalid device JWT. */
-            401: {
+            /** @description Invalid request or registration error. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    /**
-                     * @example {
-                     *       "detail": "Missing token"
-                     *     }
-                     */
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Email already registered. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1131,26 +1296,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
-                };
-            };
-        };
-    };
-    healthz_healthz_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthzResponse"];
                 };
             };
         };
