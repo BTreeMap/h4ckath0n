@@ -108,6 +108,7 @@ def _register_user_with_device(
         json={
             "email": email,
             "password": password,
+            "display_name": "Test User",
             "device_public_key_jwk": public_jwk,
             "device_label": "test",
         },
@@ -130,6 +131,135 @@ class TestPasswordHashing:
 
 
 # ---------------------------------------------------------------------------
+# Display-name persistence (password registration)
+# ---------------------------------------------------------------------------
+
+
+class TestDisplayNamePassword:
+    def test_register_persists_display_name(self, client: TestClient):
+        private_pem, public_jwk = _create_device_keypair()
+        r = client.post(
+            "/auth/register",
+            json={
+                "email": "dn_test@example.com",
+                "password": "strongP@ss1",
+                "display_name": "Jane Doe",
+                "device_public_key_jwk": public_jwk,
+            },
+        )
+        assert r.status_code == 201
+        body = r.json()
+        assert body["display_name"] == "Jane Doe"
+
+    def test_register_response_includes_display_name(self, client: TestClient):
+        private_pem, public_jwk = _create_device_keypair()
+        r = client.post(
+            "/auth/register",
+            json={
+                "email": "dn_resp@example.com",
+                "password": "strongP@ss1",
+                "display_name": "Response Test",
+                "device_public_key_jwk": public_jwk,
+            },
+        )
+        assert r.status_code == 201
+        assert "display_name" in r.json()
+
+    def test_login_returns_display_name(self, client: TestClient):
+        private_pem, public_jwk = _create_device_keypair()
+        client.post(
+            "/auth/register",
+            json={
+                "email": "dn_login@example.com",
+                "password": "strongP@ss1",
+                "display_name": "Login Name",
+                "device_public_key_jwk": public_jwk,
+            },
+        )
+        r = client.post(
+            "/auth/login",
+            json={"email": "dn_login@example.com", "password": "strongP@ss1"},
+        )
+        assert r.status_code == 200
+        assert r.json()["display_name"] == "Login Name"
+
+    async def test_register_persists_display_name_in_db(
+        self, client: TestClient, db_session: AsyncSession
+    ):
+        private_pem, public_jwk = _create_device_keypair()
+        client.post(
+            "/auth/register",
+            json={
+                "email": "dn_db@example.com",
+                "password": "strongP@ss1",
+                "display_name": "DB Persist",
+                "device_public_key_jwk": public_jwk,
+            },
+        )
+        result = await db_session.execute(select(User).filter(User.email == "dn_db@example.com"))
+        user = result.scalars().first()
+        assert user is not None
+        assert user.display_name == "DB Persist"
+
+    def test_register_trims_display_name(self, client: TestClient):
+        private_pem, public_jwk = _create_device_keypair()
+        r = client.post(
+            "/auth/register",
+            json={
+                "email": "dn_trim@example.com",
+                "password": "strongP@ss1",
+                "display_name": "  Trimmed  ",
+                "device_public_key_jwk": public_jwk,
+            },
+        )
+        assert r.status_code == 201
+        assert r.json()["display_name"] == "Trimmed"
+
+    def test_register_rejects_empty_display_name(self, client: TestClient):
+        r = client.post(
+            "/auth/register",
+            json={
+                "email": "dn_empty@example.com",
+                "password": "strongP@ss1",
+                "display_name": "",
+            },
+        )
+        assert r.status_code == 422
+
+    def test_register_rejects_whitespace_display_name(self, client: TestClient):
+        r = client.post(
+            "/auth/register",
+            json={
+                "email": "dn_ws@example.com",
+                "password": "strongP@ss1",
+                "display_name": "   ",
+            },
+        )
+        assert r.status_code == 422
+
+    def test_register_rejects_missing_display_name(self, client: TestClient):
+        r = client.post(
+            "/auth/register",
+            json={
+                "email": "dn_miss@example.com",
+                "password": "strongP@ss1",
+            },
+        )
+        assert r.status_code == 422
+
+    def test_register_rejects_too_long_display_name(self, client: TestClient):
+        r = client.post(
+            "/auth/register",
+            json={
+                "email": "dn_long@example.com",
+                "password": "strongP@ss1",
+                "display_name": "x" * 201,
+            },
+        )
+        assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
 # Signup / Login happy path (password, device-binding)
 # ---------------------------------------------------------------------------
 
@@ -142,6 +272,7 @@ class TestSignupLogin:
             json={
                 "email": "alice@example.com",
                 "password": "strongP@ss1",
+                "display_name": "Alice",
                 "device_public_key_jwk": public_jwk,
                 "device_label": "test",
             },
@@ -151,6 +282,7 @@ class TestSignupLogin:
         assert "user_id" in body
         assert "device_id" in body
         assert body["role"] == "user"
+        assert body["display_name"] == "Alice"
         # No access/refresh tokens
         assert "access_token" not in body
         assert "refresh_token" not in body
@@ -162,6 +294,7 @@ class TestSignupLogin:
             json={
                 "email": "bob@example.com",
                 "password": "strongP@ss1",
+                "display_name": "Bob",
                 "device_public_key_jwk": public_jwk,
             },
         )
@@ -170,6 +303,7 @@ class TestSignupLogin:
             json={
                 "email": "bob@example.com",
                 "password": "strongP@ss1",
+                "display_name": "Bob",
                 "device_public_key_jwk": public_jwk,
             },
         )
@@ -182,6 +316,7 @@ class TestSignupLogin:
             json={
                 "email": "carol@example.com",
                 "password": "strongP@ss1",
+                "display_name": "Carol",
                 "device_public_key_jwk": public_jwk,
             },
         )
@@ -198,6 +333,7 @@ class TestSignupLogin:
         body = r.json()
         assert "user_id" in body
         assert "device_id" in body
+        assert body["display_name"] == "Carol"
         assert "access_token" not in body
         assert "refresh_token" not in body
 
@@ -208,6 +344,7 @@ class TestSignupLogin:
             json={
                 "email": "dave@example.com",
                 "password": "strongP@ss1",
+                "display_name": "Dave",
                 "device_public_key_jwk": public_jwk,
             },
         )
@@ -367,6 +504,7 @@ class TestPasswordReset:
             json={
                 "email": "luna@example.com",
                 "password": "oldP@ss1",
+                "display_name": "Luna",
                 "device_public_key_jwk": public_jwk,
             },
         )
@@ -416,6 +554,7 @@ class TestPasswordReset:
             json={
                 "email": "mike@example.com",
                 "password": "oldP@ss1",
+                "display_name": "Mike",
                 "device_public_key_jwk": jwk,
             },
         )
@@ -445,6 +584,7 @@ class TestPasswordReset:
             json={
                 "email": "nancy@example.com",
                 "password": "oldP@ss1",
+                "display_name": "Nancy",
                 "device_public_key_jwk": jwk,
             },
         )
@@ -488,6 +628,7 @@ class TestBootstrapAdmin:
                 json={
                     "email": "first@example.com",
                     "password": "P@ss1",
+                    "display_name": "First",
                     "device_public_key_jwk": jwk,
                 },
             )
@@ -515,6 +656,7 @@ class TestBootstrapAdmin:
                 json={
                     "email": "regular@example.com",
                     "password": "P@ss1",
+                    "display_name": "Regular",
                     "device_public_key_jwk": jwk1,
                 },
             )
@@ -524,6 +666,7 @@ class TestBootstrapAdmin:
                 json={
                     "email": "boss@example.com",
                     "password": "P@ss1",
+                    "display_name": "Boss",
                     "device_public_key_jwk": jwk2,
                 },
             )

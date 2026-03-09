@@ -52,6 +52,8 @@ async def register_user(
     email: str,
     password: str,
     settings: Settings,
+    *,
+    display_name: str | None = None,
 ) -> User:
     hash_password, _verify = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
@@ -62,6 +64,7 @@ async def register_user(
         email=email,
         password_hash=hash_password(password),
         role=role,
+        display_name=display_name,
     )
     db.add(user)
     await db.commit()

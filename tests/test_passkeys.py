@@ -227,6 +227,60 @@ class TestFlowState:
 
 
 # ---------------------------------------------------------------------------
+# Display-name persistence and validation (passkey registration)
+# ---------------------------------------------------------------------------
+
+
+class TestDisplayName:
+    async def test_register_start_persists_display_name(self, db_session: AsyncSession, settings):
+        flow_id, options = await start_registration(
+            db_session, settings, display_name="Alice Wonderland"
+        )
+        result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
+        flow = result.scalars().first()
+        result = await db_session.execute(select(User).filter_by(id=flow.user_id))
+        user = result.scalars().first()
+        assert user is not None
+        assert user.display_name == "Alice Wonderland"
+
+    async def test_webauthn_options_use_display_name(self, db_session: AsyncSession, settings):
+        _flow_id, options = await start_registration(
+            db_session, settings, display_name="Bob Builder"
+        )
+        assert options["user"]["displayName"] == "Bob Builder"
+
+    async def test_webauthn_options_fallback_to_user_id_when_no_display_name(
+        self, db_session: AsyncSession, settings
+    ):
+        _flow_id, options = await start_registration(db_session, settings)
+        # When no display_name, should fall back to the user ID
+        assert is_user_id(options["user"]["displayName"])
+
+    def test_register_start_route_rejects_empty_display_name(self, client: TestClient):
+        r = client.post("/auth/passkey/register/start", json={"display_name": ""})
+        assert r.status_code == 422
+
+    def test_register_start_route_rejects_whitespace_only_display_name(self, client: TestClient):
+        r = client.post("/auth/passkey/register/start", json={"display_name": "   "})
+        assert r.status_code == 422
+
+    def test_register_start_route_rejects_missing_display_name(self, client: TestClient):
+        r = client.post("/auth/passkey/register/start", json={})
+        assert r.status_code == 422
+
+    def test_register_start_route_rejects_too_long_display_name(self, client: TestClient):
+        r = client.post("/auth/passkey/register/start", json={"display_name": "x" * 201})
+        assert r.status_code == 422
+
+    def test_register_start_route_trims_display_name(self, client: TestClient):
+        r = client.post("/auth/passkey/register/start", json={"display_name": "  Trimmed  "})
+        assert r.status_code == 200
+        # The user options should reflect the trimmed name
+        options = r.json()["options"]
+        assert options["user"]["displayName"] == "Trimmed"
+
+
+# ---------------------------------------------------------------------------
 # Last-passkey invariant
 # ---------------------------------------------------------------------------
 
@@ -304,7 +358,7 @@ class TestLastPasskeyInvariant:
 
 class TestPasskeyRoutes:
     def test_register_start_returns_options(self, client: TestClient):
-        r = client.post("/auth/passkey/register/start")
+        r = client.post("/auth/passkey/register/start", json={"display_name": "Test User"})
         assert r.status_code == 200
         body = r.json()
         assert "flow_id" in body
@@ -349,7 +403,7 @@ class TestPasskeyRoutes:
     async def test_register_start_creates_user_in_db(
         self, client: TestClient, db_session: AsyncSession
     ):
-        r = client.post("/auth/passkey/register/start")
+        r = client.post("/auth/passkey/register/start", json={"display_name": "Alice"})
         assert r.status_code == 200
         flow_id = r.json()["flow_id"]
         result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
@@ -359,6 +413,7 @@ class TestPasskeyRoutes:
         user = result.scalars().first()
         assert user is not None
         assert is_user_id(user.id)
+        assert user.display_name == "Alice"
 
 
 # ---------------------------------------------------------------------------
