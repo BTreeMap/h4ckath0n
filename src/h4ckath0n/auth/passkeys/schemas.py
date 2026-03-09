@@ -11,14 +11,6 @@ from h4ckath0n.auth.schemas import DeviceBindingMixin
 # -- Registration --
 
 
-class PasskeyRegisterStartRequest(BaseModel):
-    display_name: str | None = Field(
-        None,
-        description="Optional display name for the new user account.",
-        max_length=64,
-    )
-
-
 class PasskeyRegisterStartResponse(BaseModel):
     flow_id: str = Field(..., description="Server-generated flow ID for registration.")
     options: dict = Field(
@@ -119,5 +111,5 @@ class PasskeyFinishResponse(BaseModel):
     role: str = Field(..., description="Server-side role for the user.")
     display_name: str | None = Field(
         None,
-        description="Optional display name for the user.",
+        description="Optional display name for the user, not set by default.",
     )

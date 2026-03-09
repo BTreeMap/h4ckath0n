@@ -58,13 +58,9 @@ async def _db_dep(request: Request) -> AsyncGenerator[AsyncSession, None]:
         }
     },
 )
-async def register_start(
-    request: Request,
-    body: schemas.PasskeyRegisterStartRequest = schemas.PasskeyRegisterStartRequest(),
-    db: AsyncSession = Depends(_db_dep),
-):
+async def register_start(request: Request, db: AsyncSession = Depends(_db_dep)):
     settings = request.app.state.settings
-    flow_id, options = await start_registration(db, settings, display_name=body.display_name)
+    flow_id, options = await start_registration(db, settings)
     return schemas.PasskeyRegisterStartResponse(flow_id=flow_id, options=options)
 
 
@@ -97,9 +93,7 @@ async def register_finish(
 
     device_id = await register_device(db, user.id, body.device_public_key_jwk, body.device_label)
 
-    return schemas.PasskeyFinishResponse(
-        user_id=user.id, device_id=device_id, role=user.role, display_name=user.display_name
-    )
+    return schemas.PasskeyFinishResponse(user_id=user.id, device_id=device_id, role=user.role)
 
 
 # ---------------------------------------------------------------------------
@@ -149,9 +143,7 @@ async def login_finish(
 
     device_id = await register_device(db, user.id, body.device_public_key_jwk, body.device_label)
 
-    return schemas.PasskeyFinishResponse(
-        user_id=user.id, device_id=device_id, role=user.role, display_name=user.display_name
-    )
+    return schemas.PasskeyFinishResponse(user_id=user.id, device_id=device_id, role=user.role)
 
 
 # ---------------------------------------------------------------------------
@@ -208,9 +200,7 @@ async def add_finish(
 
     device_id = await register_device(db, user.id, body.device_public_key_jwk, body.device_label)
 
-    return schemas.PasskeyFinishResponse(
-        user_id=user.id, device_id=device_id, role=user.role, display_name=user.display_name
-    )
+    return schemas.PasskeyFinishResponse(user_id=user.id, device_id=device_id, role=user.role)
 
 
 # ---------------------------------------------------------------------------

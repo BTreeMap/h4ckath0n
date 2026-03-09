@@ -97,11 +97,7 @@ export function Dashboard() {
             Dashboard
           </h1>
           <p className="text-text-muted mt-1">
-            Overview for{" "}
-            <span className="font-semibold text-text" data-testid="dashboard-username">
-              {user?.displayName || user?.id}
-            </span>
-            .
+            Overview for <span className="font-semibold text-text">{user?.id}</span>.
           </p>
         </div>
         <div className="flex gap-2">

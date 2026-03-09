@@ -69,13 +69,12 @@ async def _consume_flow(db: AsyncSession, flow: WebAuthnChallenge) -> None:
 async def start_registration(
     db: AsyncSession,
     settings: Settings,
-    display_name: str | None = None,
 ) -> tuple[str, dict]:
     """Begin passkey registration - create user + flow, return (flow_id, options_dict)."""
     rp_id = settings.effective_rp_id()
     origin = settings.effective_origin()
 
-    user = User(display_name=display_name)
+    user = User()
     db.add(user)
     await db.flush()
 
@@ -98,7 +97,7 @@ async def start_registration(
         rp_name=rp_id,
         user_id=user.id.encode("utf-8"),
         user_name=user.id,
-        user_display_name=display_name or user.id,
+        user_display_name=user.id,
         challenge=challenge_bytes,
         settings=settings,
     )
@@ -266,7 +265,7 @@ async def start_add_credential(
         rp_name=rp_id,
         user_id=user.id.encode("utf-8"),
         user_name=user.id,
-        user_display_name=user.display_name or user.id,
+        user_display_name=user.id,
         challenge=challenge_bytes,
         settings=settings,
         exclude_credentials=exclude,
