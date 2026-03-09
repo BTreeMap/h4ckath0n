@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { useAuth } from "../auth";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
+import { PasswordField } from "../components/PasswordField";
 import {
   Card,
   CardHeader,
@@ -18,36 +19,40 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const { loginPasskey, loginPassword } = useAuth();
   const navigate = useNavigate();
 
+  const isLoading = passkeyLoading || passwordLoading;
+
   const handlePasskeyLogin = async () => {
     setError(null);
-    setIsLoading(true);
+    setPasskeyLoading(true);
     try {
       await loginPasskey();
       navigate("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Passkey login failed");
     } finally {
-      setIsLoading(false);
+      setPasskeyLoading(false);
     }
   };
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) return;
 
     setError(null);
-    setIsLoading(true);
+    setPasswordLoading(true);
     try {
-      await loginPassword(email, password);
+      await loginPassword(trimmedEmail, password);
       navigate("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed");
     } finally {
-      setIsLoading(false);
+      setPasswordLoading(false);
     }
   };
 
@@ -74,7 +79,7 @@ export function Login() {
             size="lg"
             data-testid="login-submit"
           >
-            {isLoading ? (
+            {passkeyLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Fingerprint className="mr-2 h-5 w-5" />
@@ -104,6 +109,8 @@ export function Login() {
               disabled={isLoading}
               data-testid="login-email-input"
               autoComplete="email"
+              autoCapitalize="none"
+              autoFocus
             />
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -120,9 +127,8 @@ export function Login() {
                   Forgot password?
                 </Link>
               </div>
-              <Input
+              <PasswordField
                 id="password"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
@@ -133,11 +139,13 @@ export function Login() {
             <Button
               type="submit"
               variant="secondary"
-              disabled={isLoading || !email || !password}
+              disabled={isLoading || !email.trim() || !password}
               className="w-full"
               data-testid="login-password-btn"
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {passwordLoading && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Sign In
             </Button>
           </form>

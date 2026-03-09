@@ -52,4 +52,26 @@ describe("Login page", () => {
     render(<Login />);
     expect(screen.queryByTestId("login-username-input")).not.toBeInTheDocument();
   });
+
+  it("uses the shared PasswordField component for the password input", () => {
+    render(<Login />);
+    const input = screen.getByTestId("login-password-input");
+    expect(input).toHaveAttribute("type", "password");
+    // The PasswordField renders a visibility toggle button
+    expect(
+      screen.getByRole("button", { name: "Show password" }),
+    ).toBeInTheDocument();
+  });
+
+  it("has distinct passkey and password submit elements", () => {
+    render(<Login />);
+    expect(screen.getByTestId("login-submit")).toBeInTheDocument();
+    expect(screen.getByTestId("login-password-btn")).toBeInTheDocument();
+  });
+
+  it("links to the forgot-password page", () => {
+    render(<Login />);
+    const link = screen.getByText("Forgot password?");
+    expect(link).toHaveAttribute("href", "/forgot-password");
+  });
 });
