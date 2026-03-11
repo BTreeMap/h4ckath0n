@@ -22,6 +22,9 @@ from h4ckath0n.db.migrations.runtime import (
     get_schema_status,
     run_upgrade_to_head,
 )
+from h4ckath0n.jobs.router import jobs_router
+from h4ckath0n.llm.router import llm_router
+from h4ckath0n.uploads.router import uploads_router
 from h4ckath0n.version import __version__ as H4CKATH0N_VERSION
 
 logger = logging.getLogger(__name__)
@@ -88,6 +91,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(passkey_router)
     app.include_router(passkeys_router)
     app.include_router(session_router)
+    app.include_router(jobs_router)
+    app.include_router(uploads_router)
+    app.include_router(llm_router)
 
     # Password routes are only mounted when the extra is installed AND enabled.
     if settings.password_auth_enabled:

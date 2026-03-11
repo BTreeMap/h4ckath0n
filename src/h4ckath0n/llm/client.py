@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from collections.abc import AsyncGenerator
 
 from openai import AsyncOpenAI, DefaultAioHttpClient, OpenAI
 
@@ -124,6 +125,27 @@ class AsyncLLMClient:
             usage_prompt_tokens=usage.prompt_tokens if usage else 0,
             usage_completion_tokens=usage.completion_tokens if usage else 0,
         )
+
+    async def stream_chat(
+        self,
+        *,
+        user: str,
+        system: str = "You are a helpful assistant.",
+        model: str | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """Stream chat completion tokens."""
+        async with self._semaphore:
+            stream = await self._client.chat.completions.create(
+                model=model or self._model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                stream=True,
+            )
+            async for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
 
 
 def llm(
