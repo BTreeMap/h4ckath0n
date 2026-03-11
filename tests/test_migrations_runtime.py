@@ -30,7 +30,7 @@ class TestMigrationStatusDetection:
                 conn.execute(
                     text(f"CREATE TABLE {VERSION_TABLE} (version_num VARCHAR(32) NOT NULL)")
                 )
-                conn.execute(text(f"INSERT INTO {VERSION_TABLE} (version_num) VALUES ('0003')"))
+                conn.execute(text(f"INSERT INTO {VERSION_TABLE} (version_num) VALUES ('0004')"))
             status = get_schema_status(db_url)
             assert status.state == "at_head"
             assert status.warning is None

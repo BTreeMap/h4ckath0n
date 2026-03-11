@@ -33,10 +33,11 @@ async def _get_async_db_from_request(request: Request) -> AsyncSession:
     return request.app.state.async_session_factory()  # type: ignore[no-any-return]
 
 
-async def _get_auth_context(
+async def get_auth_context(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(_bearer),
 ) -> AuthContext:
+    """Public dependency that returns the current :class:`AuthContext`."""
     token = credentials.credentials
     db: AsyncSession = await _get_async_db_from_request(request)
     try:
@@ -52,7 +53,7 @@ async def _get_auth_context(
 
 async def _get_current_user(
     request: Request,
-    ctx: AuthContext = Depends(_get_auth_context),
+    ctx: AuthContext = Depends(get_auth_context),
 ) -> User:
     db: AsyncSession = await _get_async_db_from_request(request)
     try:
