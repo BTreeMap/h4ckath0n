@@ -1,13 +1,7 @@
-import {
-  Activity,
-  CreditCard,
-  DollarSign,
-  Users,
-  ArrowUpRight,
-  ArrowDownRight,
-  MousePointer2,
-} from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../auth";
+import { apiFetch } from "../auth/api";
+import { getOrMintToken } from "../auth/token";
 import {
   Card,
   CardHeader,
@@ -15,229 +9,309 @@ import {
   CardContent,
   CardDescription,
 } from "../components/Card";
-import { Avatar, AvatarFallback, AvatarImage } from "../components/Avatar";
 import { Button } from "../components/Button";
 
+// Types for backend responses
+interface UploadItem {
+  id: string;
+  original_filename: string;
+  content_type: string;
+  byte_size: number;
+  extraction_job_id: string | null;
+  created_at: string;
+}
+
+interface JobItem {
+  id: string;
+  kind: string;
+  status: string;
+  progress: number;
+  error: string | null;
+  created_at: string;
+}
+
 export function Dashboard() {
-  const { user } = useAuth();
+  const { user, userId, deviceId, role, displayName } = useAuth();
+  const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [jobs, setJobs] = useState<JobItem[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [aiStreaming, setAiStreaming] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const stats = [
-    {
-      title: "Total Revenue",
-      value: "$45,231.89",
-      change: "+20.1% from last month",
-      icon: DollarSign,
-    },
-    {
-      title: "Subscriptions",
-      value: "+2350",
-      change: "+180.1% from last month",
-      icon: Users,
-    },
-    {
-      title: "Sales",
-      value: "+12,234",
-      change: "+19% from last month",
-      icon: CreditCard,
-    },
-    {
-      title: "Active Now",
-      value: "+573",
-      change: "+201 since last hour",
-      icon: Activity,
-    },
-  ];
+  const loadUploads = useCallback(async () => {
+    try {
+      const res = await apiFetch<UploadItem[]>("/uploads");
+      if (res.ok) setUploads(res.data);
+    } catch (err) {
+      console.warn("Failed to load uploads", err);
+    }
+  }, []);
 
-  const recentSales = [
-    {
-      name: "Olivia Martin",
-      email: "olivia.martin@email.com",
-      amount: "+$1,999.00",
-      avatar: "https://ui.shadcn.com/avatars/01.png",
-      initials: "OM",
-    },
-    {
-      name: "Jackson Lee",
-      email: "jackson.lee@email.com",
-      amount: "+$39.00",
-      avatar: "https://ui.shadcn.com/avatars/02.png",
-      initials: "JL",
-    },
-    {
-      name: "Isabella Nguyen",
-      email: "isabella.nguyen@email.com",
-      amount: "+$299.00",
-      avatar: "https://ui.shadcn.com/avatars/03.png",
-      initials: "IN",
-    },
-    {
-      name: "William Kim",
-      email: "will@email.com",
-      amount: "+$99.00",
-      avatar: "https://ui.shadcn.com/avatars/04.png",
-      initials: "WK",
-    },
-    {
-      name: "Sofia Davis",
-      email: "sofia.davis@email.com",
-      amount: "+$39.00",
-      avatar: "https://ui.shadcn.com/avatars/05.png",
-      initials: "SD",
-    },
-  ];
+  const loadJobs = useCallback(async () => {
+    try {
+      const res = await apiFetch<JobItem[]>("/jobs");
+      if (res.ok) setJobs(res.data);
+    } catch (err) {
+      console.warn("Failed to load jobs", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUploads();
+    loadJobs();
+  }, [loadUploads, loadJobs]);
+
+  const handleUpload = async () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const token = await getOrMintToken("http");
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+      const res = await fetch(`${API_BASE}/uploads`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (res.ok) {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        await loadUploads();
+        await loadJobs();
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleAiStream = async () => {
+    if (!aiPrompt.trim()) return;
+    setAiStreaming(true);
+    setAiResponse("");
+    try {
+      const token = await getOrMintToken("http");
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+      const res = await fetch(`${API_BASE}/llm/chat/stream`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user: aiPrompt }),
+      });
+      if (!res.ok || !res.body) {
+        setAiResponse("Error: Could not connect to LLM service");
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (line.startsWith("data:")) {
+            try {
+              const data = JSON.parse(line.slice(5).trim());
+              if (data.token) {
+                setAiResponse((prev) => prev + data.token);
+              } else if (data.error) {
+                setAiResponse((prev) => prev + `\n[Error: ${data.error}]`);
+              }
+            } catch {
+              /* skip malformed */
+            }
+          }
+        }
+      }
+    } catch {
+      setAiResponse("Error: Stream failed");
+    } finally {
+      setAiStreaming(false);
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1
-            className="text-3xl font-bold tracking-tight"
-            data-testid="dashboard-heading"
-          >
-            Dashboard
-          </h1>
-          <p className="text-text-muted mt-1">
-            Overview for <span className="font-semibold text-text">{user?.id}</span>.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button>Download Report</Button>
-        </div>
+      <div>
+        <h1
+          className="text-3xl font-bold tracking-tight"
+          data-testid="dashboard-heading"
+        >
+          Dashboard
+        </h1>
+        <p className="text-text-muted mt-1">
+          Welcome back,{" "}
+          <span className="font-semibold text-text">
+            {displayName || userId}
+          </span>
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, i) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {stat.title}
-                </CardTitle>
-                <Icon className="h-4 w-4 text-text-muted" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-text-muted">{stat.change}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Session Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Session</CardTitle>
+          <CardDescription>Current authenticated session details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="text-text-muted">User ID</span>
+              <p className="font-mono text-xs truncate">{userId}</p>
+            </div>
+            <div>
+              <span className="text-text-muted">Device ID</span>
+              <p className="font-mono text-xs truncate">{deviceId}</p>
+            </div>
+            <div>
+              <span className="text-text-muted">Role</span>
+              <p className="font-semibold">{role}</p>
+            </div>
+            <div>
+              <span className="text-text-muted">Display Name</span>
+              <p>{displayName || "—"}</p>
+            </div>
+            <div>
+              <span className="text-text-muted">Scopes</span>
+              <p className="font-mono text-xs">
+                {user?.scopes?.join(", ") || "none"}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* File Upload */}
+        <Card>
           <CardHeader>
-            <CardTitle>Overview</CardTitle>
-            <CardDescription>
-              Your application's monthly recurring revenue.
-            </CardDescription>
+            <CardTitle>File Upload</CardTitle>
+            <CardDescription>Upload files to your storage</CardDescription>
           </CardHeader>
-          <CardContent className="pl-2">
-            <div className="h-[350px] flex items-end justify-between gap-2 px-4 pb-4 pt-10">
-              {/* Mock Chart Bars */}
-              {[45, 23, 78, 56, 34, 89, 45, 67, 23, 89, 45, 76].map(
-                (height, i) => (
-                  <div key={i} className="w-full flex flex-col gap-2 group">
-                    <div className="relative flex-1 w-full bg-surface-alt rounded-t-sm overflow-hidden">
-                      <div
-                        className="absolute bottom-0 w-full bg-primary transition-all duration-500 group-hover:bg-primary-hover"
-                        style={{ height: `${height}%` }}
-                      />
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white"
+                />
+                <Button onClick={handleUpload} disabled={uploading}>
+                  {uploading ? "Uploading…" : "Upload"}
+                </Button>
+              </div>
+              {uploads.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Recent Uploads</p>
+                  {uploads.slice(0, 5).map((u) => (
+                    <div
+                      key={u.id}
+                      className="flex items-center justify-between text-sm p-2 bg-surface-alt rounded"
+                    >
+                      <div className="truncate flex-1">
+                        <span className="font-medium">
+                          {u.original_filename}
+                        </span>
+                        <span className="text-text-muted ml-2">
+                          ({(u.byte_size / 1024).toFixed(1)} KB)
+                        </span>
+                      </div>
+                      <span className="text-xs text-text-muted ml-2">
+                        {u.extraction_job_id ? "📝 Extracted" : ""}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-center text-text-muted uppercase">
-                      {new Date(0, i).toLocaleString("default", {
-                        month: "short",
-                      })}
-                    </span>
-                  </div>
-                ),
+                  ))}
+                </div>
               )}
             </div>
           </CardContent>
         </Card>
-        <Card className="col-span-3">
+
+        {/* Recent Jobs */}
+        <Card>
           <CardHeader>
-            <CardTitle>Recent Sales</CardTitle>
-            <CardDescription>
-              You made 265 sales this month.
-            </CardDescription>
+            <CardTitle>Background Jobs</CardTitle>
+            <CardDescription>Recent job activity</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-8">
-              {recentSales.map((sale, i) => (
-                <div key={i} className="flex items-center">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={sale.avatar} alt="Avatar" />
-                    <AvatarFallback>{sale.initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {sale.name}
-                    </p>
-                    <p className="text-xs text-text-muted">{sale.email}</p>
+            {jobs.length === 0 ? (
+              <p className="text-sm text-text-muted">
+                No jobs yet. Upload a text file to create one.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {jobs.slice(0, 5).map((j) => (
+                  <div
+                    key={j.id}
+                    className="flex items-center justify-between text-sm p-2 bg-surface-alt rounded"
+                  >
+                    <div>
+                      <span className="font-medium">{j.kind}</span>
+                      <span
+                        className={`ml-2 text-xs px-1.5 py-0.5 rounded ${
+                          j.status === "succeeded"
+                            ? "bg-green-100 text-green-700"
+                            : j.status === "failed"
+                              ? "bg-red-100 text-red-700"
+                              : j.status === "running"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {j.status}
+                      </span>
+                    </div>
+                    {j.progress > 0 && j.progress < 100 && (
+                      <span className="text-xs">{j.progress}%</span>
+                    )}
                   </div>
-                  <div className="ml-auto font-medium">{sale.amount}</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
+            <Button className="mt-4 w-full" onClick={loadJobs}>
+              Refresh
+            </Button>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>User Acquisition</CardTitle>
-            <CardDescription>New users over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center p-4 bg-primary/10 rounded-full mb-2">
-                  <ArrowUpRight className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-3xl font-bold">+12.5%</div>
-                <p className="text-xs text-text-muted">vs last 30 days</p>
+      {/* AI Stream */}
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Chat</CardTitle>
+          <CardDescription>
+            Stream responses from the LLM endpoint
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <textarea
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder="Type a prompt…"
+              className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <Button
+              onClick={handleAiStream}
+              disabled={aiStreaming || !aiPrompt.trim()}
+            >
+              {aiStreaming ? "Streaming…" : "Send"}
+            </Button>
+            {aiResponse && (
+              <div className="p-3 rounded bg-surface-alt text-sm whitespace-pre-wrap font-mono">
+                {aiResponse}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Bounce Rate</CardTitle>
-            <CardDescription>Users leaving quickly</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center p-4 bg-success/10 rounded-full mb-2">
-                  <ArrowDownRight className="w-6 h-6 text-success" />
-                </div>
-                <div className="text-3xl font-bold">-2.4%</div>
-                <p className="text-xs text-text-muted">vs last 30 days</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Click Through Rate</CardTitle>
-            <CardDescription>Ad performance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center p-4 bg-primary/10 rounded-full mb-2">
-                  <MousePointer2 className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-3xl font-bold">4.3%</div>
-                <p className="text-xs text-text-muted">avg. per campaign</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
