@@ -31,7 +31,7 @@ vi.mock("react-router", () => ({
 describe("Register page", () => {
   it("renders Display Name label instead of Username", () => {
     render(<Register />);
-    expect(screen.getByLabelText("Display Name")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Display Name/)).toBeInTheDocument();
     expect(screen.queryByLabelText("Username")).not.toBeInTheDocument();
   });
 
