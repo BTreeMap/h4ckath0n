@@ -1,0 +1,11 @@
+From: noreply@localhost
+To: luna@example.com
+Subject: Password Reset Request
+Date: 2026-03-11T23:45:02.230920+00:00
+Content-Type: text/plain; charset=utf-8
+
+Click this link to reset your password:
+
+http://localhost:5173/reset-password?token=FZptGTvpnRP0zJXpqPT9vYfhYma5NVepTg5IJbp1BRoutB-K1r49-QX5_2N2tu2t
+
+This link expires in 30 minutes.
