@@ -88,7 +88,8 @@ def require_scopes(*scopes: str) -> Any:
 
     async def _scoped(user: User = Depends(_get_current_user)) -> User:
         # Optimization: Use a set comprehension for O(1) membership testing instead of a list.
-        # This speeds up the 's not in user_scopes' check below, especially for users with many scopes.
+        # This speeds up the 's not in user_scopes' check below, especially for users
+        # with many scopes.
         user_scopes = {s for s in user.scopes.split(",") if s}
         for s in needed:
             if s not in user_scopes:
