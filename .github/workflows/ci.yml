@@ -44,6 +44,9 @@ jobs:
       - name: Pytest
         run: uv run --locked pytest -v
 
+      - name: Check doc routes
+        run: uv run --locked scripts/check_doc_routes.py
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

@@ -66,6 +66,24 @@ uv run uvicorn your_module:app --reload
 - `GET /` — welcome message confirming the app is reachable.
 - `GET /health` — returns `{"status": "healthy"}` for load balancer and deployment checks.
 
+### Session
+- `GET /auth/session` — returns the current user session details.
+
+### Background Jobs
+- `GET /jobs` — list jobs.
+- `POST /jobs` — enqueue a background job.
+- `GET /jobs/{job_id}` — get the status and result of a job.
+
+### Uploads
+- `GET /uploads` — list uploaded files.
+- `POST /uploads` — upload a new file.
+- `GET /uploads/{upload_id}` — get metadata for a specific upload.
+- `GET /uploads/{upload_id}/download` — download the uploaded file.
+
+### LLM Chat
+- `POST /llm/chat` — send a message to the language model.
+- `POST /llm/chat/stream` — stream responses from the language model.
+
 ## Auth model
 
 ### Passkeys by default
