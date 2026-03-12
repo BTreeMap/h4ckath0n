@@ -75,6 +75,17 @@ class MessageResponse(BaseModel):
     message: str = Field(..., description="Human-readable response message.")
 
 
+class SessionResponse(BaseModel):
+    """Current authenticated session info."""
+
+    user_id: str = Field(..., description="User ID.")
+    device_id: str = Field(..., description="Device ID from the verified JWT.")
+    role: str = Field(..., description="Server-side role.")
+    scopes: list[str] = Field(..., description="User scopes as a list.")
+    display_name: str | None = Field(None, description="Display name.")
+    email: str | None = Field(None, description="User email if set.")
+
+
 class ErrorResponse(BaseModel):
     """Standard error envelope for auth routes."""
 

@@ -10,6 +10,7 @@ They do **not** return access/refresh tokens.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -23,6 +24,8 @@ from h4ckath0n.auth.service import (
     register_device,
     register_user,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -114,9 +117,35 @@ def _password_router() -> APIRouter:
         db: AsyncSession = Depends(_db_dep),
     ):
         settings = request.app.state.settings
-        await create_password_reset_token(
+        token = await create_password_reset_token(
             db, body.email, expire_minutes=settings.password_reset_expire_minutes
         )
+        if token:
+            try:
+                from h4ckath0n.email.sender import send_email
+
+                reset_link = f"{settings.app_base_url}/reset-password?token={token}"
+                await send_email(
+                    to=body.email,
+                    subject="Password Reset Request",
+                    body_text=(
+                        f"Click this link to reset your password:\n\n"
+                        f"{reset_link}\n\n"
+                        f"This link expires in "
+                        f"{settings.password_reset_expire_minutes} minutes."
+                    ),
+                    backend=settings.email_backend,
+                    email_from=settings.email_from,
+                    outbox_dir=settings.email_outbox_dir,
+                    smtp_host=settings.smtp_host,
+                    smtp_port=settings.smtp_port,
+                    smtp_username=settings.smtp_username,
+                    smtp_password=settings.smtp_password,
+                    smtp_starttls=settings.smtp_starttls,
+                    smtp_ssl=settings.smtp_ssl,
+                )
+            except Exception:
+                logger.exception("Failed to send password reset email")
         return schemas.MessageResponse(
             message="If that email is registered, a reset link was sent."
         )

@@ -19,3 +19,5 @@ playwright-report/
 test-results/
 *.tsbuildinfo
 *.log
+.h4ckath0n_storage/
+.h4ckath0n_email_outbox/

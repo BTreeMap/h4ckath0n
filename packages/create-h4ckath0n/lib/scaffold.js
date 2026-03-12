@@ -107,7 +107,6 @@ export function copyDir(src, dest, replacements) {
  * @returns {string}
  */
 function buildEnvContent(dbType, projectName) {
-  const signingKey = generateSecret();
   const dbUrl =
     dbType === "sqlite"
       ? `sqlite+aiosqlite:///./data/${projectName}.db`
@@ -119,6 +118,14 @@ function buildEnvContent(dbType, projectName) {
     `H4CKATH0N_DATABASE_URL=${dbUrl}`,
     "H4CKATH0N_RP_ID=localhost",
     "H4CKATH0N_ORIGIN=http://localhost:5173",
+    "H4CKATH0N_APP_BASE_URL=http://localhost:5173",
+    "H4CKATH0N_REDIS_URL=",
+    "H4CKATH0N_STORAGE_DIR=./.h4ckath0n_storage",
+    "H4CKATH0N_EMAIL_BACKEND=file",
+    "H4CKATH0N_EMAIL_OUTBOX_DIR=./.h4ckath0n_email_outbox",
+    "H4CKATH0N_DEMO_MODE=false",
+    "H4CKATH0N_PASSWORD_AUTH_ENABLED=true",
+    "OPENAI_API_KEY=",
     "VITE_API_BASE_URL=/api",
     "",
   ].join("\n");
@@ -141,6 +148,14 @@ function buildEnvExampleContent(dbType) {
     `H4CKATH0N_DATABASE_URL=${dbPlaceholder}`,
     "H4CKATH0N_RP_ID=localhost",
     "H4CKATH0N_ORIGIN=http://localhost:5173",
+    "H4CKATH0N_APP_BASE_URL=http://localhost:5173",
+    "H4CKATH0N_REDIS_URL=",
+    "H4CKATH0N_STORAGE_DIR=./.h4ckath0n_storage",
+    "H4CKATH0N_EMAIL_BACKEND=file",
+    "H4CKATH0N_EMAIL_OUTBOX_DIR=./.h4ckath0n_email_outbox",
+    "H4CKATH0N_DEMO_MODE=false",
+    "H4CKATH0N_PASSWORD_AUTH_ENABLED=true",
+    "OPENAI_API_KEY=",
     "VITE_API_BASE_URL=/api",
     "",
   ].join("\n");

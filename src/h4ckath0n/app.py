@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from h4ckath0n.auth.passkeys.router import passkeys_router
 from h4ckath0n.auth.passkeys.router import router as passkey_router
+from h4ckath0n.auth.session_router import session_router
 from h4ckath0n.config import Settings
 from h4ckath0n.db.base import Base
 from h4ckath0n.db.engine import create_async_engine_from_settings
@@ -21,6 +22,9 @@ from h4ckath0n.db.migrations.runtime import (
     get_schema_status,
     run_upgrade_to_head,
 )
+from h4ckath0n.jobs.router import jobs_router
+from h4ckath0n.llm.router import llm_router
+from h4ckath0n.uploads.router import uploads_router
 from h4ckath0n.version import __version__ as H4CKATH0N_VERSION
 
 logger = logging.getLogger(__name__)
@@ -36,6 +40,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # Import models so they register with Base.metadata before create_all.
     import h4ckath0n.auth.models  # noqa: F401
+    import h4ckath0n.jobs.models  # noqa: F401
+    import h4ckath0n.uploads.models  # noqa: F401
 
     async_session_factory = async_sessionmaker(async_engine, expire_on_commit=False)
 
@@ -84,6 +90,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Passkey routes are always mounted (default auth).
     app.include_router(passkey_router)
     app.include_router(passkeys_router)
+    app.include_router(session_router)
+    app.include_router(jobs_router)
+    app.include_router(uploads_router)
+    app.include_router(llm_router)
 
     # Password routes are only mounted when the extra is installed AND enabled.
     if settings.password_auth_enabled:

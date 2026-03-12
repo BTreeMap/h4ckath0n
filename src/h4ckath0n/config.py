@@ -42,6 +42,31 @@ class Settings(BaseSettings):
     # --- LLM ---
     openai_api_key: str = ""
 
+    # --- Redis ---
+    redis_url: str = ""
+    jobs_inline_in_dev: bool = True
+    jobs_default_queue: str = "default"
+
+    # --- Storage ---
+    storage_backend: str = "local"
+    storage_dir: str = "./.h4ckath0n_storage"
+    max_upload_bytes: int = 50 * 1024 * 1024  # 50 MB
+
+    # --- Email ---
+    app_base_url: str = "http://localhost:5173"
+    email_backend: str = "file"  # "file" or "smtp"
+    email_from: str = "noreply@localhost"
+    email_outbox_dir: str = "./.h4ckath0n_email_outbox"
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_starttls: bool = True
+    smtp_ssl: bool = False
+
+    # --- Demo ---
+    demo_mode: bool = False
+
     def effective_rp_id(self) -> str:
         """Return the WebAuthn relying party ID."""
         if self.rp_id:

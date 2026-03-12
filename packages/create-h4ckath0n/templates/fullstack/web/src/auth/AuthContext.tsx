@@ -119,22 +119,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const navigate = useNavigate();
 
-  // Check existing device identity on mount
+  // Check existing device identity on mount and rehydrate from backend
   useEffect(() => {
     getDeviceIdentity()
-      .then((identity) => {
-        if (identity) {
+      .then(async (identity) => {
+        if (!identity) {
+          setState((s) => ({ ...s, isLoading: false }));
+          return;
+        }
+        try {
+          const { apiFetch } = await import("./api");
+          const res = await apiFetch<{
+            user_id: string;
+            device_id: string;
+            role: string;
+            scopes: string[];
+            display_name: string | null;
+            email: string | null;
+          }>("/auth/session");
+          if (res.ok) {
+            setState({
+              isAuthenticated: true,
+              isLoading: false,
+              userId: res.data.user_id,
+              deviceId: res.data.device_id,
+              role: res.data.role,
+              displayName: res.data.display_name,
+              user: { id: res.data.user_id, role: res.data.role, scopes: res.data.scopes },
+            });
+          } else {
+            // Stale identity
+            clearCachedToken();
+            await clearDeviceAuthorization();
+            setState((s) => ({ ...s, isLoading: false }));
+          }
+        } catch {
+          // Network error or AuthError - fall back to stored identity
           setState({
             isAuthenticated: true,
             isLoading: false,
             userId: identity.userId,
             deviceId: identity.deviceId,
-            role: "user", // Default role, specific role logic might need API call
+            role: "user",
             displayName: null,
             user: { id: identity.userId, role: "user", scopes: [] },
           });
-        } else {
-          setState((s) => ({ ...s, isLoading: false }));
         }
       })
       .catch(() => setState((s) => ({ ...s, isLoading: false })));

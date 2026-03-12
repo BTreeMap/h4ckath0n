@@ -669,6 +669,218 @@ def _cmd_passkeys_revoke(args: argparse.Namespace) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Jobs commands
+# ---------------------------------------------------------------------------
+
+
+def _cmd_jobs_worker(args: argparse.Namespace) -> int:
+    """Run a background job worker.
+
+    Polls a Redis queue (``brpop``) for job IDs, loads each job from the
+    database, executes the registered handler, and updates the job status
+    to ``succeeded`` or ``failed``.  Exits with ``EXIT_BAD_ARGS`` when no
+    Redis URL is configured.
+    """
+    from h4ckath0n.config import Settings
+
+    settings = Settings()
+    queue = getattr(args, "queue", settings.jobs_default_queue)
+    poll_interval = getattr(args, "poll_interval", 2)
+
+    if not settings.redis_url:
+        print(
+            "No Redis URL configured. Set H4CKATH0N_REDIS_URL.",
+            file=sys.stderr,
+        )
+        return EXIT_BAD_ARGS
+
+    import asyncio
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    import h4ckath0n.jobs.handlers  # noqa: F401 – ensure handlers registered
+    from h4ckath0n.db.engine import create_async_engine_from_settings
+    from h4ckath0n.jobs.models import Job
+    from h4ckath0n.jobs.registry import get_handler
+
+    print(f"Starting worker on queue '{queue}' (Redis: {settings.redis_url})")
+
+    async def _worker_loop() -> None:
+        import redis.asyncio as aioredis
+
+        r = aioredis.from_url(settings.redis_url)
+        engine = create_async_engine_from_settings(settings)
+        session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+        try:
+            while True:
+                raw = await r.brpop(  # type: ignore[misc]
+                    [f"h4ckath0n:jobs:{queue}"],
+                    timeout=int(poll_interval),
+                )
+                if raw is None:
+                    continue
+                _, job_id_bytes = raw
+                job_id = job_id_bytes.decode()  # type: ignore[union-attr]
+                print(f"Processing job {job_id}")
+
+                async with session_factory() as db:
+                    from sqlalchemy import select
+
+                    res = await db.execute(select(Job).filter(Job.id == job_id))
+                    job = res.scalars().first()
+                    if not job:
+                        print(f"Job {job_id} not found")
+                        continue
+
+                    handler = get_handler(job.kind)
+                    if not handler:
+                        job.status = "failed"
+                        job.error = f"No handler for: {job.kind}"
+                        job.finished_at = datetime.now(UTC)
+                        await db.commit()
+                        continue
+
+                    job.status = "running"
+                    job.started_at = datetime.now(UTC)
+                    job.attempts += 1
+                    await db.commit()
+
+                    try:
+                        payload = json.loads(job.payload_json)
+                        handler_result = await handler(payload)
+                        job.status = "succeeded"
+                        job.result_json = json.dumps(handler_result)
+                        job.progress = 100
+                    except Exception as exc:
+                        job.status = "failed"
+                        job.error = str(exc)
+
+                    job.finished_at = datetime.now(UTC)
+                    await db.commit()
+                    print(f"Job {job_id}: {job.status}")
+        finally:
+            await r.aclose()
+            await engine.dispose()
+
+    try:
+        asyncio.run(_worker_loop())
+    except KeyboardInterrupt:
+        print("\nWorker stopped.")
+    return EXIT_OK
+
+
+# ---------------------------------------------------------------------------
+# Seed commands
+# ---------------------------------------------------------------------------
+
+
+def _cmd_seed_demo(args: argparse.Namespace) -> int:
+    """Seed demo data (admin user, regular user, and sample jobs).
+
+    Creates two users (``admin@demo.local`` with role admin and
+    ``user@demo.local`` with role user), optionally sets passwords when
+    password auth is enabled, and inserts sample ``demo.echo`` jobs.
+    Requires ``--yes`` to confirm the mutation.
+    """
+    if not getattr(args, "yes", False):
+        print("Use --yes to confirm seeding demo data.", file=sys.stderr)
+        return EXIT_BAD_ARGS
+
+    from h4ckath0n.config import Settings
+
+    settings = Settings()
+
+    if not settings.demo_mode:
+        print(
+            "Warning: demo_mode is not enabled. Set H4CKATH0N_DEMO_MODE=true.",
+            file=sys.stderr,
+        )
+
+    import asyncio
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    import h4ckath0n.auth.models  # noqa: F401
+    import h4ckath0n.jobs.models  # noqa: F401
+    import h4ckath0n.uploads.models  # noqa: F401
+    from h4ckath0n.auth.models import User
+    from h4ckath0n.db.base import Base
+    from h4ckath0n.db.engine import create_async_engine_from_settings
+    from h4ckath0n.jobs.models import Job
+
+    async def _seed() -> None:
+        engine = create_async_engine_from_settings(settings)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+        async with session_factory() as db:
+            # Demo admin user
+            admin = User(
+                role="admin",
+                scopes="admin,demo",
+                display_name="Demo Admin",
+                email="admin@demo.local",
+            )
+            # Demo regular user
+            regular = User(
+                role="user",
+                scopes="demo",
+                display_name="Demo User",
+                email="user@demo.local",
+            )
+
+            # Set passwords if password auth enabled
+            if settings.password_auth_enabled:
+                try:
+                    from h4ckath0n.auth.passwords import hash_password
+
+                    admin.password_hash = hash_password("admin123")
+                    regular.password_hash = hash_password("user123")
+                except ImportError:
+                    print("Password extra not installed, skipping password setup.")
+
+            db.add_all([admin, regular])
+            await db.flush()
+
+            # Demo jobs
+            now = datetime.now(UTC)
+            jobs = [
+                Job(
+                    kind="demo.echo",
+                    status="succeeded",
+                    progress=100,
+                    payload_json=json.dumps({"msg": "Hello from demo"}),
+                    result_json=json.dumps({"echo": {"msg": "Hello from demo"}}),
+                    created_by_user_id=admin.id,
+                    started_at=now,
+                    finished_at=now,
+                ),
+                Job(
+                    kind="demo.echo",
+                    status="queued",
+                    payload_json=json.dumps({"msg": "Pending demo job"}),
+                    created_by_user_id=regular.id,
+                ),
+            ]
+            db.add_all(jobs)
+            await db.commit()
+
+            print(f"Created demo admin: {admin.id} (admin@demo.local)")
+            print(f"Created demo user: {regular.id} (user@demo.local)")
+            if settings.password_auth_enabled:
+                print("Demo admin password: admin123")
+                print("Demo user password: user123")
+            print(f"Created {len(jobs)} demo jobs")
+
+        await engine.dispose()
+
+    asyncio.run(_seed())
+    return EXIT_OK
+
+
+# ---------------------------------------------------------------------------
 # User-selector arguments helper
 # ---------------------------------------------------------------------------
 
@@ -821,6 +1033,30 @@ def _build_parser() -> argparse.ArgumentParser:
     passkeys_revoke.add_argument("--key-id", required=True, help="Passkey ID (k...)")
     passkeys_revoke.add_argument("--yes", action="store_true", help="Confirm mutation")
 
+    # ---- jobs ----
+    jobs_parser = subparsers.add_parser("jobs", help="Background job operations")
+    jobs_sub = jobs_parser.add_subparsers(dest="jobs_command")
+
+    # jobs worker
+    jobs_worker = jobs_sub.add_parser(
+        "worker", parents=[common], help="Run a background job worker"
+    )
+    jobs_worker.add_argument("--queue", default="default", help="Queue name (default: default)")
+    jobs_worker.add_argument(
+        "--poll-interval",
+        type=float,
+        default=2,
+        help="Poll interval in seconds (default: 2)",
+    )
+
+    # ---- seed ----
+    seed_parser = subparsers.add_parser("seed", help="Seed data operations")
+    seed_sub = seed_parser.add_subparsers(dest="seed_command")
+
+    # seed demo
+    seed_demo = seed_sub.add_parser("demo", parents=[common], help="Seed demo data")
+    seed_demo.add_argument("--yes", action="store_true", help="Confirm mutation")
+
     return parser
 
 
@@ -904,6 +1140,22 @@ def main() -> int:
         if passkeys_cmd == "revoke":
             return _cmd_passkeys_revoke(args)
         parser.parse_args(["passkeys", "--help"])
+        return EXIT_BAD_ARGS
+
+    # -- jobs --
+    if args.command == "jobs":
+        jobs_cmd = getattr(args, "jobs_command", None)
+        if jobs_cmd == "worker":
+            return _cmd_jobs_worker(args)
+        parser.parse_args(["jobs", "--help"])
+        return EXIT_BAD_ARGS
+
+    # -- seed --
+    if args.command == "seed":
+        seed_cmd = getattr(args, "seed_command", None)
+        if seed_cmd == "demo":
+            return _cmd_seed_demo(args)
+        parser.parse_args(["seed", "--help"])
         return EXIT_BAD_ARGS
 
     parser.print_help()

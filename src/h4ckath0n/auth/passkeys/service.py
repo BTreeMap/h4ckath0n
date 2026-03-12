@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import secrets
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
@@ -20,6 +19,8 @@ from h4ckath0n.auth.passkeys.webauthn import (
     verify_registration,
 )
 from h4ckath0n.config import Settings
+from h4ckath0n.rng import random_bytes as _rng_bytes
+from h4ckath0n.rng import token_urlsafe as _rng_urlsafe
 
 
 class LastPasskeyError(Exception):
@@ -32,11 +33,13 @@ class LastPasskeyError(Exception):
 
 
 def _new_flow_id() -> str:
-    return secrets.token_urlsafe(32)
+    # 32 bytes → 256-bit unguessable URL-safe ID stored in the DB per flow.
+    return _rng_urlsafe(32)
 
 
 def _new_challenge() -> bytes:
-    return secrets.token_bytes(32)
+    # WebAuthn spec requires ≥16 bytes; 32 gives 256-bit security margin.
+    return _rng_bytes(32)
 
 
 async def _get_valid_flow(db: AsyncSession, flow_id: str, kind: str) -> WebAuthnChallenge:

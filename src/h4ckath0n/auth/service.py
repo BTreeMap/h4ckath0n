@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import secrets
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
@@ -16,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from h4ckath0n.auth.models import Device, PasswordResetToken, User
 from h4ckath0n.config import Settings
+from h4ckath0n.rng import token_urlsafe as _rng_urlsafe
 
 
 def _hash_token(token: str) -> str:
@@ -142,7 +142,8 @@ async def create_password_reset_token(
     result = await db.execute(select(User).filter(User.email == email))
     if (user := result.scalars().first()) is None:
         return None
-    raw = secrets.token_urlsafe(48)
+    # 32 bytes → 256-bit unguessable token; hashed before storage.
+    raw = _rng_urlsafe(32)
     prt = PasswordResetToken(
         user_id=user.id,
         token_hash=_hash_token(raw),
