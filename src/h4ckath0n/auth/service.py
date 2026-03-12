@@ -73,12 +73,15 @@ async def register_user(
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
-    _hash, verify_password = _require_password_extra()
+    hash_password, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+    user = result.scalars().first()
+
+    # Mitigate user enumeration via timing attacks
+    if user is None or not user.password_hash:
+        hash_password(password)
         return None
-    if not user.password_hash:
-        return None
+
     if not verify_password(password, user.password_hash):
         return None
     return user
@@ -140,13 +143,18 @@ async def create_password_reset_token(
 ) -> str | None:
     """Create a password reset token. Returns raw token or None if email unknown."""
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
-        return None
-    # 32 bytes → 256-bit unguessable token; hashed before storage.
+    user = result.scalars().first()
+
+    # Mitigate timing attacks
     raw = _rng_urlsafe(32)
+    hashed = _hash_token(raw)
+
+    if user is None:
+        return None
+
     prt = PasswordResetToken(
         user_id=user.id,
-        token_hash=_hash_token(raw),
+        token_hash=hashed,
         expires_at=datetime.now(UTC) + timedelta(minutes=expire_minutes),
     )
     db.add(prt)

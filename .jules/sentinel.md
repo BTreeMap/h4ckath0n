@@ -1,0 +1,4 @@
+## 2024-03-12 - Prevent User Enumeration via Timing Attacks
+**Vulnerability:** User enumeration was possible on the login and password reset endpoints because the execution time differed significantly between valid and invalid emails. If an email did not exist, the server skipped the slow Argon2 password hashing or token generation step and returned immediately.
+**Learning:** In authentication flows (e.g., login, password reset), any early return before an expensive cryptographic operation (like password verification or secure token hashing) allows attackers to perform timing attacks. They can measure response times to guess whether an email is registered in the system.
+**Prevention:** Always ensure that authentication endpoints perform similar amounts of work regardless of whether the user exists. When a user is not found, perform dummy cryptographic operations (like hashing a dummy password or generating and hashing a token) to normalize response times.
