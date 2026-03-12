@@ -84,16 +84,16 @@ def require_admin() -> Any:
 def require_scopes(*scopes: str) -> Any:
     """Dependency that requires the user to have specific scopes (from DB)."""
 
-    needed: list[str] = list(scopes)
+    needed: set[str] = set(filter(None, map(str.strip, scopes)))
 
     async def _scoped(user: User = Depends(_get_current_user)) -> User:
-        user_scopes = [s for s in user.scopes.split(",") if s]
-        for s in needed:
-            if s not in user_scopes:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Missing scope: {s}",
-                )
+        user_scopes = filter(None, map(str.strip, user.scopes.split(",")))
+        if missing := needed.difference(user_scopes):
+            missing_scopes = ", ".join(missing)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Missing scope(s): {missing_scopes}",
+            )
         return user
 
     return Depends(_scoped)

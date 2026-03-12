@@ -1,4 +1,4 @@
-# Atlas Journal — Critical Learnings
+# Atlas Journal: Critical Learnings
 
 ## 2026-02-28 - API route substring matching is unreliable for drift checks
 
