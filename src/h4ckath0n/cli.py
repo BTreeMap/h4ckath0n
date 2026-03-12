@@ -126,16 +126,9 @@ def _make_sync_engine(url: str):  # type: ignore[no-untyped-def]
 
 def _normalize_scopes(raw: str) -> str:
     """Normalize a comma-separated scopes string."""
-    parts = [s.strip() for s in raw.split(",")]
-    parts = [s for s in parts if s]
+    parts = filter(None, map(str.strip, raw.split(",")))
     # de-duplicate preserving order
-    seen: set[str] = set()
-    result: list[str] = []
-    for s in parts:
-        if s not in seen:
-            seen.add(s)
-            result.append(s)
-    return ",".join(result)
+    return ",".join(dict.fromkeys(parts))
 
 
 def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-untyped-def]
