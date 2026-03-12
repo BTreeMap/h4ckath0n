@@ -126,7 +126,7 @@ def _make_sync_engine(url: str):  # type: ignore[no-untyped-def]
 
 def _normalize_scopes(raw: str) -> str:
     """Normalize a comma-separated scopes string."""
-    parts = [s for s in (s.strip() for s in raw.split(",")) if s]
+    parts = filter(None, map(str.strip, raw.split(",")))
     # de-duplicate preserving order
     return ",".join(dict.fromkeys(parts))
 
