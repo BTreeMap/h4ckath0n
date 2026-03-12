@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import os
-import secrets
+
+from h4ckath0n.rng import token_hex as _rng_hex
 
 
 async def store_file(storage_dir: str, data: bytes) -> tuple[str, str]:
@@ -15,7 +16,7 @@ async def store_file(storage_dir: str, data: bytes) -> tuple[str, str]:
     """
     sha256 = hashlib.sha256(data).hexdigest()
     prefix = sha256[:2]
-    random_part = secrets.token_hex(16)
+    random_part = _rng_hex(16)  # 128-bit opaque path component.
     storage_key = f"{prefix}/{random_part}"
 
     full_path = os.path.join(storage_dir, prefix)

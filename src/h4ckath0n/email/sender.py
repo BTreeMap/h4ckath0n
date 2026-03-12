@@ -5,11 +5,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import secrets
 import smtplib
 from datetime import UTC, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+from h4ckath0n.rng import token_nonce as _rng_nonce
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ async def _send_file(
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
     # Use an opaque random suffix – never include user-controlled values
     # in the filename to avoid path-injection risks.
-    nonce = secrets.token_hex(6)
+    nonce = _rng_nonce()  # 8 bytes; collision-avoidance only, not a secret.
     filename = f"{timestamp}_{nonce}.eml"
     filepath = os.path.join(outbox_dir, filename)
 

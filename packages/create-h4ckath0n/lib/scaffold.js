@@ -107,7 +107,6 @@ export function copyDir(src, dest, replacements) {
  * @returns {string}
  */
 function buildEnvContent(dbType, projectName) {
-  const signingKey = generateSecret();
   const dbUrl =
     dbType === "sqlite"
       ? `sqlite+aiosqlite:///./data/${projectName}.db`
@@ -119,7 +118,6 @@ function buildEnvContent(dbType, projectName) {
     `H4CKATH0N_DATABASE_URL=${dbUrl}`,
     "H4CKATH0N_RP_ID=localhost",
     "H4CKATH0N_ORIGIN=http://localhost:5173",
-    `H4CKATH0N_SIGNING_KEY=${signingKey}`,
     "H4CKATH0N_APP_BASE_URL=http://localhost:5173",
     "H4CKATH0N_REDIS_URL=",
     "H4CKATH0N_STORAGE_DIR=./.h4ckath0n_storage",
@@ -150,7 +148,6 @@ function buildEnvExampleContent(dbType) {
     `H4CKATH0N_DATABASE_URL=${dbPlaceholder}`,
     "H4CKATH0N_RP_ID=localhost",
     "H4CKATH0N_ORIGIN=http://localhost:5173",
-    "H4CKATH0N_SIGNING_KEY=<generate-a-random-hex-secret>",
     "H4CKATH0N_APP_BASE_URL=http://localhost:5173",
     "H4CKATH0N_REDIS_URL=",
     "H4CKATH0N_STORAGE_DIR=./.h4ckath0n_storage",
