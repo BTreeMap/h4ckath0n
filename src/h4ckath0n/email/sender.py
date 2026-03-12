@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import secrets
 import smtplib
 from datetime import UTC, datetime
 from email.mime.multipart import MIMEMultipart
@@ -69,8 +70,10 @@ async def _send_file(
     """Write email to a file in the outbox directory."""
     os.makedirs(outbox_dir, exist_ok=True)
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
-    safe_to = to.replace("@", "_at_").replace(".", "_")[:50]
-    filename = f"{timestamp}_{safe_to}.eml"
+    # Use an opaque random suffix – never include user-controlled values
+    # in the filename to avoid path-injection risks.
+    nonce = secrets.token_hex(6)
+    filename = f"{timestamp}_{nonce}.eml"
     filepath = os.path.join(outbox_dir, filename)
 
     content = f"""From: {email_from}

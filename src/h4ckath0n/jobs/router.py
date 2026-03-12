@@ -13,7 +13,7 @@ from h4ckath0n.auth.dependencies import get_auth_context, require_user
 from h4ckath0n.auth.models import User
 from h4ckath0n.jobs.models import Job
 from h4ckath0n.jobs.queue import enqueue_job
-from h4ckath0n.jobs.registry import registered_kinds
+from h4ckath0n.jobs.registry import public_kinds
 from h4ckath0n.jobs.schemas import EnqueueJobRequest, JobResponse
 from h4ckath0n.realtime.auth import AuthContext
 
@@ -54,7 +54,7 @@ async def create_job(
     ctx: AuthContext = Depends(get_auth_context),
     db: AsyncSession = Depends(_db_dep),
 ) -> JobResponse:
-    if body.kind not in registered_kinds():
+    if body.kind not in public_kinds():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unknown job kind: {body.kind}",

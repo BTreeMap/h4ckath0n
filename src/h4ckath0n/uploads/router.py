@@ -66,7 +66,7 @@ async def upload_file(
             detail=f"File too large. Maximum size: {settings.max_upload_bytes} bytes",
         )
 
-    storage_key, sha256 = await store_file(settings.storage_dir, data, file.filename or "upload")
+    storage_key, sha256 = await store_file(settings.storage_dir, data)
     content_type = file.content_type or "application/octet-stream"
 
     upload = Upload(

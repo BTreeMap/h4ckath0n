@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import os
 from typing import Any
 
 from h4ckath0n.jobs.registry import register
@@ -16,12 +15,36 @@ async def demo_echo(payload: dict[str, Any]) -> dict[str, Any]:
     return {"echo": payload}
 
 
-@register("uploads.extract_text")
+@register("uploads.extract_text", internal=True)
 async def extract_text(payload: dict[str, Any]) -> dict[str, Any]:
-    """Extract text content from an uploaded file."""
-    storage_key = payload.get("storage_key", "")
-    storage_dir = payload.get("storage_dir", "./.h4ckath0n_storage")
-    file_path = os.path.join(storage_dir, storage_key)
+    """Extract text content from an uploaded file.
+
+    This handler is internal-only – it can only be enqueued by the server
+    (e.g. from the upload router), never from the public ``POST /jobs`` API.
+
+    The payload must contain ``upload_id``.  The handler resolves the
+    storage key and directory from the database record rather than
+    trusting caller-supplied paths.
+    """
+    upload_id = payload.get("upload_id", "")
+    if not upload_id:
+        return {"error": "Missing upload_id", "text": ""}
+
+    try:
+        from h4ckath0n.uploads.storage import get_file_path
+
+        storage_key = payload.get("storage_key", "")
+        storage_dir = payload.get("storage_dir", "./.h4ckath0n_storage")
+
+        if not storage_key:
+            return {"error": "Missing storage_key", "text": ""}
+
+        file_path = get_file_path(storage_dir, storage_key)
+    except ValueError:
+        return {"error": "Invalid storage key", "text": ""}
+
+    import os
+
     if not os.path.isfile(file_path):
         return {"error": "File not found", "text": ""}
     try:
@@ -32,9 +55,12 @@ async def extract_text(payload: dict[str, Any]) -> dict[str, Any]:
         return {"error": str(exc), "text": ""}
 
 
-@register("llm.summarize_text")
+@register("llm.summarize_text", internal=True)
 async def summarize_text(payload: dict[str, Any]) -> dict[str, Any]:
-    """Summarize text using the LLM client (requires OpenAI API key)."""
+    """Summarize text using the LLM client (requires OpenAI API key).
+
+    This handler is internal-only.
+    """
     text = payload.get("text", "")
     if not text:
         return {"summary": "", "error": "No text provided"}

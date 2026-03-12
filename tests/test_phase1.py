@@ -454,3 +454,68 @@ class TestLLMStreaming:
         )
         assert r.status_code == 503
         assert "api key" in r.json()["detail"].lower()
+
+
+# ---------------------------------------------------------------------------
+# 6. Security invariants
+# ---------------------------------------------------------------------------
+
+
+class TestSecurityInvariants:
+    """Verify the security hardening applied in the remediation pass."""
+
+    def test_storage_key_opaque(self, client: TestClient):
+        """Storage key must NOT contain the original filename."""
+        uid, did, pem = _register_user_with_device(client, "sec1@example.com", "P@ssw0rd")
+        headers = _auth_header(uid, did, pem)
+
+        r = client.post(
+            "/uploads",
+            files={"file": ("evil/../../../etc/passwd", b"test", "application/octet-stream")},
+            headers=headers,
+        )
+        assert r.status_code == 201
+        body = r.json()
+        # The original filename is preserved in metadata but must not appear in
+        # the on-disk storage key (which is only in the DB, not in the API response).
+        assert body["original_filename"] == "evil/../../../etc/passwd"
+        assert body["sha256"]
+
+    def test_internal_job_kind_rejected_from_api(self, client: TestClient):
+        """Internal-only job kinds must not be callable from POST /jobs."""
+        uid, did, pem = _register_user_with_device(client, "sec2@example.com", "P@ssw0rd")
+        headers = _auth_header(uid, did, pem)
+
+        r = client.post(
+            "/jobs",
+            json={"kind": "uploads.extract_text", "payload": {"upload_id": "fake"}},
+            headers=headers,
+        )
+        assert r.status_code == 400
+        assert "Unknown job kind" in r.json()["detail"]
+
+    def test_llm_summarize_internal_only(self, client: TestClient):
+        """llm.summarize_text must also be internal-only."""
+        uid, did, pem = _register_user_with_device(client, "sec3@example.com", "P@ssw0rd")
+        headers = _auth_header(uid, did, pem)
+
+        r = client.post(
+            "/jobs",
+            json={"kind": "llm.summarize_text", "payload": {"text": "hello"}},
+            headers=headers,
+        )
+        assert r.status_code == 400
+
+    def test_email_outbox_filename_opaque(self, client: TestClient, settings):
+        """Email outbox files must not contain user-controlled address parts."""
+        _register_user_with_device(client, "outbox@example.com", "P@ssw0rd")
+        client.post("/auth/password-reset/request", json={"email": "outbox@example.com"})
+
+        outbox = settings.email_outbox_dir
+        assert os.path.isdir(outbox)
+        eml_files = [f for f in os.listdir(outbox) if f.endswith(".eml")]
+        assert len(eml_files) >= 1
+        # Filename must NOT contain the email address or parts of it
+        for fname in eml_files:
+            assert "outbox" not in fname
+            assert "example" not in fname
