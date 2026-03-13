@@ -17,3 +17,8 @@
 **Learning:** Comments like "convert to set for O(1) membership testing" can be misleading when the code is not actually doing repeated membership checks. In this case, the important question is the whole operation shape, not a generic rule about sets being faster.
 
 **Action:** Write comments that describe the actual algorithm and why it was chosen in context. Prefer precise explanations over cargo-cult performance slogans.
+
+## 2026-03-13 - Avoid ORM Hydration for ID Fetches
+
+**Learning:** When retrieving a single field (like a primary key ID) from the database, querying for the full ORM object using `db.execute(select(Model)).scalars().first()` forces SQLAlchemy to parse, allocate, and hydrate the entire model instance, including potentially large fields like JSON blocks or long texts.
+**Action:** Always use `db.scalar(select(Model.id)...)` when only the identifier is needed. This avoids the ORM overhead and significantly reduces database bandwidth and memory allocation.
