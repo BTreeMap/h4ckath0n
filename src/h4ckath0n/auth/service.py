@@ -117,9 +117,9 @@ async def register_device(
         return ""
     fp = _jwk_fingerprint(public_key_jwk)
 
-    result = await db.execute(select(Device).filter(Device.fingerprint == fp))
-    if existing := result.scalars().first():
-        return existing.id
+    # ⚡ Bolt: Fetch only the ID to avoid instantiating the full Device ORM object.
+    if existing_id := await db.scalar(select(Device.id).filter(Device.fingerprint == fp)):
+        return existing_id
 
     device = Device(
         user_id=user_id,
@@ -139,13 +139,13 @@ async def create_password_reset_token(
     expire_minutes: int = 30,
 ) -> str | None:
     """Create a password reset token. Returns raw token or None if email unknown."""
-    result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+    # ⚡ Bolt: Fetch only the ID to avoid instantiating the full User ORM object.
+    if (user_id := await db.scalar(select(User.id).filter(User.email == email))) is None:
         return None
     # 32 bytes → 256-bit unguessable token; hashed before storage.
     raw = _rng_urlsafe(32)
     prt = PasswordResetToken(
-        user_id=user.id,
+        user_id=user_id,
         token_hash=_hash_token(raw),
         expires_at=datetime.now(UTC) + timedelta(minutes=expire_minutes),
     )

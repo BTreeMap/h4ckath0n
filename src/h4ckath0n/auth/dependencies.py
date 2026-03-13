@@ -14,7 +14,6 @@ from typing import Any
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from h4ckath0n.auth.models import User
@@ -57,8 +56,8 @@ async def _get_current_user(
 ) -> User:
     db: AsyncSession = await _get_async_db_from_request(request)
     try:
-        result = await db.execute(select(User).filter(User.id == ctx.user_id))
-        if (user := result.scalars().first()) is None:
+        # ⚡ Bolt: Use primary key lookup to hit the session identity map.
+        if (user := await db.get(User, ctx.user_id)) is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
         return user
     finally:
