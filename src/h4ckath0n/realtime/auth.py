@@ -15,7 +15,6 @@ import jwt
 from cryptography.hazmat.primitives import serialization
 from fastapi import WebSocket
 from jwt.algorithms import ECAlgorithm
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
@@ -82,8 +81,7 @@ async def verify_device_jwt(
     if not kid:
         raise AuthError("Missing kid in JWT header")
 
-    result = await db.execute(select(Device).filter(Device.id == kid))
-    device = result.scalars().first()
+    device = await db.get(Device, kid)
     if not device:
         raise AuthError("Unknown device")
 
@@ -114,8 +112,7 @@ async def verify_device_jwt(
         raise AuthError(f"Invalid aud: expected {expected_aud}")
 
     # ── user lookup ───────────────────────────────────────────────────
-    result = await db.execute(select(User).filter(User.id == claims.sub))
-    user = result.scalars().first()
+    user = await db.get(User, claims.sub)
     if user is None:
         raise AuthError("User not found")
 

@@ -22,3 +22,8 @@
 
 **Learning:** When retrieving a single field (like a primary key ID) from the database, querying for the full ORM object using `db.execute(select(Model)).scalars().first()` forces SQLAlchemy to parse, allocate, and hydrate the entire model instance, including potentially large fields like JSON blocks or long texts.
 **Action:** Always use `db.scalar(select(Model.id)...)` when only the identifier is needed. This avoids the ORM overhead and significantly reduces database bandwidth and memory allocation.
+
+## 2026-03-13 - Use Session Identity Map for Primary Key Lookups on the Hot Path
+
+**Learning:** In authentication middleware and other hot paths, using `await db.execute(select(Model).filter(Model.id == pk))` forces SQLAlchemy to compile the query and hit the database every time.
+**Action:** When performing primary key lookups, always use `await db.get(Model, pk)`. This skips query compilation overhead and first checks the SQLAlchemy Session Identity Map, which can completely avoid a database round-trip if the object is already loaded, saving critical milliseconds per request.
