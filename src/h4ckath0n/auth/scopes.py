@@ -13,7 +13,7 @@ def format_scopes(scopes: Iterable[str] | str) -> str:
     if isinstance(scopes, str):
         scopes = [scopes]
 
-    parts = []
+    parts: list[str] = []
     for s in scopes:
         parts.extend(filter(None, map(str.strip, s.split(","))))
     return ",".join(dict.fromkeys(parts))
