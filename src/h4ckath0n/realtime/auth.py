@@ -82,8 +82,8 @@ async def verify_device_jwt(
     if not kid:
         raise AuthError("Missing kid in JWT header")
 
-    result = await db.execute(select(Device).filter(Device.id == kid))
-    device = result.scalars().first()
+    # ⚡ Bolt: Use primary key lookup to hit the session identity map.
+    device = await db.get(Device, kid)
     if not device:
         raise AuthError("Unknown device")
 
@@ -114,12 +114,12 @@ async def verify_device_jwt(
         raise AuthError(f"Invalid aud: expected {expected_aud}")
 
     # ── user lookup ───────────────────────────────────────────────────
-    result = await db.execute(select(User).filter(User.id == claims.sub))
-    user = result.scalars().first()
-    if user is None:
+    # ⚡ Bolt: Fetch only the ID to avoid instantiating the full User ORM object.
+    user_id = await db.scalar(select(User.id).filter(User.id == claims.sub))
+    if user_id is None:
         raise AuthError("User not found")
 
-    return AuthContext(user_id=user.id, device_id=device.id)
+    return AuthContext(user_id=user_id, device_id=device.id)
 
 
 # ── Transport helpers ─────────────────────────────────────────────────────
