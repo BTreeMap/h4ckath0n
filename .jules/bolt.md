@@ -22,3 +22,8 @@
 
 **Learning:** When retrieving a single field (like a primary key ID) from the database, querying for the full ORM object using `db.execute(select(Model)).scalars().first()` forces SQLAlchemy to parse, allocate, and hydrate the entire model instance, including potentially large fields like JSON blocks or long texts.
 **Action:** Always use `db.scalar(select(Model.id)...)` when only the identifier is needed. This avoids the ORM overhead and significantly reduces database bandwidth and memory allocation.
+
+## 2026-03-15 - Optimize Hot Paths by Using db.get and Avoiding Full ORM Hydration
+
+**Learning:** In highly-frequented paths like `verify_device_jwt` (which runs on every authenticated request), querying for the full ORM object using `db.execute(select(Model)).scalars().first()` forces SQLAlchemy to parse, allocate, and hydrate the entire model instance. Furthermore, for primary keys, it bypasses the session identity map.
+**Action:** Always use `db.get(Model, primary_key)` for primary key lookups to hit the session identity map. When only checking for existence or fetching a single field (like `User.id`), use `db.scalar(select(Model.id).filter(...))` to bypass unnecessary ORM hydration overhead.
