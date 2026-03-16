@@ -22,3 +22,8 @@
 
 **Learning:** When retrieving a single field (like a primary key ID) from the database, querying for the full ORM object using `db.execute(select(Model)).scalars().first()` forces SQLAlchemy to parse, allocate, and hydrate the entire model instance, including potentially large fields like JSON blocks or long texts.
 **Action:** Always use `db.scalar(select(Model.id)...)` when only the identifier is needed. This avoids the ORM overhead and significantly reduces database bandwidth and memory allocation.
+
+## 2026-03-13 - Use `db.get(Model, primary_key)` for Primary Key Lookups
+
+**Learning:** When retrieving a single full ORM object by its primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` always executes a query against the database, bypassing the SQLAlchemy session identity map. This results in unnecessary network round trips and database queries when the object is already loaded in the session.
+**Action:** Always use `await db.get(Model, primary_key)` for primary key lookups. This allows SQLAlchemy to utilize the session identity map and skip the database query entirely if the object is already present.
