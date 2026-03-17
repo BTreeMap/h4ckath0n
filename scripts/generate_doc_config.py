@@ -63,9 +63,7 @@ def update_readme(table_content: str) -> None:
     readme_text = README.read_text()
 
     if "<!-- BEGIN_CONFIG_TABLE -->" in readme_text and "<!-- END_CONFIG_TABLE -->" in readme_text:
-        pattern = re.compile(
-            r"<!-- BEGIN_CONFIG_TABLE -->.*?<!-- END_CONFIG_TABLE -->", re.DOTALL
-        )
+        pattern = re.compile(r"<!-- BEGIN_CONFIG_TABLE -->.*?<!-- END_CONFIG_TABLE -->", re.DOTALL)
         new_text = pattern.sub(table_content, readme_text)
         README.write_text(new_text)
         return
@@ -78,12 +76,7 @@ def update_readme(table_content: str) -> None:
     for i, line in enumerate(lines):
         if line.startswith("| Variable | Default | Description |"):
             start_idx = i
-        elif (
-            start_idx != -1
-            and i > start_idx
-            and not line.startswith("|")
-            and end_idx == -1
-        ):
+        elif start_idx != -1 and i > start_idx and not line.startswith("|") and end_idx == -1:
             end_idx = i
 
     if start_idx != -1 and end_idx != -1:
@@ -105,14 +98,10 @@ def main() -> int:
         readme_text = README.read_text()
 
         if "<!-- BEGIN_CONFIG_TABLE -->" not in readme_text:
-            print(
-                "❌ The configuration table in README.md is not using the generated markers."
-            )
+            print("❌ The configuration table in README.md is not using the generated markers.")
             return 1
 
-        pattern = re.compile(
-            r"<!-- BEGIN_CONFIG_TABLE -->.*?<!-- END_CONFIG_TABLE -->", re.DOTALL
-        )
+        pattern = re.compile(r"<!-- BEGIN_CONFIG_TABLE -->.*?<!-- END_CONFIG_TABLE -->", re.DOTALL)
         match = pattern.search(readme_text)
 
         if not match:

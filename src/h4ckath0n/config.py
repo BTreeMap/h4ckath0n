@@ -22,22 +22,34 @@ class Settings(BaseSettings):
     env: str = Field("development", description="`development` or `production`")
 
     # --- database ---
-    database_url: str = Field("sqlite:///./h4ckath0n.db", description="SQLAlchemy connection string")
-    auto_upgrade: bool = Field(False, description="Auto-run packaged DB migrations to head on startup")
+    database_url: str = Field(
+        "sqlite:///./h4ckath0n.db", description="SQLAlchemy connection string"
+    )
+    auto_upgrade: bool = Field(
+        False, description="Auto-run packaged DB migrations to head on startup"
+    )
 
     # --- WebAuthn / Passkeys ---
     rp_id: str = Field("", description="WebAuthn relying party ID, required in production")
     origin: str = Field("", description="WebAuthn origin, required in production")
     webauthn_ttl_seconds: int = Field(300, description="WebAuthn challenge TTL in seconds")
-    user_verification: str = Field("preferred", description="WebAuthn user verification requirement")
+    user_verification: str = Field(
+        "preferred", description="WebAuthn user verification requirement"
+    )
     attestation: str = Field("none", description="WebAuthn attestation preference")
 
     # --- password auth (optional extra) ---
-    password_auth_enabled: bool = Field(False, description="Enable password routes when the extra is installed")
-    password_reset_expire_minutes: int = Field(30, description="Password reset token expiry in minutes")
+    password_auth_enabled: bool = Field(
+        False, description="Enable password routes when the extra is installed"
+    )
+    password_reset_expire_minutes: int = Field(
+        30, description="Password reset token expiry in minutes"
+    )
 
     # --- admin bootstrap ---
-    bootstrap_admin_emails: list[str] = Field([], description="JSON list of emails that become admin on password signup")
+    bootstrap_admin_emails: list[str] = Field(
+        [], description="JSON list of emails that become admin on password signup"
+    )
     first_user_is_admin: bool = Field(False, description="First password signup becomes admin")
 
     # --- LLM ---
@@ -45,8 +57,12 @@ class Settings(BaseSettings):
 
     # --- Redis ---
     redis_url: str = Field("", description="Redis connection URL")
-    jobs_inline_in_dev: bool = Field(True, description="Run background jobs inline during development")
-    jobs_default_queue: str = Field("default", description="Default queue name for background jobs")
+    jobs_inline_in_dev: bool = Field(
+        True, description="Run background jobs inline during development"
+    )
+    jobs_default_queue: str = Field(
+        "default", description="Default queue name for background jobs"
+    )
 
     # --- Storage ---
     storage_backend: str = Field("local", description="Storage backend type (e.g., local)")
@@ -57,7 +73,9 @@ class Settings(BaseSettings):
     app_base_url: str = Field("http://localhost:5173", description="Base URL of the frontend app")
     email_backend: str = Field("file", description="Email backend (`file` or `smtp`)")
     email_from: str = Field("noreply@localhost", description="Default from address for emails")
-    email_outbox_dir: str = Field("./.h4ckath0n_email_outbox", description="Directory for file-based email outbox")
+    email_outbox_dir: str = Field(
+        "./.h4ckath0n_email_outbox", description="Directory for file-based email outbox"
+    )
     smtp_host: str = Field("", description="SMTP server host")
     smtp_port: int = Field(587, description="SMTP server port")
     smtp_username: str = Field("", description="SMTP server username")
