@@ -25,9 +25,7 @@ def get_settings_info() -> list[tuple[str, str, str]]:
     for name, field in Settings.model_fields.items():
         var_name = f"H4CKATH0N_{name.upper()}"
 
-        if name == "openai_api_key":
-            default_val = "empty"
-        elif field.default == "":
+        if name == "openai_api_key" or field.default == "":
             default_val = "empty"
         elif isinstance(field.default, bool):
             default_val = "`true`" if field.default else "`false`"
