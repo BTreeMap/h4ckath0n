@@ -1,0 +1,3 @@
+## 2024-05-22 - Centralize comma-separated string parsing (Scopes)
+**Learning:** The codebase heavily relies on comma-separated strings for things like scopes. Ad-hoc implementations to parse, trim, deduplicate, and format these strings are bug-prone and non-deterministic when using sets. Python's `dict.fromkeys()` is more idiomatic for order-preserving deduplication than a manual `set()`.
+**Action:** Centralize string parsing and formatting into pure helpers (e.g. `parse_scopes`, `format_scopes`, `normalize_scopes` in `src/h4ckath0n/auth/scopes.py`). Always use these utilities instead of manually splitting (`.split(",")`) or creating sets.
