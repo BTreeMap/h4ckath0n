@@ -15,7 +15,6 @@ import jwt
 from cryptography.hazmat.primitives import serialization
 from fastapi import WebSocket
 from jwt.algorithms import ECAlgorithm
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
