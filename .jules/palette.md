@@ -1,0 +1,3 @@
+## 2025-03-17 - Add aria-labels to duplicate responsive elements in Layout
+**Learning:** When using responsive layouts (like desktop/mobile toolbars), visual hiding (Tailwind `md:hidden` / `hidden md:flex`) doesn't hide elements from the testing library query `getByRole`. If `aria-label`s are added for accessibility on both duplicates, React Testing Library `getByRole` calls will throw a multiple elements error.
+**Action:** When adding accessibility features like `aria-label` to duplicate responsive components (e.g. mobile toggles), ensure corresponding unit tests are updated to use `screen.getAllByRole` and index the results to avoid "Found multiple elements" failures.
