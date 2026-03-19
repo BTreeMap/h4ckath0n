@@ -148,11 +148,11 @@ def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-un
         return None
 
     if user_id:
-        stmt = select(User).where(User.id == user_id)
+        # Optimize: use get() for PK lookup
+        return session.get(User, user_id)
     else:
         stmt = select(User).where(User.email == email)
-
-    return session.execute(stmt).scalars().first()
+        return session.execute(stmt).scalars().first()
 
 
 # ---------------------------------------------------------------------------
@@ -555,7 +555,6 @@ def _cmd_devices_revoke(args: argparse.Namespace) -> int:
     if not _require_yes(args):
         return EXIT_BAD_ARGS
 
-    from sqlalchemy import select
 
     from h4ckath0n.auth.models import Device
 
@@ -565,8 +564,8 @@ def _cmd_devices_revoke(args: argparse.Namespace) -> int:
         from sqlalchemy.orm import Session
 
         with Session(engine) as session:
-            stmt = select(Device).where(Device.id == args.device_id)
-            if (device := session.execute(stmt).scalars().first()) is None:
+            # Optimize: use get() for PK lookup
+            if (device := session.get(Device, args.device_id)) is None:
                 _err("device not found")
                 return EXIT_NOT_FOUND
 
@@ -626,8 +625,8 @@ def _cmd_passkeys_revoke(args: argparse.Namespace) -> int:
         from sqlalchemy.orm import Session
 
         with Session(engine) as session:
-            stmt = select(WebAuthnCredential).where(WebAuthnCredential.id == args.key_id)
-            if (cred := session.execute(stmt).scalars().first()) is None:
+            # Optimize: use get() for PK lookup
+            if (cred := session.get(WebAuthnCredential, args.key_id)) is None:
                 _err("passkey not found")
                 return EXIT_NOT_FOUND
 
@@ -718,10 +717,9 @@ def _cmd_jobs_worker(args: argparse.Namespace) -> int:
                 print(f"Processing job {job_id}")
 
                 async with session_factory() as db:
-                    from sqlalchemy import select
 
-                    res = await db.execute(select(Job).filter(Job.id == job_id))
-                    job = res.scalars().first()
+                    # Optimize: use get() for PK lookup
+                    job = await db.get(Job, job_id)
                     if not job:
                         print(f"Job {job_id} not found")
                         continue

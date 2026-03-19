@@ -137,8 +137,8 @@ async def get_upload(
     user: User = require_user(),
     db: AsyncSession = Depends(_db_dep),
 ) -> UploadResponse:
-    result = await db.execute(select(Upload).filter(Upload.id == upload_id))
-    upload = result.scalars().first()
+    # Optimize: use get() for PK lookup
+    upload = await db.get(Upload, upload_id)
     if upload is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Upload not found")
     if upload.owner_user_id != user.id:
@@ -157,8 +157,8 @@ async def download_upload(
     user: User = require_user(),
     db: AsyncSession = Depends(_db_dep),
 ) -> FileResponse:
-    result = await db.execute(select(Upload).filter(Upload.id == upload_id))
-    upload = result.scalars().first()
+    # Optimize: use get() for PK lookup
+    upload = await db.get(Upload, upload_id)
     if upload is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Upload not found")
     if upload.owner_user_id != user.id:
