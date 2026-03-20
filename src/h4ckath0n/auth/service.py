@@ -169,8 +169,8 @@ async def confirm_password_reset(db: AsyncSession, raw_token: str, new_password:
     if prt.expires_at.replace(tzinfo=UTC) < datetime.now(UTC):
         raise ValueError("Reset token expired")
     prt.used = True
-    user_result = await db.execute(select(User).filter(User.id == prt.user_id))
-    if (user := user_result.scalars().first()) is None:
+    # ⚡ Bolt: Use db.get() for primary key lookup to utilize the session identity map.
+    if (user := await db.get(User, prt.user_id)) is None:
         raise ValueError("User not found")
     user.password_hash = hash_password(new_password)
     await db.commit()
