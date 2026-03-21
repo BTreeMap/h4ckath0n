@@ -22,12 +22,13 @@ async def get_session(
     user: User = require_user(),
     ctx: AuthContext = Depends(get_auth_context),
 ) -> SessionResponse:
-    scopes = [s for s in user.scopes.split(",") if s]
+    from h4ckath0n.auth.scopes import parse_scopes
+
     return SessionResponse(
         user_id=user.id,
         device_id=ctx.device_id,
         role=user.role,
-        scopes=scopes,
+        scopes=parse_scopes(user.scopes),
         display_name=user.display_name,
         email=user.email,
     )
