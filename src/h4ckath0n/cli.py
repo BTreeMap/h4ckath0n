@@ -718,10 +718,8 @@ def _cmd_jobs_worker(args: argparse.Namespace) -> int:
                 print(f"Processing job {job_id}")
 
                 async with session_factory() as db:
-                    from sqlalchemy import select
-
-                    res = await db.execute(select(Job).filter(Job.id == job_id))
-                    job = res.scalars().first()
+                    # Optimize: use db.get() for primary key lookup
+                    job = await db.get(Job, job_id)
                     if not job:
                         print(f"Job {job_id} not found")
                         continue
