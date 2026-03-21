@@ -82,6 +82,7 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> User
     if user is None or not user.password_hash:
         # Offload the dummy hash to a worker thread to prevent blocking the event loop
         import asyncio
+
         await asyncio.to_thread(hash_password, password)
         return None
 
