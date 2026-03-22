@@ -1,0 +1,3 @@
+## 2024-03-23 - Keyboard Shortcut Discoverability in Textareas
+**Learning:** Adding keyboard shortcuts (like Enter to submit) to textareas is great for power users, but it's invisible to most. Adding visual `<kbd>` hints significantly improves discoverability of these shortcuts. Additionally, custom `onKeyDown` handlers must carefully replicate the exact `disabled` state conditions of their corresponding submit buttons (e.g., preventing submission when streaming or if input is empty) to prevent invalid state transitions.
+**Action:** Whenever adding `onKeyDown` submission handlers to inputs or textareas, always pair them with a visual `<kbd>` hint and ensure the handler's execution conditions perfectly mirror the associated button's `disabled` prop.
