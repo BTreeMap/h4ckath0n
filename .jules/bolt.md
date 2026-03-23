@@ -28,3 +28,8 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-24 - Remove Chained Methods when Switching to `db.get`
+
+**Learning:** When refactoring existing `db.execute(select(Model).filter(...))` calls to `db.get(Model, pk)`, it's critical to also remove the chained `.scalars().first()` methods. Leaving them dangling will cause an `AttributeError` since `db.get()` returns the model instance directly, not a result object.
+**Action:** Always ensure the entire explicit query chain, including `.scalars().first()`, is removed and replaced by the single `db.get()` assignment.

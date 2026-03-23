@@ -102,8 +102,8 @@ async def get_job(
     user: User = require_user(),
     db: AsyncSession = Depends(_db_dep),
 ) -> JobResponse:
-    result = await db.execute(select(Job).filter(Job.id == job_id))
-    job = result.scalars().first()
+    # Optimize: Use db.get() for primary key lookups to utilize session identity map
+    job = await db.get(Job, job_id)
     if job is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
     if job.created_by_user_id != user.id:
