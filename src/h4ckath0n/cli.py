@@ -718,7 +718,6 @@ def _cmd_jobs_worker(args: argparse.Namespace) -> int:
                 print(f"Processing job {job_id}")
 
                 async with session_factory() as db:
-
                     job = await db.get(Job, job_id)
                     if not job:
                         print(f"Job {job_id} not found")
