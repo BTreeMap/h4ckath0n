@@ -44,8 +44,8 @@ def _new_challenge() -> bytes:
 
 async def _get_valid_flow(db: AsyncSession, flow_id: str, kind: str) -> WebAuthnChallenge:
     """Fetch and validate an unconsumed, non-expired flow."""
-    result = await db.execute(select(WebAuthnChallenge).filter(WebAuthnChallenge.id == flow_id))
-    if (flow := result.scalars().first()) is None:
+    flow = await db.get(WebAuthnChallenge, flow_id)
+    if flow is None:
         raise ValueError("Unknown flow")
     if flow.kind != kind:
         raise ValueError("Flow kind mismatch")
@@ -141,8 +141,8 @@ async def finish_registration(
     db.add(cred)
     await db.commit()
 
-    result = await db.execute(select(User).filter(User.id == flow.user_id))
-    if (user := result.scalars().first()) is None:
+    user = await db.get(User, flow.user_id)
+    if user is None:
         raise ValueError("User not found")
     return user
 
@@ -217,8 +217,8 @@ async def finish_authentication(
     stored.last_used_at = datetime.now(UTC)
     await db.commit()
 
-    user_result = await db.execute(select(User).filter(User.id == stored.user_id))
-    if (user := user_result.scalars().first()) is None:
+    user = await db.get(User, stored.user_id)
+    if user is None:
         raise ValueError("User not found")
     return user
 
