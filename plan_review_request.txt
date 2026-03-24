@@ -1,0 +1,30 @@
+I plan to improve code quality by centralizing the parsing and formatting of comma-separated scope strings into a new functional module `src/h4ckath0n/auth/scopes.py`.
+
+Currently, this transformation logic is duplicated across several files:
+- `src/h4ckath0n/auth/dependencies.py` has `user_scopes = filter(None, map(str.strip, user.scopes.split(",")))` and `needed: set[str] = set(filter(None, map(str.strip, scopes)))`.
+- `src/h4ckath0n/auth/session_router.py` has `scopes = [s for s in user.scopes.split(",") if s]`.
+- `src/h4ckath0n/cli.py` has `parts = filter(None, map(str.strip, raw.split(",")))` and similar ad-hoc manipulation for adding/removing scopes.
+
+This leads to potential semantic drift and edge cases (e.g., handling spaces) being handled differently in different places. As noted in the memory directives, I should use centralized functional utilities rather than repeating ad-hoc string manipulation for lists of strings in database text columns.
+
+My proposed plan is:
+
+1. Create `src/h4ckath0n/auth/scopes.py` with pure helper functions for processing scopes:
+   - `parse_scopes(raw: str) -> list[str]`
+   - `format_scopes(scopes: Iterable[str]) -> str`
+   - `add_scopes(raw: str, new_scopes: Iterable[str]) -> str`
+   - `remove_scopes(raw: str, scopes_to_remove: Iterable[str]) -> str`
+
+2. Add a comprehensive test suite `tests/test_scopes.py` for these helper functions, ensuring tricky edge cases like spaces and empty values are verified.
+
+3. Update `src/h4ckath0n/cli.py` to use these helpers instead of its own `_normalize_scopes` and list comprehension logic.
+
+4. Update `src/h4ckath0n/auth/dependencies.py` and `src/h4ckath0n/auth/session_router.py` to use `parse_scopes`.
+
+5. Run local checks (format, lint, mypy, pytest) as required by `AGENTS.md` before making a commit.
+
+6. Add an entry to `.jules/vector.md` reflecting on the importance of centralized string normalization to prevent invariant drift.
+
+7. Complete pre-commit steps to ensure proper testing, verification, review, and reflection are done.
+
+Please review this proposed plan.

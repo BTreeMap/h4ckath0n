@@ -124,13 +124,6 @@ def _make_sync_engine(url: str):  # type: ignore[no-untyped-def]
     return create_sync_engine(url)
 
 
-def _normalize_scopes(raw: str) -> str:
-    """Normalize a comma-separated scopes string."""
-    parts = filter(None, map(str.strip, raw.split(",")))
-    # de-duplicate preserving order
-    return ",".join(dict.fromkeys(parts))
-
-
 def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-untyped-def]
     """Resolve a user by --user-id or --email. Returns user or None."""
     from sqlalchemy import select
@@ -451,10 +444,9 @@ def _cmd_users_scopes_add(args: argparse.Namespace) -> int:
                 _err("user not found")
                 return EXIT_NOT_FOUND
 
-            existing = set(s for s in user.scopes.split(",") if s.strip())
-            for scope in args.scope:
-                existing.add(scope.strip())
-            user.scopes = _normalize_scopes(",".join(existing))
+            from h4ckath0n.auth.scopes import add_scopes
+
+            user.scopes = add_scopes(user.scopes, args.scope)
             session.commit()
             session.refresh(user)
             _output(_user_dict(user), fmt=args.format, pretty=args.pretty)
@@ -480,10 +472,9 @@ def _cmd_users_scopes_remove(args: argparse.Namespace) -> int:
                 _err("user not found")
                 return EXIT_NOT_FOUND
 
-            existing = [s for s in user.scopes.split(",") if s.strip()]
-            to_remove = {s.strip() for s in args.scope}
-            remaining = [s for s in existing if s not in to_remove]
-            user.scopes = _normalize_scopes(",".join(remaining))
+            from h4ckath0n.auth.scopes import remove_scopes
+
+            user.scopes = remove_scopes(user.scopes, args.scope)
             session.commit()
             session.refresh(user)
             _output(_user_dict(user), fmt=args.format, pretty=args.pretty)
@@ -509,7 +500,9 @@ def _cmd_users_scopes_set(args: argparse.Namespace) -> int:
                 _err("user not found")
                 return EXIT_NOT_FOUND
 
-            user.scopes = _normalize_scopes(args.scopes)
+            from h4ckath0n.auth.scopes import format_scopes, parse_scopes
+
+            user.scopes = format_scopes(parse_scopes(args.scopes))
             session.commit()
             session.refresh(user)
             _output(_user_dict(user), fmt=args.format, pretty=args.pretty)
