@@ -217,8 +217,8 @@ async def finish_authentication(
     stored.last_used_at = datetime.now(UTC)
     await db.commit()
 
-    user_result = await db.execute(select(User).filter(User.id == stored.user_id))
-    if (user := user_result.scalars().first()) is None:
+    # ⚡ Bolt: Use db.get() for primary key lookup
+    if (user := await db.get(User, stored.user_id)) is None:
         raise ValueError("User not found")
     return user
 
