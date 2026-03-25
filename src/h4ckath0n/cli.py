@@ -555,7 +555,6 @@ def _cmd_devices_revoke(args: argparse.Namespace) -> int:
     if not _require_yes(args):
         return EXIT_BAD_ARGS
 
-
     from h4ckath0n.auth.models import Device
 
     url = _normalize_db_url_for_sync(_get_db_url(args))
@@ -717,7 +716,6 @@ def _cmd_jobs_worker(args: argparse.Namespace) -> int:
                 print(f"Processing job {job_id}")
 
                 async with session_factory() as db:
-
                     # ⚡ Bolt: Use db.get() for primary key lookup
                     job = await db.get(Job, job_id)
                     if not job:
