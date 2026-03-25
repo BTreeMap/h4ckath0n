@@ -87,6 +87,7 @@ const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
           <button
             type="button"
             aria-label={visible ? "Hide password" : "Show password"}
+            title={visible ? "Hide password" : "Show password"}
             aria-pressed={visible}
             onClick={handleToggle}
             onPointerDown={handlePointerDown}
