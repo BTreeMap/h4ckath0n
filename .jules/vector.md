@@ -1,0 +1,3 @@
+## 2024-05-19 - Centralize Scope String Normalization
+**Learning:** The application uses comma-separated strings for DB storage of scopes (`user.scopes`). Multiple files (`auth/dependencies.py`, `auth/session_router.py`, `cli.py`) were manually and inconsistently parsing, stripping, deduplicating, and splitting these comma-separated strings.
+**Action:** Create a centralized functional module `src/h4ckath0n/auth/scopes.py` providing `parse_scopes(raw)` and `format_scopes(iterable)` and replace the ad-hoc local staging loops with these tested, declarative helpers to reduce drift and correctness risks.
