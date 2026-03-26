@@ -9,3 +9,7 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+
+## 2024-03-26 - Generate Configuration Table from Code
+**Learning:** Manual configuration tables in README.md drift easily as new environment variables are added to pydantic settings.
+**Action:** Use a script to parse `pydantic.Field` descriptions and inject the generated table between HTML comments in markdown. Add `--check` to CI to catch drift.
