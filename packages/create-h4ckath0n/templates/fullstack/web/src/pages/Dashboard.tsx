@@ -201,7 +201,8 @@ export function Dashboard() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  className="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white"
+                disabled={uploading}
+                className="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white file:cursor-pointer file:hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <Button onClick={handleUpload} disabled={uploading}>
                   {uploading ? "Uploading…" : "Upload"}
@@ -292,12 +293,26 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <textarea
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="Type a prompt…"
-              className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <div>
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!aiStreaming && aiPrompt.trim()) {
+                      handleAiStream();
+                    }
+                  }
+                }}
+                placeholder="Type a prompt…"
+                className="w-full h-24 p-3 rounded-xl border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <div className="flex items-center gap-4 mt-1 mb-2 text-xs text-text-muted">
+                <span><kbd className="px-1.5 py-0.5 rounded-lg bg-surface-alt border border-border font-sans text-text">Enter</kbd> to send</span>
+                <span><kbd className="px-1.5 py-0.5 rounded-lg bg-surface-alt border border-border font-sans text-text">Shift</kbd> + <kbd className="px-1.5 py-0.5 rounded-lg bg-surface-alt border border-border font-sans text-text">Enter</kbd> for new line</span>
+              </div>
+            </div>
             <Button
               onClick={handleAiStream}
               disabled={aiStreaming || !aiPrompt.trim()}
