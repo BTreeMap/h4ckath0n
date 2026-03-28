@@ -1,0 +1,4 @@
+## 2026-03-28 - [Timing Attack] User enumeration vulnerability in auth
+**Vulnerability:** The authentication endpoint allowed user enumeration because it returned early without performing expensive hashing operations if a user did not exist or had no password (e.g., passkey-only users).
+**Learning:** Always perform dummy cryptographic operations when a user isn't found to ensure consistent response times and avoid leaking user existence through timing differences.
+**Prevention:** Use `hash_password(password)` as a dummy operation before returning `None` when the user lookup fails or they lack a password hash.
