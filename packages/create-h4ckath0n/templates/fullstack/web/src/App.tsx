@@ -7,6 +7,7 @@ import { Login } from "./pages/Login";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
 import { Dashboard } from "./pages/Dashboard";
+
 import { Settings } from "./pages/Settings";
 import { Admin } from "./pages/Admin";
 import { DemoRealtime } from "./pages/DemoRealtime";
@@ -17,6 +18,7 @@ export function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Landing />} />
         <Route path="/register" element={<Register />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
