@@ -6,6 +6,7 @@ They will raise ``RuntimeError`` if called without the extra installed.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from datetime import UTC, datetime, timedelta
@@ -73,14 +74,18 @@ async def register_user(
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
-    _hash, verify_password = _require_password_extra()
+    hash_password, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+    user = result.scalars().first()
+
+    # 🛡️ Sentinel: Prevent user enumeration timing attacks by always hashing a password
+    if user is None or not user.password_hash:
+        await asyncio.to_thread(hash_password, password)
         return None
-    if not user.password_hash:
+
+    if not await asyncio.to_thread(verify_password, password, user.password_hash):
         return None
-    if not verify_password(password, user.password_hash):
-        return None
+
     return user
 
 
