@@ -9,3 +9,7 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+
+## 2026-03-01 - Prevent config drift with auto-generated documentation
+**Learning:** Hardcoded environment variables in READMEs inevitably drift from Pydantic `BaseSettings`.
+**Action:** Use `Field(description="...")` to define documentation alongside configuration parameters, and auto-generate the markdown tables in CI via scripts injecting between `<!-- CONFIG_TABLE_START -->` markers. Add `--check` to fail builds to prevent drift.
