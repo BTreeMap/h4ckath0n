@@ -9,3 +9,6 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+## 2025-04-03 - Generate env vars table to prevent doc drift
+**Learning:** Hardcoded environment variables tables in markdown files are prone to drifting as the system settings schema evolves.
+**Action:** Rely on a central config file (`src/h4ckath0n/config.py`) using `pydantic.Field` descriptions as a single source of truth, and generate/enforce parity in `README.md` through a drift-prevention script (`scripts/check_doc_env_vars.py`).
