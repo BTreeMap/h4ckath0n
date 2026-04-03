@@ -132,21 +132,21 @@ class TestAlembicUrlNormalization:
 # ---------------------------------------------------------------------------
 
 
-class TestNormalizeScopes:
-    def test_basic(self):
-        assert format_scopes(parse_scopes("a,b,c")) == "a,b,c"
+class TestScopesHelpers:
+    def test_parse_scopes(self):
+        assert parse_scopes("a,b,c") == ["a", "b", "c"]
+        assert parse_scopes("a,b,a") == ["a", "b"]
+        assert parse_scopes(" a , b , c ") == ["a", "b", "c"]
+        assert parse_scopes("a,,b,,") == ["a", "b"]
+        assert parse_scopes("") == []
 
-    def test_dedup(self):
-        assert format_scopes(parse_scopes("a,b,a")) == "a,b"
-
-    def test_trim(self):
-        assert format_scopes(parse_scopes(" a , b , c ")) == "a,b,c"
-
-    def test_empty_segments(self):
-        assert format_scopes(parse_scopes("a,,b,,")) == "a,b"
-
-    def test_empty_string(self):
-        assert format_scopes(parse_scopes("")) == ""
+    def test_format_scopes(self):
+        assert format_scopes(["a", "b", "c"]) == "a,b,c"
+        assert format_scopes(["a", "b", "a"]) == "a,b"
+        assert format_scopes([" a ", " b ", " c "]) == "a,b,c"
+        assert format_scopes(["a", "", "b", ""]) == "a,b"
+        assert format_scopes([]) == ""
+        assert format_scopes(parse_scopes("a, b, a, c")) == "a,b,c"
 
 
 # ---------------------------------------------------------------------------

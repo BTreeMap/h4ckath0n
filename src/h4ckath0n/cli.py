@@ -15,6 +15,7 @@ from typing import Any
 from alembic import command as alembic_command
 from alembic.config import Config
 
+from h4ckath0n.auth.scopes import format_scopes, parse_scopes
 from h4ckath0n.db.migrations.runtime import (
     PackagedMigrationsError,
     create_sync_engine,
@@ -122,9 +123,6 @@ def _get_db_url(args: argparse.Namespace) -> str:
 
 def _make_sync_engine(url: str):  # type: ignore[no-untyped-def]
     return create_sync_engine(url)
-
-
-from h4ckath0n.auth.scopes import format_scopes, parse_scopes  # noqa: E402
 
 
 def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-untyped-def]
@@ -448,7 +446,10 @@ def _cmd_users_scopes_add(args: argparse.Namespace) -> int:
                 return EXIT_NOT_FOUND
 
             existing = parse_scopes(user.scopes)
-            user.scopes = format_scopes(existing + args.scope)
+            for scope in args.scope:
+                if (stripped := scope.strip()) and stripped not in existing:
+                    existing.append(stripped)
+            user.scopes = format_scopes(existing)
             session.commit()
             session.refresh(user)
             _output(_user_dict(user), fmt=args.format, pretty=args.pretty)

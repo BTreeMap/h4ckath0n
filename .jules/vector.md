@@ -1,3 +1,4 @@
-## 2024-04-03 - Centralize semantic string splitting
-**Learning:** Normalizing and splitting comma-separated database fields (like scopes) was duplicated across the CLI, auth dependencies, and routers using slightly different `split(",")` logic, risking semantic drift and ordering/trimming edge case bugs.
-**Action:** Extracted pure `parse_scopes` and `format_scopes` functions into `src/h4ckath0n/auth/scopes.py`. This moves us to explicit FP-style transformation pipelines and centralizes the edge-case handling for empty items and whitespace.
+## 2025-04-03 - Centralize DB text column parsing/formatting
+
+**Learning:** This repo frequently stores lists/sequences (like user scopes) in single text columns. Previously, ad-hoc string manipulation (like `.split()`, `.strip()`, and manual deduplication) was repeated across auth dependencies, API routers, and CLI utilities.
+**Action:** When converting lists or sequences to and from database text columns, use centralized, pure functional utilities (e.g., shared parsing and formatting helpers) rather than repeating ad-hoc string manipulation across multiple files.
