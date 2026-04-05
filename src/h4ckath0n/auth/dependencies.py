@@ -86,7 +86,9 @@ def require_scopes(*scopes: str) -> Any:
     needed: set[str] = set(filter(None, map(str.strip, scopes)))
 
     async def _scoped(user: User = Depends(_get_current_user)) -> User:
-        user_scopes = filter(None, map(str.strip, user.scopes.split(",")))
+        from h4ckath0n.auth.scopes import parse_scopes
+
+        user_scopes = parse_scopes(user.scopes)
         if missing := needed.difference(user_scopes):
             missing_scopes = ", ".join(missing)
             raise HTTPException(
