@@ -1,0 +1,4 @@
+## 2024-05-24 - Fix User Enumeration via Timing Attack
+**Vulnerability:** The `authenticate_user` function returned early when an email wasn't found, skipping the computationally expensive Argon2id verification. This allowed attackers to enumerate registered emails by timing login requests.
+**Learning:** When using `argon2-cffi` to mitigate timing attacks via dummy password verification, the dummy hash *must* be a structurally valid Argon2id hash string (e.g., `$argon2id$v=19$...`). Passing an invalid string causes `verify_password` to raise an early parsing exception, defeating the timing mitigation entirely.
+**Prevention:** Always verify that dummy hashes used for timing mitigations are valid for the specific hashing algorithm being used, and test that the execution time matches a valid login attempt.
