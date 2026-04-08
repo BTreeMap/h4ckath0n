@@ -1,0 +1,4 @@
+## 2026-03-26 - Mitigate User Enumeration Timing Attack
+**Vulnerability:** The `authenticate_user` function returned early if a user was not found or lacked a password hash, allowing attackers to enumerate valid users via timing analysis.
+**Learning:** Early returns in authentication paths that bypass expensive cryptographic operations (like password verification) create observable timing differences.
+**Prevention:** Ensure consistent execution time in authentication flows by performing dummy cryptographic operations (e.g., hashing the provided password) when a user lookup fails or they lack a credential.
