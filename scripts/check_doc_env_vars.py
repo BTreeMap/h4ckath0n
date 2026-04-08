@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+
 from h4ckath0n.config import Settings
 
 BEGIN_MARKER = "<!-- BEGIN ENV VARS -->"
