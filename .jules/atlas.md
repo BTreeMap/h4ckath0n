@@ -1,11 +1,3 @@
-# Atlas Journal: Critical Learnings
-
-## 2026-02-28 - API route substring matching is unreliable for drift checks
-
-**Learning:** Checking whether a path string appears *anywhere* in a README causes false negatives
-when one route's path is a substring of another (e.g. `/auth/passkeys/{key_id}` inside
-`/auth/passkeys/{key_id}/revoke`). The drift check must match `METHOD /path` as a combined token,
-ideally inside backtick delimiters, to avoid this trap.
-
-**Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
-that mirror the actual markdown formatting.
+## 2024-04-08 - Env Var Docs Drift
+**Learning:** Env vars drift heavily because they are defined in `src/h4ckath0n/config.py` using `pydantic-settings` but the list in README.md is hand-written and out of date (missing Redis, Storage, Email, and Demo settings).
+**Action:** Replace the hand-written env var list in README.md with a generated section from a docs-check script (`scripts/check_doc_env_vars.py`), run via CI, that parses Pydantic model fields and ensures the README stays in sync.
