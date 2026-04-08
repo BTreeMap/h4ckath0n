@@ -1,4 +1,4 @@
-#!/usr/bin/env -S uv run python
+#!/usr/bin/env python3
 """Drift-prevention check: verify that every API route in the FastAPI app is documented.
 
 Usage (from repo root):
