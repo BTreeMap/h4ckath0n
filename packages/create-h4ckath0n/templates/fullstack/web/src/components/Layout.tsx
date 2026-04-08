@@ -191,6 +191,11 @@ export function Layout() {
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
+                aria-label={
+                  themePreference === "system"
+                    ? `Theme: system (${effectiveTheme})`
+                    : `Theme: ${themePreference}`
+                }
                 className="mr-2"
               >
                 {effectiveTheme === "dark" ? (
@@ -203,6 +208,8 @@ export function Layout() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-expanded={isMobileMenuOpen}
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileMenuOpen ? (
                   <X className="w-5 h-5" />
