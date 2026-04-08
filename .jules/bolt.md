@@ -28,3 +28,8 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-18 - Further enforce db.get() for single-record lookups
+
+**Learning:** Even beyond hot-path device JWT authentication, routine flow resolution (`WebAuthnChallenge`) and registration completion still benefit from utilizing `db.get()`. This ensures we consistently bypass ORM hydration and identity map overhead across all primary key fetch points.
+**Action:** Systematically check for `.filter(Model.id == pk).scalars().first()` anti-patterns and replace them with `await db.get(Model, pk)` (or `session.get(...)` for sync/CLI) throughout all layers.
