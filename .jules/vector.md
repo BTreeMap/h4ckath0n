@@ -1,0 +1,3 @@
+## 2024-04-04 - Centralize scope formatting and parsing logic
+**Learning:** Parsing and formatting scopes (a comma-separated string) was duplicated across HTTP dependencies, CLI tools, and session router using ad-hoc `split(",")` and `map` operations. This caused duplicated logic and slightly different iteration patterns.
+**Action:** Extracted pure functional helpers `iter_scopes`, `parse_scopes`, `format_scopes`, and `normalize_scopes` to a central module `h4ckath0n.auth.scopes`. This ensures one source of truth, cleaner APIs for call sites, and guarantees properties like deduplication and order preservation without repeated code.
