@@ -6,6 +6,7 @@ They will raise ``RuntimeError`` if called without the extra installed.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from datetime import UTC, datetime, timedelta
@@ -60,9 +61,10 @@ async def register_user(
     if result.scalars().first():
         raise ValueError("Email already registered")
     role = "admin" if await _is_bootstrap_admin(email, settings, db) else "user"
+    hashed_pw = await asyncio.to_thread(hash_password, password)
     user = User(
         email=email,
-        password_hash=hash_password(password),
+        password_hash=hashed_pw,
         role=role,
         display_name=display_name,
     )
@@ -79,7 +81,7 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> User
         return None
     if not user.password_hash:
         return None
-    if not verify_password(password, user.password_hash):
+    if not await asyncio.to_thread(verify_password, password, user.password_hash):
         return None
     return user
 
@@ -172,6 +174,6 @@ async def confirm_password_reset(db: AsyncSession, raw_token: str, new_password:
     # ⚡ Bolt: Use db.get() for primary key lookup
     if (user := await db.get(User, prt.user_id)) is None:
         raise ValueError("User not found")
-    user.password_hash = hash_password(new_password)
+    user.password_hash = await asyncio.to_thread(hash_password, new_password)
     await db.commit()
     return user
