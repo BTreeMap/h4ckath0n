@@ -201,7 +201,8 @@ export function Dashboard() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  className="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white"
+                  aria-label="Upload file"
+                  className="flex-1 text-sm cursor-pointer file:cursor-pointer file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-primary file:text-white file:hover:bg-primary-hover file:transition-colors"
                 />
                 <Button onClick={handleUpload} disabled={uploading}>
                   {uploading ? "Uploading…" : "Upload"}
@@ -296,7 +297,8 @@ export function Dashboard() {
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
               placeholder="Type a prompt…"
-              className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="AI prompt message"
+              className="w-full h-24 p-3 rounded-xl border border-border bg-surface text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-surface"
             />
             <Button
               onClick={handleAiStream}
