@@ -87,6 +87,7 @@ Backend (run from repo root):
 - `uv run --locked ruff format --check .`
 - `uv run --locked ruff check .`
 - `uv run --locked mypy src`
+- `uv run --locked scripts/check_doc_env_vars.py`
 - `uv run --locked pytest -v`
 
 Frontend (run from `packages/create-h4ckath0n/templates/fullstack/web/`):
