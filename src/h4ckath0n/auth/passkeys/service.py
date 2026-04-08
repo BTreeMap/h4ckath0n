@@ -141,8 +141,8 @@ async def finish_registration(
     db.add(cred)
     await db.commit()
 
-    result = await db.execute(select(User).filter(User.id == flow.user_id))
-    if (user := result.scalars().first()) is None:
+    # ⚡ Bolt: Use db.get() for primary key lookup
+    if (user := await db.get(User, flow.user_id)) is None:
         raise ValueError("User not found")
     return user
 
