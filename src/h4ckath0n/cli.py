@@ -125,10 +125,10 @@ def _make_sync_engine(url: str):  # type: ignore[no-untyped-def]
 
 
 def _normalize_scopes(raw: str) -> str:
-    """Normalize a comma-separated scopes string."""
-    parts = filter(None, map(str.strip, raw.split(",")))
-    # de-duplicate preserving order
-    return ",".join(dict.fromkeys(parts))
+    """Normalize a comma-separated scopes string. Backwards-compatible wrapper."""
+    from h4ckath0n.auth.scopes import format_scopes, parse_scopes
+
+    return format_scopes(parse_scopes(raw))
 
 
 def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-untyped-def]
@@ -451,10 +451,12 @@ def _cmd_users_scopes_add(args: argparse.Namespace) -> int:
                 _err("user not found")
                 return EXIT_NOT_FOUND
 
-            existing = set(s for s in user.scopes.split(",") if s.strip())
+            from h4ckath0n.auth.scopes import format_scopes, parse_scopes
+
+            existing = parse_scopes(user.scopes)
             for scope in args.scope:
-                existing.add(scope.strip())
-            user.scopes = _normalize_scopes(",".join(existing))
+                existing.append(scope)
+            user.scopes = format_scopes(existing)
             session.commit()
             session.refresh(user)
             _output(_user_dict(user), fmt=args.format, pretty=args.pretty)
@@ -480,10 +482,12 @@ def _cmd_users_scopes_remove(args: argparse.Namespace) -> int:
                 _err("user not found")
                 return EXIT_NOT_FOUND
 
-            existing = [s for s in user.scopes.split(",") if s.strip()]
+            from h4ckath0n.auth.scopes import format_scopes, parse_scopes
+
+            existing = parse_scopes(user.scopes)
             to_remove = {s.strip() for s in args.scope}
             remaining = [s for s in existing if s not in to_remove]
-            user.scopes = _normalize_scopes(",".join(remaining))
+            user.scopes = format_scopes(remaining)
             session.commit()
             session.refresh(user)
             _output(_user_dict(user), fmt=args.format, pretty=args.pretty)
