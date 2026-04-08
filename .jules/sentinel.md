@@ -1,0 +1,4 @@
+## 2024-05-24 - Fix User Enumeration Timing Attack in Auth
+**Vulnerability:** User enumeration via timing attack in `authenticate_user` early returns when a user is not found or lacks a password hash (e.g., passkey-only users).
+**Learning:** The absence of a dummy password hashing operation for non-existent users allows attackers to distinguish between valid and invalid usernames based on response time differences. This is a critical vulnerability pattern specific to passkey-first authentication models where some users may not have password hashes.
+**Prevention:** To mitigate user enumeration via timing attacks in auth services, ensure consistent execution time by performing dummy password hashing (`hash_password(password)`) when a user is not found or lacks a password hash. Avoid early returns that bypass expensive cryptographic operations.
