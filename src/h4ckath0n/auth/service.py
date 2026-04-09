@@ -6,6 +6,7 @@ They will raise ``RuntimeError`` if called without the extra installed.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 from datetime import UTC, datetime, timedelta
@@ -72,13 +73,24 @@ async def register_user(
     return user
 
 
+# A structurally valid Argon2id hash to mitigate timing attacks.
+DUMMY_PASSWORD_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$crHQxFa86TGghqkRDiByVA"
+    "$tREluuFGhTHY4WjihZXZMtNS/eDR8cPjkkEEh/z6e7A"
+)
+
+
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+    user = result.scalars().first()
+
+    if user is None or not user.password_hash:
+        # Dummy verification to prevent user enumeration via timing attack
+        with contextlib.suppress(Exception):
+            verify_password(password, DUMMY_PASSWORD_HASH)
         return None
-    if not user.password_hash:
-        return None
+
     if not verify_password(password, user.password_hash):
         return None
     return user
