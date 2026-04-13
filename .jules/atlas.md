@@ -1,11 +1,6 @@
-# Atlas Journal: Critical Learnings
-
-## 2026-02-28 - API route substring matching is unreliable for drift checks
-
-**Learning:** Checking whether a path string appears *anywhere* in a README causes false negatives
-when one route's path is a substring of another (e.g. `/auth/passkeys/{key_id}` inside
-`/auth/passkeys/{key_id}/revoke`). The drift check must match `METHOD /path` as a combined token,
-ideally inside backtick delimiters, to avoid this trap.
-
-**Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
-that mirror the actual markdown formatting.
+## 2024-04-13 - Replace hand-written env var lists with generated lists from config
+**Learning:** The `h4ckath0n` project has drift between `README.md` and `src/h4ckath0n/config.py`. Numerous config fields like `storage_backend`, `email_backend`, and `demo_mode` exist in code but are missing from `README.md` entirely. Relying on hand-written documentation for environment variables is a common failure mode that creates silent drift.
+**Action:** When acting as Atlas, always convert hand-written configuration docs into dynamically generated tables driven by the authoritative configuration source (e.g. `pydantic.Field` definitions in `src/h4ckath0n/config.py`). Implement a `check_doc_env_vars.py` script that can verify parity and auto-update the `README.md` via `<!-- BEGIN ENV VARS -->` delimiters.
+## 2024-04-13 - Replace hand-written env var lists with generated lists from config
+**Learning:** The `h4ckath0n` project has drift between `README.md` and `src/h4ckath0n/config.py`. Numerous config fields like `storage_backend`, `email_backend`, and `demo_mode` exist in code but are missing from `README.md` entirely. Relying on hand-written documentation for environment variables is a common failure mode that creates silent drift.
+**Action:** When acting as Atlas, always convert hand-written configuration docs into dynamically generated tables driven by the authoritative configuration source (e.g. `pydantic.Field` definitions in `src/h4ckath0n/config.py`). Implement a `check_doc_env_vars.py` script that can verify parity and auto-update the `README.md` via `<!-- BEGIN ENV VARS -->` delimiters.
