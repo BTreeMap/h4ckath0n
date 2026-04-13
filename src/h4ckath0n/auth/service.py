@@ -74,10 +74,14 @@ async def register_user(
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
+    # 🛡️ Sentinel: Valid dummy hash to mitigate timing attacks on invalid users.
+    dummy_hash = (
+        "$argon2id$v=19$m=65536,t=3,p=4$FkMog8E7An24UxlsIrUJSw$"
+        "UUj5ewvkp4zcmQtLrGX6RDtlv6CdZ5k3msYRiSQX+4U"
+    )
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
-        return None
-    if not user.password_hash:
+    if (user := result.scalars().first()) is None or not user.password_hash:
+        verify_password(password, dummy_hash)
         return None
     if not verify_password(password, user.password_hash):
         return None
