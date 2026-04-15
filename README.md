@@ -175,6 +175,23 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 | `H4CKATH0N_FIRST_USER_IS_ADMIN` | `false` | First password signup becomes admin |
 | `OPENAI_API_KEY` | empty | OpenAI API key for the LLM wrapper |
 | `H4CKATH0N_OPENAI_API_KEY` | empty | Alternate OpenAI API key for the LLM wrapper |
+| `H4CKATH0N_REDIS_URL` | empty | Redis connection string for background jobs |
+| `H4CKATH0N_JOBS_INLINE_IN_DEV` | `true` | Run jobs inline without a worker in development |
+| `H4CKATH0N_JOBS_DEFAULT_QUEUE` | `default` | Default Redis queue name for background jobs |
+| `H4CKATH0N_STORAGE_BACKEND` | `local` | File storage backend (`local` or other supported) |
+| `H4CKATH0N_STORAGE_DIR` | `./.h4ckath0n_storage` | Directory for local file storage |
+| `H4CKATH0N_MAX_UPLOAD_BYTES` | `52428800` | Maximum file upload size in bytes (default 50MB) |
+| `H4CKATH0N_APP_BASE_URL` | `http://localhost:5173` | Base URL of the frontend web application |
+| `H4CKATH0N_EMAIL_BACKEND` | `file` | Email backend (`file` or `smtp`) |
+| `H4CKATH0N_EMAIL_FROM` | `noreply@localhost` | Default sender email address |
+| `H4CKATH0N_EMAIL_OUTBOX_DIR` | `./.h4ckath0n_email_outbox` | Directory for file-based email outbox |
+| `H4CKATH0N_SMTP_HOST` | empty | SMTP server host |
+| `H4CKATH0N_SMTP_PORT` | `587` | SMTP server port |
+| `H4CKATH0N_SMTP_USERNAME` | empty | SMTP server username |
+| `H4CKATH0N_SMTP_PASSWORD` | empty | SMTP server password |
+| `H4CKATH0N_SMTP_STARTTLS` | `true` | Use STARTTLS for SMTP |
+| `H4CKATH0N_SMTP_SSL` | `false` | Use implicit SSL for SMTP |
+| `H4CKATH0N_DEMO_MODE` | `false` | Enable demo mode restrictions |
 
 In development, missing `RP_ID` and `ORIGIN` fall back to localhost defaults with
 warnings. In production, missing values raise a runtime error when passkey flows start.
