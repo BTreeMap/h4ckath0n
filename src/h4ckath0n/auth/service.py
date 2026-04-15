@@ -17,7 +17,10 @@ from h4ckath0n.auth.models import Device, PasswordResetToken, User
 from h4ckath0n.config import Settings
 from h4ckath0n.rng import token_urlsafe as _rng_urlsafe
 
-_DUMMY_PASSWORD_HASH = "$argon2id$v=19$m=65536,t=3,p=4$LDX2q+e5LFasJ4chV+cLuw$WXFWJmub13FTOZ91JF/CSEKCBgs6tF1+6coHnE/TIlY"
+_DUMMY_PASSWORD_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$LDX2q+e5LFasJ4chV+cLuw$"
+    "WXFWJmub13FTOZ91JF/CSEKCBgs6tF1+6coHnE/TIlY"
+)
 
 
 def _hash_token(token: str) -> str:
