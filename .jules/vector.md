@@ -1,0 +1,3 @@
+## 2024-05-18 - Centralize scope parsing and formatting
+**Learning:** The database model `user.scopes` (a comma-separated string) is repeatedly parsed using manual pipelines like `filter(None, map(str.strip, scopes.split(",")))` across the repository (e.g., CLI tools, endpoint dependencies, routing). This risks subtle bugs with whitespace, empties, duplicates, and ordering.
+**Action:** Centralized the logic into pure functions `parse_scopes` and `format_scopes` within `src/h4ckath0n/auth/scopes.py`. This ensures one single source of truth for semantic boundaries and clarifies the FP transformation pipeline without mutating `user.scopes` in place or dealing with ad-hoc list comprehension scattered across multiple files.
