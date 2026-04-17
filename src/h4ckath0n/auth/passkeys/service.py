@@ -44,8 +44,8 @@ def _new_challenge() -> bytes:
 
 async def _get_valid_flow(db: AsyncSession, flow_id: str, kind: str) -> WebAuthnChallenge:
     """Fetch and validate an unconsumed, non-expired flow."""
-    result = await db.execute(select(WebAuthnChallenge).filter(WebAuthnChallenge.id == flow_id))
-    if (flow := result.scalars().first()) is None:
+    # Optimize: Use db.get() for primary key lookup to leverage identity map cache
+    if (flow := await db.get(WebAuthnChallenge, flow_id)) is None:
         raise ValueError("Unknown flow")
     if flow.kind != kind:
         raise ValueError("Flow kind mismatch")
@@ -141,8 +141,8 @@ async def finish_registration(
     db.add(cred)
     await db.commit()
 
-    result = await db.execute(select(User).filter(User.id == flow.user_id))
-    if (user := result.scalars().first()) is None:
+    # Optimize: Use db.get() for primary key lookup to leverage identity map cache
+    if (user := await db.get(User, flow.user_id)) is None:
         raise ValueError("User not found")
     return user
 
@@ -338,13 +338,8 @@ async def rename_passkey(
 
     Raises ValueError if not found / not owned / revoked.
     """
-    result = await db.execute(
-        select(WebAuthnCredential).filter(
-            WebAuthnCredential.id == key_id,
-            WebAuthnCredential.user_id == user.id,
-        )
-    )
-    if (cred := result.scalars().first()) is None:
+    # Optimize: Use db.get() for primary key lookup and check secondary condition in Python
+    if (cred := await db.get(WebAuthnCredential, key_id)) is None or cred.user_id != user.id:
         raise ValueError("Credential not found")
     if cred.revoked_at is not None:
         raise ValueError("Cannot rename a revoked passkey")
@@ -375,13 +370,8 @@ async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
         # Per-user mutex. In SQLite, FOR UPDATE is ignored (acceptable for dev/tests).
         await db.execute(select(User.id).filter(User.id == user.id).with_for_update())
 
-        result = await db.execute(
-            select(WebAuthnCredential).filter(
-                WebAuthnCredential.id == key_id,
-                WebAuthnCredential.user_id == user.id,
-            )
-        )
-        if (cred := result.scalars().first()) is None:
+        # Optimize: Use db.get() for primary key lookup and check secondary condition in Python
+        if (cred := await db.get(WebAuthnCredential, key_id)) is None or cred.user_id != user.id:
             raise ValueError("Credential not found")
         if cred.revoked_at is not None:
             raise ValueError("Credential already revoked")
