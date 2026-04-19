@@ -9,3 +9,6 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+## 2024-04-19 - Generate Config Docs from Pydantic
+**Learning:** Hardcoded environment variable lists in READMEs drift easily from the actual configuration fields.
+**Action:** Use `Settings.model_fields` to programmatically extract descriptions and defaults, outputting them between markdown markers in the README, and add a CI step to enforce parity.
