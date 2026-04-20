@@ -1,0 +1,4 @@
+## 2024-05-24 - Fix User Enumeration via Timing Attack in Login
+**Vulnerability:** The login endpoint in `authenticate_user` returned early without hashing the password if the user did not exist or had no password set. This allowed an attacker to enumerate valid email addresses by measuring the response time, since hashing is a time-consuming operation.
+**Learning:** Even when failing an authentication attempt early (e.g., user not found), it's crucial to perform a dummy hashing operation of similar computational cost to prevent timing attacks.
+**Prevention:** Always ensure a consistent execution time path for authentication endpoints. For login, perform a dummy password hashing (`hash_password(password)`) when a user is not found or when they don't have a password.
