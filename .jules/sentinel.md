@@ -1,0 +1,4 @@
+## 2024-03-15 - Prevent User Enumeration via Timing Attack in Password Auth
+**Vulnerability:** User enumeration was possible via a timing attack on `authenticate_user`. Because it returned early without executing a computationally expensive `verify_password` check if the user did not exist or had no password set, an attacker could observe timing differences to deduce whether an email is registered.
+**Learning:** Returning early on authentication checks when user queries return no result creates an observable timing discrepancy because hashing operations are significantly slower than standard code paths.
+**Prevention:** Always perform dummy hashing operations (e.g. `hash_password(password)`) when the primary verification check cannot be executed. This normalizes the execution time for both successful and unsuccessful user lookups, effectively blinding timing attacks.
