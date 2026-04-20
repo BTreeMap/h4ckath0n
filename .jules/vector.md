@@ -1,0 +1,3 @@
+## 2024-03-15 - Extract pure string parsing/formatting to central helper module
+**Learning:** The logic for deduplicating, filtering, trimming, and joining comma-separated scopes strings (e.g., `filter(None, map(str.strip, scopes.split(",")))`) was duplicated in at least 3 places (dependencies, session router, cli).
+**Action:** Created `src/h4ckath0n/auth/scopes.py` with pure helper functions `parse_scopes` and `format_scopes`. When encountering common data-shaping operations across a module, extract them to a centralized, well-tested functional utility rather than repeating the list/string comprehension pipeline.
