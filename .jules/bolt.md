@@ -28,3 +28,7 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2024-05-23 - Optimizing PK + Ownership Queries
+**Learning:** When looking up a single record by its primary key alongside additional filters (e.g., ownership checks like `Model.user_id == user.id`), it is generally more performant to fetch the object using `await db.get(Model, pk)` to leverage the SQLAlchemy Identity Map cache and then perform the secondary validations in Python, rather than executing a multi-column SQL query that bypasses the cache lookup.
+**Action:** Always prefer `db.get()` for primary key lookups, even when secondary filtering logic (like checking user ownership) is required.
