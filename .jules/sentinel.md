@@ -1,0 +1,4 @@
+## 2024-05-18 - Fix user enumeration via timing attack in login
+**Vulnerability:** The login endpoint was vulnerable to user enumeration via timing attacks. Authentication attempts for non-existent users were significantly faster than for existing users because the password hashing step was skipped when the user was not found.
+**Learning:** To mitigate timing attacks, the execution time for both valid and invalid authentication attempts should be consistent. Dummy password hashing is required when a user is not found to balance the response time.
+**Prevention:** Always perform dummy hashing operations (e.g., `hash_password(password)`) when user lookups fail or when checking invalid users to ensure the response time is consistent, masking the existence of a user.
