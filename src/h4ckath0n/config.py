@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import warnings
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,54 +19,76 @@ class Settings(BaseSettings):
     )
 
     # --- environment ---
-    env: str = "development"
+    env: str = Field("development", description="`development` or `production`")
 
     # --- database ---
-    database_url: str = "sqlite:///./h4ckath0n.db"
-    auto_upgrade: bool = False
+    database_url: str = Field(
+        "sqlite:///./h4ckath0n.db", description="SQLAlchemy connection string"
+    )
+    auto_upgrade: bool = Field(
+        False, description="Auto-run packaged DB migrations to head on startup"
+    )
 
     # --- WebAuthn / Passkeys ---
-    rp_id: str = ""
-    origin: str = ""
-    webauthn_ttl_seconds: int = 300
-    user_verification: str = "preferred"
-    attestation: str = "none"
+    rp_id: str = Field("", description="WebAuthn relying party ID, required in production")
+    origin: str = Field("", description="WebAuthn origin, required in production")
+    webauthn_ttl_seconds: int = Field(300, description="WebAuthn challenge TTL in seconds")
+    user_verification: str = Field(
+        "preferred", description="WebAuthn user verification requirement"
+    )
+    attestation: str = Field("none", description="WebAuthn attestation preference")
 
     # --- password auth (optional extra) ---
-    password_auth_enabled: bool = False
-    password_reset_expire_minutes: int = 30
+    password_auth_enabled: bool = Field(
+        False, description="Enable password routes when the extra is installed"
+    )
+    password_reset_expire_minutes: int = Field(
+        30, description="Password reset token expiry in minutes"
+    )
 
     # --- admin bootstrap ---
-    bootstrap_admin_emails: list[str] = []
-    first_user_is_admin: bool = False
+    bootstrap_admin_emails: list[str] = Field(
+        [], description="JSON list of emails that become admin on password signup"
+    )
+    first_user_is_admin: bool = Field(False, description="First password signup becomes admin")
 
     # --- LLM ---
-    openai_api_key: str = ""
+    openai_api_key: str = Field("", description="OpenAI API key for the LLM wrapper")
 
     # --- Redis ---
-    redis_url: str = ""
-    jobs_inline_in_dev: bool = True
-    jobs_default_queue: str = "default"
+    redis_url: str = Field("", description="Redis connection string")
+    jobs_inline_in_dev: bool = Field(
+        True, description="Run jobs inline in development instead of queueing"
+    )
+    jobs_default_queue: str = Field(
+        "default", description="Default queue name for background jobs"
+    )
 
     # --- Storage ---
-    storage_backend: str = "local"
-    storage_dir: str = "./.h4ckath0n_storage"
-    max_upload_bytes: int = 50 * 1024 * 1024  # 50 MB
+    storage_backend: str = Field("local", description="Storage backend (`local` or `s3`)")
+    storage_dir: str = Field(
+        "./.h4ckath0n_storage", description="Directory for local storage backend"
+    )
+    max_upload_bytes: int = Field(50 * 1024 * 1024, description="Maximum upload size in bytes")
 
     # --- Email ---
-    app_base_url: str = "http://localhost:5173"
-    email_backend: str = "file"  # "file" or "smtp"
-    email_from: str = "noreply@localhost"
-    email_outbox_dir: str = "./.h4ckath0n_email_outbox"
-    smtp_host: str = ""
-    smtp_port: int = 587
-    smtp_username: str = ""
-    smtp_password: str = ""
-    smtp_starttls: bool = True
-    smtp_ssl: bool = False
+    app_base_url: str = Field(
+        "http://localhost:5173", description="Base URL of the frontend application"
+    )
+    email_backend: str = Field("file", description="Email backend (`file` or `smtp`)")
+    email_from: str = Field("noreply@localhost", description="Default sender address")
+    email_outbox_dir: str = Field(
+        "./.h4ckath0n_email_outbox", description="Directory for file email backend"
+    )
+    smtp_host: str = Field("", description="SMTP server hostname")
+    smtp_port: int = Field(587, description="SMTP server port")
+    smtp_username: str = Field("", description="SMTP username")
+    smtp_password: str = Field("", description="SMTP password")
+    smtp_starttls: bool = Field(True, description="Use STARTTLS for SMTP")
+    smtp_ssl: bool = Field(False, description="Use SSL/TLS for SMTP")
 
     # --- Demo ---
-    demo_mode: bool = False
+    demo_mode: bool = Field(False, description="Enable read-only demo mode features")
 
     def effective_rp_id(self) -> str:
         """Return the WebAuthn relying party ID."""
