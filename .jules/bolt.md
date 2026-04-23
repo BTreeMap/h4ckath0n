@@ -28,3 +28,9 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-22 - Offload CPU-Bound and Blocking I/O from the Event Loop
+
+**Learning:** Synchronous, CPU-bound tasks like large-buffer hashing via `hashlib` and blocking I/O operations such as `os.makedirs` or file writes, when placed directly in asynchronous functions, will block the main thread and introduce severe event loop latency. This reduces concurrency, especially for high-latency operations like large file uploads.
+
+**Action:** Always offload CPU-bound computations and blocking filesystem I/O in async routes to a worker thread using `asyncio.to_thread` to maintain a non-blocking event loop.
