@@ -148,11 +148,11 @@ def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-un
         return None
 
     if user_id:
-        stmt = select(User).where(User.id == user_id)
+        # ⚡ Bolt: Use primary key lookup to hit the session identity map.
+        return session.get(User, user_id)
     else:
         stmt = select(User).where(User.email == email)
-
-    return session.execute(stmt).scalars().first()
+        return session.execute(stmt).scalars().first()
 
 
 # ---------------------------------------------------------------------------
