@@ -1,0 +1,3 @@
+## 2024-04-14 - Centralize scope parsing/formatting
+**Learning:** The `h4ckath0n` codebase manually parses the DB `scopes` text column using ad-hoc `split(",")` and `strip` manipulation in multiple places (`cli.py`, `auth/dependencies.py`, `auth/session_router.py`). This leads to duplicate normalization logic and subtle drift (e.g. sometimes using `set()`, sometimes lists, sometimes `filter(None, ...)` vs `if s`).
+**Action:** Centralize scope parsing and formatting into a `h4ckath0n.auth.scopes` module exposing pure helpers (`parse_scopes` and `format_scopes`) per the repository memory constraints. Use these helpers across all files that deal with the DB scopes column.
