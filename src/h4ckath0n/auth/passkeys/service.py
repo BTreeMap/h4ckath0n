@@ -44,8 +44,9 @@ def _new_challenge() -> bytes:
 
 async def _get_valid_flow(db: AsyncSession, flow_id: str, kind: str) -> WebAuthnChallenge:
     """Fetch and validate an unconsumed, non-expired flow."""
-    result = await db.execute(select(WebAuthnChallenge).filter(WebAuthnChallenge.id == flow_id))
-    if (flow := result.scalars().first()) is None:
+    # Optimize: use db.get() for primary key lookup to bypass DB network roundtrip
+    # when object is already cached in the Identity Map.
+    if (flow := await db.get(WebAuthnChallenge, flow_id)) is None:
         raise ValueError("Unknown flow")
     if flow.kind != kind:
         raise ValueError("Flow kind mismatch")
@@ -141,8 +142,9 @@ async def finish_registration(
     db.add(cred)
     await db.commit()
 
-    result = await db.execute(select(User).filter(User.id == flow.user_id))
-    if (user := result.scalars().first()) is None:
+    # Optimize: use db.get() for primary key lookup to bypass DB network roundtrip
+    # when object is already cached in the Identity Map.
+    if (user := await db.get(User, flow.user_id)) is None:
         raise ValueError("User not found")
     return user
 
