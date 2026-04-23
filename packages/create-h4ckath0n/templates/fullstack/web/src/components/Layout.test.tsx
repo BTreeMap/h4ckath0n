@@ -59,7 +59,7 @@ describe("Layout theme preference", () => {
     renderLayout();
 
     const button = screen.getAllByRole("button", { name: "Theme: system (dark)" })[0];
-    fireEvent.click(button);
+    fireEvent.click(button!);
 
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("light");
@@ -77,7 +77,7 @@ describe("Layout theme preference", () => {
 
     const button = screen.getAllByRole("button", { name: "Theme: light" })[0];
 
-    fireEvent.click(button);
+    fireEvent.click(button!);
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("dark");
       expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
@@ -87,7 +87,7 @@ describe("Layout theme preference", () => {
     });
 
     const darkButtonsToClick = screen.getAllByRole("button", { name: "Theme: dark" });
-    fireEvent.click(darkButtonsToClick[0]);
+    fireEvent.click(darkButtonsToClick[0]!);
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("light");
       expect(document.documentElement.getAttribute("data-theme")).toBe("light");
