@@ -1,0 +1,3 @@
+## 2024-03-24 - Centralize Scope Normalization
+**Learning:** The database stores `user.scopes` as a comma-separated string, leading to multiple files (CLI, dependencies, routers) duplicating string parsing, stripping, and de-duplication logic using ad-hoc tools (`filter(None, map(str.strip, ...))`). This leads to invariant drift and inconsistent handling of duplicates and order preservation.
+**Action:** Use centralized functional utilities (e.g., `parse_scopes`, `format_scopes`, `add_scopes`) in `src/h4ckath0n/auth/scopes.py` instead of implementing ad-hoc manual pipelines. Never repeat `.split(",")` and list comprehensions for text columns storing sequences.
