@@ -1,0 +1,3 @@
+## 2024-04-13 - Enter-to-Submit in Chat Interfaces
+**Learning:** In chat-like interfaces (such as AI prompts), users expect to hit Enter to submit rather than clicking a button. However, during async streaming, if the textarea remains enabled, users might continue typing and mangle the prompt or accidentally trigger overlapping submissions. Absolute-positioned keyboard shortcuts can overlap user text if bottom padding is not increased.
+**Action:** Always apply the `disabled` attribute directly to the textarea during async operations (like streaming). When adding an absolute-positioned `<kbd>` hint, add adequate bottom padding (e.g., `pb-8`) to the textarea to prevent text overlap.
