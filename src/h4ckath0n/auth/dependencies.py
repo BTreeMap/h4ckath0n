@@ -83,11 +83,13 @@ def require_admin() -> Any:
 def require_scopes(*scopes: str) -> Any:
     """Dependency that requires the user to have specific scopes (from DB)."""
 
-    needed: set[str] = set(filter(None, map(str.strip, scopes)))
+    from h4ckath0n.auth.scopes import parse_scopes
+
+    needed = parse_scopes(",".join(scopes))
 
     async def _scoped(user: User = Depends(_get_current_user)) -> User:
-        user_scopes = filter(None, map(str.strip, user.scopes.split(",")))
-        if missing := needed.difference(user_scopes):
+        user_scopes = set(parse_scopes(user.scopes))
+        if missing := [s for s in needed if s not in user_scopes]:
             missing_scopes = ", ".join(missing)
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
