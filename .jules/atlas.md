@@ -9,3 +9,6 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+## 2024-04-14 - Replace hand-written env var lists with generated list from config loader
+**Learning:** Pydantic model configurations containing descriptions are an excellent source of truth for generating accurate documentation tables and avoiding manual drift in `README.md`.
+**Action:** Instead of hard-coding environment variables manually, write a script to generate the markdown from `model_fields` and run it during CI.
