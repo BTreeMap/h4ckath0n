@@ -1,11 +1,7 @@
-# Atlas Journal: Critical Learnings
+## 2024-04-25 - Env Vars Generation Parity
+**Learning:** Hardcoded environment variables in README.md quickly drift from the actual `Settings` schema. This repository uses pydantic `BaseSettings`, making it possible to inspect and automatically generate the environment variables documentation.
+**Action:** Replace the static table in `README.md` with generated content and add a script (`scripts/generate_env_docs.py`) to prevent drift. Integrate this check into CI to catch missing/stale documentation automatically.
 
-## 2026-02-28 - API route substring matching is unreliable for drift checks
-
-**Learning:** Checking whether a path string appears *anywhere* in a README causes false negatives
-when one route's path is a substring of another (e.g. `/auth/passkeys/{key_id}` inside
-`/auth/passkeys/{key_id}/revoke`). The drift check must match `METHOD /path` as a combined token,
-ideally inside backtick delimiters, to avoid this trap.
-
-**Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
-that mirror the actual markdown formatting.
+## 2024-04-25 - Env Vars Generation Parity
+**Learning:** Hardcoded environment variables in README.md quickly drift from the actual `Settings` schema. This repository uses pydantic `BaseSettings`, making it possible to inspect and automatically generate the environment variables documentation.
+**Action:** Replace the static table in `README.md` with generated content and add a script (`scripts/generate_env_docs.py`) to prevent drift. Integrate this check into CI to catch missing/stale documentation automatically.
