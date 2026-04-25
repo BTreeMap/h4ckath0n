@@ -1,0 +1,4 @@
+## 2024-04-25 - Prevent Timing Attacks in Login
+**Vulnerability:** Timing attack possible during password authentication (`authenticate_user`). When an email is not found, the function returns early without verifying any password. This allows an attacker to enumerate valid user emails by measuring response times.
+**Learning:** Returning early when a user is not found or lacks a password hash creates a timing difference compared to when a user is found and their password hash is verified.
+**Prevention:** Always verify a dummy password hash even when the user is not found to ensure constant-time response for both valid and invalid emails. Note that the dummy hash must be structurally valid for argon2 to avoid early parsing errors (InvalidHashError) which would also bypass the timing mitigation.
