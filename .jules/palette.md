@@ -1,0 +1,3 @@
+## 2026-04-25 - Prevent prompt mangling and text overlap in AI Chat textareas
+**Learning:** During async operations (like LLM streaming), the textarea can remain editable which can result in the prompt getting mangled by subsequent keystrokes before the streaming finishes. Also, absolute-positioned hints inside textareas can obscure user text.
+**Action:** When implementing Enter-to-submit keyboard interactions in chat interfaces, apply the `disabled` attribute directly to the textarea during async operations to prevent prompt mangling. Apply adequate bottom padding (e.g., `pb-8`) to the textarea to prevent text overlap with absolutely positioned keyboard `<kbd>` hints.
