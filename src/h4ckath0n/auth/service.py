@@ -78,6 +78,7 @@ _DUMMY_HASH = (
     "KFu+gOIIDImhAstuhZQxpw$HZ4D1PLyFnInpZzpVD2cZjAPNsDfc4z5xztgfNPqIWE"
 )
 
+
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
