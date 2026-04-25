@@ -11,10 +11,10 @@ Otherwise, updates the README.md in-place.
 from __future__ import annotations
 
 import argparse
-import sys
-from pathlib import Path
 import json
 import re
+import sys
+from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 README = REPO_ROOT / "README.md"
@@ -22,13 +22,11 @@ README = REPO_ROOT / "README.md"
 MARKER_START = "<!-- GENERATED_ENV_VARS_START -->"
 MARKER_END = "<!-- GENERATED_ENV_VARS_END -->"
 
+
 def generate_table() -> str:
     from h4ckath0n.config import Settings
 
-    lines = [
-        "| Variable | Default | Description |",
-        "|---|---|---|"
-    ]
+    lines = ["| Variable | Default | Description |", "|---|---|---|"]
 
     settings_schema = Settings.model_json_schema()
     properties = settings_schema.get("properties", {})
@@ -53,17 +51,31 @@ def generate_table() -> str:
 
     return "\n".join(lines)
 
+
 def update_readme(check_only: bool = False) -> int:
     readme_text = README.read_text()
 
     # Check if the markers exist
     if MARKER_START not in readme_text or MARKER_END not in readme_text:
         # If not, let's insert them around the table in the configuration section
-        config_pattern = re.compile(r"(## Configuration\n\nAll settings use the `H4CKATH0N_` prefix unless noted\.\n\n)(\| Variable \| Default \| Description \|\n\|---\|---\|---\|.*?)(?=\n\n|$)", re.DOTALL)
+        config_pattern = re.compile(
+            r"(## Configuration\n\nAll settings use the `H4CKATH0N_` prefix unless "
+            r"noted\.\n\n)(\| Variable \| Default \| Description \|\n\|---\|---\|---\|.*?)"
+            r"(?=\n\n|$)",
+            re.DOTALL,
+        )
 
         match = config_pattern.search(readme_text)
         if match:
-            new_text = readme_text[:match.start(2)] + MARKER_START + "\n" + match.group(2) + "\n" + MARKER_END + readme_text[match.end(2):]
+            new_text = (
+                readme_text[: match.start(2)]
+                + MARKER_START
+                + "\n"
+                + match.group(2)
+                + "\n"
+                + MARKER_END
+                + readme_text[match.end(2) :]
+            )
             if not check_only:
                 README.write_text(new_text)
                 readme_text = new_text
@@ -96,12 +108,16 @@ def update_readme(check_only: bool = False) -> int:
         print("✅ Environment variables in README.md are up to date.")
         return 0
 
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--check", action="store_true", help="Check if the README.md is up to date")
+    parser.add_argument(
+        "--check", action="store_true", help="Check if the README.md is up to date"
+    )
     args = parser.parse_args()
 
     return update_readme(check_only=args.check)
+
 
 if __name__ == "__main__":
     sys.exit(main())
