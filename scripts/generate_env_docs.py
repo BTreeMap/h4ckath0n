@@ -25,7 +25,7 @@ def generate_markdown_table() -> str:
             continue
         if field_name == "openai_api_key":
             # Special case for OpenAI API key alias
-            lines.append(f"| `OPENAI_API_KEY` | empty | OpenAI API key for the LLM wrapper |")
+            lines.append("| `OPENAI_API_KEY` | empty | OpenAI API key for the LLM wrapper |")
 
         default_val = field_info.default
         if (
@@ -33,10 +33,7 @@ def generate_markdown_table() -> str:
             or str(default_val) == ""
             or (isinstance(default_val, list) and not default_val)
         ):
-            if isinstance(default_val, list):
-                default_str = "`[]`"
-            else:
-                default_str = "empty"
+            default_str = "`[]`" if isinstance(default_val, list) else "empty"
         elif str(default_val) == "PydanticUndefined":
             if field_info.default_factory is list:
                 default_str = "`[]`"
