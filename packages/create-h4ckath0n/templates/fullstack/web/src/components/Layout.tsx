@@ -192,6 +192,11 @@ export function Layout() {
                 size="icon"
                 onClick={toggleTheme}
                 className="mr-2"
+                aria-label={
+                  themePreference === "system"
+                    ? `Theme: system (${effectiveTheme})`
+                    : `Theme: ${themePreference}`
+                }
               >
                 {effectiveTheme === "dark" ? (
                   <Sun className="w-4 h-4" />
@@ -203,6 +208,9 @@ export function Layout() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-menu"
               >
                 {isMobileMenuOpen ? (
                   <X className="w-5 h-5" />
@@ -216,7 +224,7 @@ export function Layout() {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-border bg-surface">
+          <div id="mobile-menu" className="md:hidden border-t border-border bg-surface">
             <div className="px-4 py-4 space-y-2">
               {isAuthenticated ? (
                 <>
