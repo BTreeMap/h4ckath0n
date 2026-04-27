@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import warnings
 
+import pydantic
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,54 +19,88 @@ class Settings(BaseSettings):
     )
 
     # --- environment ---
-    env: str = "development"
+    env: str = pydantic.Field("development", description="`development` or `production`")
 
     # --- database ---
-    database_url: str = "sqlite:///./h4ckath0n.db"
-    auto_upgrade: bool = False
+    database_url: str = pydantic.Field(
+        "sqlite:///./h4ckath0n.db", description="SQLAlchemy connection string"
+    )
+    auto_upgrade: bool = pydantic.Field(
+        False, description="Auto-run packaged DB migrations to head on startup"
+    )
 
     # --- WebAuthn / Passkeys ---
-    rp_id: str = ""
-    origin: str = ""
-    webauthn_ttl_seconds: int = 300
-    user_verification: str = "preferred"
-    attestation: str = "none"
+    rp_id: str = pydantic.Field(
+        "", description="WebAuthn relying party ID, required in production"
+    )
+    origin: str = pydantic.Field("", description="WebAuthn origin, required in production")
+    webauthn_ttl_seconds: int = pydantic.Field(
+        300, description="WebAuthn challenge TTL in seconds"
+    )
+    user_verification: str = pydantic.Field(
+        "preferred", description="WebAuthn user verification requirement"
+    )
+    attestation: str = pydantic.Field("none", description="WebAuthn attestation preference")
 
     # --- password auth (optional extra) ---
-    password_auth_enabled: bool = False
-    password_reset_expire_minutes: int = 30
+    password_auth_enabled: bool = pydantic.Field(
+        False, description="Enable password routes when the extra is installed"
+    )
+    password_reset_expire_minutes: int = pydantic.Field(
+        30, description="Password reset token expiry in minutes"
+    )
 
     # --- admin bootstrap ---
-    bootstrap_admin_emails: list[str] = []
-    first_user_is_admin: bool = False
+    bootstrap_admin_emails: list[str] = pydantic.Field(
+        [], description="JSON list of emails that become admin on password signup"
+    )
+    first_user_is_admin: bool = pydantic.Field(
+        False, description="First password signup becomes admin"
+    )
 
     # --- LLM ---
-    openai_api_key: str = ""
+    openai_api_key: str = pydantic.Field("", description="OpenAI API key for the LLM wrapper")
 
     # --- Redis ---
-    redis_url: str = ""
-    jobs_inline_in_dev: bool = True
-    jobs_default_queue: str = "default"
+    redis_url: str = pydantic.Field("", description="Redis connection URL for background jobs")
+    jobs_inline_in_dev: bool = pydantic.Field(
+        True, description="Run jobs inline in development instead of Redis"
+    )
+    jobs_default_queue: str = pydantic.Field(
+        "default", description="Default queue name for background jobs"
+    )
 
     # --- Storage ---
-    storage_backend: str = "local"
-    storage_dir: str = "./.h4ckath0n_storage"
-    max_upload_bytes: int = 50 * 1024 * 1024  # 50 MB
+    storage_backend: str = pydantic.Field("local", description="Storage backend (`local` or `s3`)")
+    storage_dir: str = pydantic.Field(
+        "./.h4ckath0n_storage", description="Directory for local storage backend"
+    )
+    max_upload_bytes: int = pydantic.Field(
+        50 * 1024 * 1024, description="Maximum upload size in bytes"
+    )
 
     # --- Email ---
-    app_base_url: str = "http://localhost:5173"
-    email_backend: str = "file"  # "file" or "smtp"
-    email_from: str = "noreply@localhost"
-    email_outbox_dir: str = "./.h4ckath0n_email_outbox"
-    smtp_host: str = ""
-    smtp_port: int = 587
-    smtp_username: str = ""
-    smtp_password: str = ""
-    smtp_starttls: bool = True
-    smtp_ssl: bool = False
+    app_base_url: str = pydantic.Field(
+        "http://localhost:5173", description="Base URL of the frontend application for email links"
+    )
+    email_backend: str = pydantic.Field("file", description="Email backend (`file` or `smtp`)")
+    email_from: str = pydantic.Field(
+        "noreply@localhost", description="Default sender address for outbound emails"
+    )
+    email_outbox_dir: str = pydantic.Field(
+        "./.h4ckath0n_email_outbox", description="Directory for file-based email outbox"
+    )
+    smtp_host: str = pydantic.Field("", description="SMTP server hostname")
+    smtp_port: int = pydantic.Field(587, description="SMTP server port")
+    smtp_username: str = pydantic.Field("", description="SMTP authentication username")
+    smtp_password: str = pydantic.Field("", description="SMTP authentication password")
+    smtp_starttls: bool = pydantic.Field(True, description="Use STARTTLS for SMTP connections")
+    smtp_ssl: bool = pydantic.Field(False, description="Use SSL/TLS for SMTP connections")
 
     # --- Demo ---
-    demo_mode: bool = False
+    demo_mode: bool = pydantic.Field(
+        False, description="Enable demo mode (e.g. read-only restrictions)"
+    )
 
     def effective_rp_id(self) -> str:
         """Return the WebAuthn relying party ID."""
