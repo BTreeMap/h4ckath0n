@@ -23,6 +23,7 @@ from h4ckath0n.db.migrations.runtime import (
     packaged_migrations_dir,
     run_upgrade_to_head,
 )
+from h4ckath0n.scopes import format_scopes, parse_scopes
 
 # ---------------------------------------------------------------------------
 # Exit codes
@@ -122,13 +123,6 @@ def _get_db_url(args: argparse.Namespace) -> str:
 
 def _make_sync_engine(url: str):  # type: ignore[no-untyped-def]
     return create_sync_engine(url)
-
-
-def _normalize_scopes(raw: str) -> str:
-    """Normalize a comma-separated scopes string."""
-    parts = filter(None, map(str.strip, raw.split(",")))
-    # de-duplicate preserving order
-    return ",".join(dict.fromkeys(parts))
 
 
 def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-untyped-def]
@@ -451,10 +445,8 @@ def _cmd_users_scopes_add(args: argparse.Namespace) -> int:
                 _err("user not found")
                 return EXIT_NOT_FOUND
 
-            existing = set(s for s in user.scopes.split(",") if s.strip())
-            for scope in args.scope:
-                existing.add(scope.strip())
-            user.scopes = _normalize_scopes(",".join(existing))
+            existing = parse_scopes(user.scopes)
+            user.scopes = format_scopes(existing + args.scope)
             session.commit()
             session.refresh(user)
             _output(_user_dict(user), fmt=args.format, pretty=args.pretty)
@@ -480,10 +472,10 @@ def _cmd_users_scopes_remove(args: argparse.Namespace) -> int:
                 _err("user not found")
                 return EXIT_NOT_FOUND
 
-            existing = [s for s in user.scopes.split(",") if s.strip()]
-            to_remove = {s.strip() for s in args.scope}
+            existing = parse_scopes(user.scopes)
+            to_remove = set(parse_scopes(",".join(args.scope)))
             remaining = [s for s in existing if s not in to_remove]
-            user.scopes = _normalize_scopes(",".join(remaining))
+            user.scopes = format_scopes(remaining)
             session.commit()
             session.refresh(user)
             _output(_user_dict(user), fmt=args.format, pretty=args.pretty)
@@ -509,7 +501,8 @@ def _cmd_users_scopes_set(args: argparse.Namespace) -> int:
                 _err("user not found")
                 return EXIT_NOT_FOUND
 
-            user.scopes = _normalize_scopes(args.scopes)
+            raw_scopes = [args.scopes] if "," not in args.scopes else args.scopes.split(",")
+            user.scopes = format_scopes(raw_scopes)
             session.commit()
             session.refresh(user)
             _output(_user_dict(user), fmt=args.format, pretty=args.pretty)
