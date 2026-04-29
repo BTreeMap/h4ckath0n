@@ -39,9 +39,7 @@ def generate_table() -> str:
             default_str = "`localhost` in development"
         elif name == "origin":
             default_str = "`http://localhost:8000` in development"
-        elif name == "auto_upgrade":
-            default_str = "`false`"
-        elif (
+        elif name == "auto_upgrade" or (
             name == "password_auth_enabled" or name == "first_user_is_admin" or name == "demo_mode"
         ):
             default_str = "`false`"
