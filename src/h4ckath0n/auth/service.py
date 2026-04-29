@@ -17,6 +17,12 @@ from h4ckath0n.auth.models import Device, PasswordResetToken, User
 from h4ckath0n.config import Settings
 from h4ckath0n.rng import token_urlsafe as _rng_urlsafe
 
+# A valid Argon2id hash for mitigating timing attacks during authentication.
+DUMMY_PASSWORD_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$qpQY4VDrbBPpf9vTRSI48g$"
+    "/ez1a17G6g0+ZrAVlqFD+Qsm8xEX7Q2gtRBG2qu6yFQ"
+)
+
 
 def _hash_token(token: str) -> str:
     """SHA-256 hash a token for storage."""
@@ -75,11 +81,14 @@ async def register_user(
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
-        return None
-    if not user.password_hash:
-        return None
-    if not verify_password(password, user.password_hash):
+    user = result.scalars().first()
+
+    # Mitigate timing attacks by verifying a dummy hash if the user doesn't exist
+    # or doesn't have a password.
+    hash_to_verify = user.password_hash if user and user.password_hash else DUMMY_PASSWORD_HASH
+    is_valid = verify_password(password, hash_to_verify)
+
+    if not user or not user.password_hash or not is_valid:
         return None
     return user
 
