@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 
 from h4ckath0n.auth.dependencies import get_auth_context, require_user
 from h4ckath0n.auth.models import User
-from h4ckath0n.auth.schemas import SessionResponse
+from h4ckath0n.auth.schemas import SessionResponse, parse_scopes
 from h4ckath0n.realtime.auth import AuthContext
 
 session_router = APIRouter(prefix="/auth", tags=["auth"])
@@ -22,7 +22,7 @@ async def get_session(
     user: User = require_user(),
     ctx: AuthContext = Depends(get_auth_context),
 ) -> SessionResponse:
-    scopes = [s for s in user.scopes.split(",") if s]
+    scopes = parse_scopes(user.scopes)
     return SessionResponse(
         user_id=user.id,
         device_id=ctx.device_id,
