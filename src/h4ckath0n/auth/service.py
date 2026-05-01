@@ -17,6 +17,11 @@ from h4ckath0n.auth.models import Device, PasswordResetToken, User
 from h4ckath0n.config import Settings
 from h4ckath0n.rng import token_urlsafe as _rng_urlsafe
 
+_DUMMY_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$WWMZ9co/uIIIEVlHGeqTHA"
+    "$8Q3lXNvbj9/T4strxcDPkOw8jsyLj6op6fHDgDOXLAY"
+)
+
 
 def _hash_token(token: str) -> str:
     """SHA-256 hash a token for storage."""
@@ -75,11 +80,13 @@ async def register_user(
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
-        return None
-    if not user.password_hash:
-        return None
-    if not verify_password(password, user.password_hash):
+    user = result.scalars().first()
+
+    hash_to_verify = user.password_hash if user and user.password_hash else _DUMMY_HASH
+
+    is_valid = verify_password(password, hash_to_verify)
+
+    if not user or not user.password_hash or not is_valid:
         return None
     return user
 
