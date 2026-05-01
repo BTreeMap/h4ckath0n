@@ -28,3 +28,9 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-24 - Utilize `session.get()` for Synchronous DB ID Lookups
+
+**Learning:** Just like with `await db.get()` for async database contexts, using `session.execute(select(Model).where(Model.id == pk)).scalars().first()` in a synchronous context (e.g. CLI operations) forces SQLAlchemy to query the database and re-hydrate the full object even if it's already in the session's identity map. This adds parsing and querying overhead.
+
+**Action:** Use `session.get(Model, pk)` for all primary key lookups in synchronous contexts as well. This fetches from the identity map first, significantly reducing overhead for already-loaded entities.
