@@ -1,0 +1,3 @@
+## $(date +%Y-%m-%d) - Centralize and functionalize scope normalization
+**Learning:** The CLI tool implicitly mutated state by adding `args.scope` values into an existing unordered `set` of scopes, which meant the final serialized string lost its original order. We can avoid this and related non-determinism bugs by enforcing functional-first data processing.
+**Action:** Prefer explicitly ordered immutable operations (like `existing + args.scope`) feeding into a pure format/deduplication pipeline rather than scattered ad hoc collections (like Python sets) when serializing deterministically ordered strings.
