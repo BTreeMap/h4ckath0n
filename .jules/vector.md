@@ -1,0 +1,3 @@
+## 2024-05-15 - Centralized scopes transformation using pure helpers
+**Learning:** The database stores `scopes` as a comma-separated string, but it was being manipulated and normalized using duplicate string splitting/joining scattered across `cli.py`, `session_router.py`, and `dependencies.py`.
+**Action:** Created pure functional helpers `parse_scopes` and `format_scopes` in `h4ckath0n.auth.schemas` (leaf node to avoid circular imports). Replaced scattered mutations with explicit format/parse pipeline. Note that `format_scopes` needed to handle iterables containing `None` when dealing with raw CLI arguments.
