@@ -9,3 +9,6 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+## 2025-05-07 - Generate env vars table from pydantic.Field
+**Learning:** Environment variable descriptions in README.md quickly drift from the actual settings configuration in `src/h4ckath0n/config.py` when managed manually.
+**Action:** Always prefer dynamically generating markdown tables of config properties by reading defaults and descriptions directly from Python type declarations and using explicit doc-generation scripts protected by CI drift checks.
