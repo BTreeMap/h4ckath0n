@@ -126,8 +126,6 @@ class TestAlembicUrlNormalization:
         assert make_url(captured["sqlalchemy.url"]) == make_url("sqlite:///./test.db")
 
 
-
-
 # ---------------------------------------------------------------------------
 # CLI integration (using subprocess to avoid sys.exit leaking)
 # ---------------------------------------------------------------------------
