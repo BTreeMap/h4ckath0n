@@ -338,13 +338,10 @@ async def rename_passkey(
 
     Raises ValueError if not found / not owned / revoked.
     """
-    result = await db.execute(
-        select(WebAuthnCredential).filter(
-            WebAuthnCredential.id == key_id,
-            WebAuthnCredential.user_id == user.id,
-        )
-    )
-    if (cred := result.scalars().first()) is None:
+    # ⚡ Bolt: Use db.get() for primary key lookup
+    if (cred := await db.get(WebAuthnCredential, key_id)) is None:
+        raise ValueError("Credential not found")
+    if cred.user_id != user.id:
         raise ValueError("Credential not found")
     if cred.revoked_at is not None:
         raise ValueError("Cannot rename a revoked passkey")
