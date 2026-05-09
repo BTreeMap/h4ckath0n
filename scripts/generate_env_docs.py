@@ -7,13 +7,14 @@ from pathlib import Path
 
 # Add src to sys.path
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT / 'src'))
+sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from h4ckath0n.config import Settings  # noqa: E402
 
 README = REPO_ROOT / "README.md"
 START_MARKER = "<!-- BEGIN ENV VARS -->"
 END_MARKER = "<!-- END ENV VARS -->"
+
 
 def generate_table() -> str:
     lines = ["| Variable | Default | Description |", "|---|---|---|"]
@@ -51,6 +52,7 @@ def generate_table() -> str:
 
     return "\n".join(lines)
 
+
 def update_readme(new_content: str, check_only: bool = False) -> int:
     readme_text = README.read_text()
     if START_MARKER not in readme_text or END_MARKER not in readme_text:
@@ -71,14 +73,11 @@ def update_readme(new_content: str, check_only: bool = False) -> int:
         print("Run `uv run scripts/generate_env_docs.py --update` to fix.")
         return 1
 
-    new_readme = (
-        readme_text[:start_idx] +
-        "\n" + new_content + "\n" +
-        readme_text[end_idx:]
-    )
+    new_readme = readme_text[:start_idx] + "\n" + new_content + "\n" + readme_text[end_idx:]
     README.write_text(new_readme)
     print("✅ Updated README.md with latest environment variables.")
     return 0
+
 
 def main():
     parser = argparse.ArgumentParser(description="Generate env vars doc")
@@ -93,6 +92,7 @@ def main():
     else:
         print(table)
         return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
