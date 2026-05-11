@@ -28,3 +28,9 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-22 - Optimize Passkey Authorization Checks
+
+**Learning:** In SQLAlchemy, executing `db.execute(select(Model).filter(Model.id == pk, Model.user_id == user.id))` forces a database query and parses a fresh model. Because primary key lookups can utilize the session identity map via `db.get()`, fetching the object by primary key first and then validating secondary authorization attributes (like `user_id`) in Python avoids unnecessary database trips when the object is already loaded in the current session.
+
+**Action:** For authorization checks that query by primary key and a secondary attribute, prioritize using `db.get(Model, pk)` and validate the secondary attribute using Python logic (`obj.user_id == user.id`) to maximize identity map hits.
