@@ -9,3 +9,8 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+
+## 2024-05-11 - Generated env vars docs
+
+**Learning:** Environment variables documented in README.md quickly fall out of sync with actual configuration loading (Pydantic `Settings`).
+**Action:** Always replace handwritten environment variable documentation with a generated section derived directly from the source of truth (the configuration loader), and add a check script to CI to prevent regressions.
