@@ -28,3 +28,9 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-24 - Validate Secondary Attributes in Python to Utilize Identity Map
+
+**Learning:** When looking up a record that must match a primary key AND a secondary condition (like `user_id == user.id`), querying with `select(Model).filter(Model.id == key_id, Model.user_id == user.id)` forces a database trip and prevents the use of SQLAlchemy's Identity Map. In hot paths like passkey rename or revoke, this bypasses cache hits and adds unnecessary parsing/hydration overhead.
+
+**Action:** Fetch the object directly by its primary key using `db.get(Model, key_id)` to leverage the Identity Map. Then, validate any secondary attributes (like ownership) in Python with `if cred.user_id != user.id: raise ValueError(...)`. This keeps the cache effective while maintaining security invariants.
