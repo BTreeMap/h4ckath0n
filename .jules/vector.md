@@ -1,0 +1,4 @@
+## 2024-05-12 - Centralized Auth Scopes Parsing
+
+**Learning:** The application extensively parsed authentication scopes via manual `split(",")` and `set()` operations across different modules (`cli.py`, `dependencies.py`, `session_router.py`). This led to slightly duplicated logic, potential issues with string ordering being destroyed by sets, and edge cases around empty/null items.
+**Action:** Created centralized, pure utility functions in `h4ckath0n.auth.scopes` (`parse_scopes`, `format_scopes`, `normalize_scope_list`) which are deterministic, deduplicate via `dict.fromkeys()` to preserve ordering, and safely filter out whitespace/empty values. This aligns with the FP ethos by removing repeated validation/normalization mutation logic and supplying tests for edges cases. Use this as an example of refactoring mutation-heavy string building into functional transformation pipelines.
