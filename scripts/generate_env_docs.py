@@ -31,11 +31,11 @@ def generate_markdown_table() -> str:
         # Handle default value representation
         default_val = field_info.default
         if field_name == "rp_id":
-             default_str = "`localhost` in development"
+            default_str = "`localhost` in development"
         elif field_name == "origin":
-             default_str = "`http://localhost:8000` in development"
+            default_str = "`http://localhost:8000` in development"
         elif field_name == "env":
-             default_str = "`development`"
+            default_str = "`development`"
         elif field_name == "database_url":
             default_str = "`sqlite:///./h4ckath0n.db`"
         elif default_val == "":
