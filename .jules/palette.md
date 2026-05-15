@@ -1,0 +1,4 @@
+
+## 2024-05-15 - Added missing mobile a11y & skip-to-content
+**Learning:** Responsive menus often duplicate toggle buttons (e.g., desktop/mobile theme toggle). When adding ARIA labels to these duplicated elements, accessibility tests using `getByRole` may begin failing due to multiple matches. Also, a hidden `skip-to-main-content` link must be explicit in custom layouts since standard UI libraries are not abstracting it here.
+**Action:** Always provide explicit `aria-label`s on responsive icon buttons like mobile menu toggles. Additionally, when duplicated elements exist, use `getAllByRole(...)[0]` in testing instead of `getByRole` to handle multiple responsive copies of the exact same semantic element. Ensure a "Skip to main content" link targeting `#main-content` is added at the start of app layout components.
