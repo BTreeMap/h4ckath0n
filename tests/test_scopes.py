@@ -1,4 +1,3 @@
-
 from h4ckath0n.auth.scopes import format_scopes, normalize_scope_list, parse_scopes
 
 
