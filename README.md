@@ -162,6 +162,7 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 | Variable | Default | Description |
 |---|---|---|
 | `H4CKATH0N_ENV` | `development` | `development` or `production` |
+| `H4CKATH0N_CORS_ORIGINS` | `["http://localhost:5173"]` | Allowed CORS origins (JSON list) |
 | `H4CKATH0N_DATABASE_URL` | `sqlite:///./h4ckath0n.db` | SQLAlchemy connection string |
 | `H4CKATH0N_AUTO_UPGRADE` | `false` | Auto-run packaged DB migrations to head on startup |
 | `H4CKATH0N_RP_ID` | `localhost` in development | WebAuthn relying party ID, required in production |
