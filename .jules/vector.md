@@ -1,0 +1,3 @@
+## 2025-02-12 - Centralize order-preserving deduplication for comma-separated sequences
+**Learning:** When dealing with comma-separated text columns where order preservation is expected (like `scopes`), using raw `set()` for deduplication randomly destroys sequence ordering. Furthermore, spreading ad-hoc normalization (e.g., `filter(None, map(str.strip, string.split(",")))`) across endpoints, dependencies, and CLI tools invites subtle inconsistency and drift.
+**Action:** Abstract sequential text column parsing and formatting into pure FP pipelines using `dict.fromkeys(iterable)` (which perfectly deduplicates while preserving order) and strictly isolate these helpers in a central `scopes.py` module to serve as the single source of truth.
