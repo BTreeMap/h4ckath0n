@@ -73,12 +73,15 @@ async def register_user(
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
-    _hash, verify_password = _require_password_extra()
+    hash_password, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+    user = result.scalars().first()
+
+    if user is None or not user.password_hash:
+        # Dummy hash to mitigate user enumeration via timing attack
+        hash_password(password)
         return None
-    if not user.password_hash:
-        return None
+
     if not verify_password(password, user.password_hash):
         return None
     return user
