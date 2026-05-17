@@ -9,11 +9,11 @@ import json
 from sqlalchemy.engine import make_url
 
 import h4ckath0n.cli as cli_module
+from h4ckath0n.auth.scopes import format_scopes, parse_scopes
 from h4ckath0n.cli import (
     EXIT_BAD_ARGS,
     EXIT_LAST_PASSKEY,
     _normalize_db_url_for_sync,
-    _normalize_scopes,
 )
 from tests.conftest import run_cli as _run_cli
 
@@ -133,20 +133,23 @@ class TestAlembicUrlNormalization:
 
 
 class TestNormalizeScopes:
+    def _normalize(self, raw: str) -> str:
+        return format_scopes(parse_scopes(raw))
+
     def test_basic(self):
-        assert _normalize_scopes("a,b,c") == "a,b,c"
+        assert self._normalize("a,b,c") == "a,b,c"
 
     def test_dedup(self):
-        assert _normalize_scopes("a,b,a") == "a,b"
+        assert self._normalize("a,b,a") == "a,b"
 
     def test_trim(self):
-        assert _normalize_scopes(" a , b , c ") == "a,b,c"
+        assert self._normalize(" a , b , c ") == "a,b,c"
 
     def test_empty_segments(self):
-        assert _normalize_scopes("a,,b,,") == "a,b"
+        assert self._normalize("a,,b,,") == "a,b"
 
     def test_empty_string(self):
-        assert _normalize_scopes("") == ""
+        assert self._normalize("") == ""
 
 
 # ---------------------------------------------------------------------------
