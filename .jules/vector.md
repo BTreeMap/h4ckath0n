@@ -1,0 +1,3 @@
+## 2024-05-17 - Centralize user scope parsing and normalization logic
+**Learning:** The project had duplicated, subtly inconsistent imperative logic for parsing, formatting, and deduplicating user scopes across `cli.py`, `dependencies.py`, and `session_router.py`. In `cli.py`, manipulating scopes via a standard `set` before joining resulted in non-deterministic ordering, and `dependencies.py` did not sort its error message.
+**Action:** Always prefer centralizing repeated string parsing/normalization into a pure, functionally-styled helper module (e.g., `src/h4ckath0n/auth/scopes.py`). Use list-based deduplication (`dict.fromkeys()`) over `set` when order matters, and always sort difference sets when emitting user-facing error messages to ensure stable output payloads.
