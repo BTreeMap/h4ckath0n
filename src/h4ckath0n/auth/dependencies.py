@@ -17,6 +17,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from h4ckath0n.auth.models import User
+from h4ckath0n.auth.scopes import parse_scopes
 from h4ckath0n.realtime.auth import AUD_HTTP, AuthContext, AuthError, verify_device_jwt
 
 _bearer = HTTPBearer(
@@ -83,12 +84,12 @@ def require_admin() -> Any:
 def require_scopes(*scopes: str) -> Any:
     """Dependency that requires the user to have specific scopes (from DB)."""
 
-    needed: set[str] = set(filter(None, map(str.strip, scopes)))
+    needed = set(parse_scopes(",".join(scopes)))
 
     async def _scoped(user: User = Depends(_get_current_user)) -> User:
-        user_scopes = filter(None, map(str.strip, user.scopes.split(",")))
+        user_scopes = parse_scopes(user.scopes)
         if missing := needed.difference(user_scopes):
-            missing_scopes = ", ".join(missing)
+            missing_scopes = ", ".join(sorted(missing))
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Missing scope(s): {missing_scopes}",
