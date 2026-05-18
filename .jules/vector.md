@@ -1,0 +1,3 @@
+## 2025-04-23 - Centralize Scope Normalization Pipeline
+**Learning:** The codebase historically relied on ad hoc string manipulations (`filter(None, map(str.strip, raw.split(",")))`) for scope validation across HTTP boundaries and CLI entrypoints. This led to bug-prone duplications where slight variations in edge cases (whitespace, empty elements, deduplication) could cause drift.
+**Action:** Always extract comma-separated list normalizers into centralized pure helper pipelines using composable standard library tools (e.g., `dict.fromkeys` for order-preserving deduplication, iterables over materialization where safe), enforcing a single semantic truth.
