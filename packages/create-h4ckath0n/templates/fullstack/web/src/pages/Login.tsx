@@ -111,6 +111,7 @@ export function Login() {
               autoComplete="email"
               autoCapitalize="none"
               autoFocus
+              required
             />
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -119,6 +120,7 @@ export function Login() {
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   Password
+                  <span className="text-danger ml-1">*</span>
                 </label>
                 <Link
                   to="/forgot-password"
@@ -134,6 +136,7 @@ export function Login() {
                 disabled={isLoading}
                 data-testid="login-password-input"
                 autoComplete="current-password"
+                required
               />
             </div>
             <Button
