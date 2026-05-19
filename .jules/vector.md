@@ -1,0 +1,3 @@
+## 2024-05-19 - Centralize scope parsing and formatting semantics
+**Learning:** The codebase implements scope handling (parsing a comma-separated string, trimming whitespace, and handling deduplication) repeatedly across `src/h4ckath0n/cli.py`, `src/h4ckath0n/auth/dependencies.py`, and `src/h4ckath0n/auth/session_router.py`. Ad hoc parsing using `.split(",")` and list comprehensions is scattered, and logic is duplicated.
+**Action:** Extract a set of pure helper functions (`parse_scopes`, `format_scopes`, `normalize_scope_list`) into a new file `src/h4ckath0n/auth/scopes.py`. This centralizes the logic, provides a single source of truth for scope list semantics, and reduces mutation and duplicate transformations.
