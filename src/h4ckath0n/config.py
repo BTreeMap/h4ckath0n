@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import warnings
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,29 +19,42 @@ class Settings(BaseSettings):
     )
 
     # --- environment ---
-    env: str = "development"
+    env: str = Field("development", description="`development` or `production`")
 
     # --- database ---
-    database_url: str = "sqlite:///./h4ckath0n.db"
-    auto_upgrade: bool = False
+    database_url: str = Field(
+        "sqlite:///./h4ckath0n.db", description="SQLAlchemy connection string"
+    )
+    auto_upgrade: bool = Field(
+        False, description="Auto-run packaged DB migrations to head on startup"
+    )
 
     # --- WebAuthn / Passkeys ---
-    rp_id: str = ""
-    origin: str = ""
-    webauthn_ttl_seconds: int = 300
-    user_verification: str = "preferred"
-    attestation: str = "none"
+    rp_id: str = Field("", description="WebAuthn relying party ID, required in production")
+    origin: str = Field("", description="WebAuthn origin, required in production")
+    webauthn_ttl_seconds: int = Field(300, description="WebAuthn challenge TTL in seconds")
+    user_verification: str = Field(
+        "preferred", description="WebAuthn user verification requirement"
+    )
+    attestation: str = Field("none", description="WebAuthn attestation preference")
 
     # --- password auth (optional extra) ---
-    password_auth_enabled: bool = False
-    password_reset_expire_minutes: int = 30
+    password_auth_enabled: bool = Field(
+        False, description="Enable password routes when the extra is installed"
+    )
+    password_reset_expire_minutes: int = Field(
+        30, description="Password reset token expiry in minutes"
+    )
 
     # --- admin bootstrap ---
-    bootstrap_admin_emails: list[str] = []
-    first_user_is_admin: bool = False
+    bootstrap_admin_emails: list[str] = Field(
+        default_factory=list,
+        description="JSON list of emails that become admin on password signup",
+    )
+    first_user_is_admin: bool = Field(False, description="First password signup becomes admin")
 
     # --- LLM ---
-    openai_api_key: str = ""
+    openai_api_key: str = Field("", description="OpenAI API key for the LLM wrapper")
 
     # --- Redis ---
     redis_url: str = ""
