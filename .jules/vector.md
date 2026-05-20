@@ -1,0 +1,3 @@
+## 2025-01-20 - Centralize scope parsing logic
+**Learning:** The codebase repeatedly parsed and deduplicated comma-separated scope strings across the CLI and API routes. This mutation-heavy ad hoc logic is prone to subtle drift and missing edge cases.
+**Action:** Extract list parsing, formatting, and normalization into pure functional helpers (`parse_scopes`, `format_scopes`, `normalize_scope_list`) in `src/h4ckath0n/auth/scopes.py`, and refactor existing call sites to use these centralized helpers to enforce deterministic behavior. When introducing new Python modules, ensure they comply with Ruff's UP035 rule (e.g. importing `Iterable` from `collections.abc`).
