@@ -35,6 +35,13 @@ def _require_password_extra() -> tuple:  # type: ignore[type-arg]
         ) from exc
 
 
+# A dummy Argon2id hash for constant-time dummy verification.
+_DUMMY_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$ZMXrA1zoWqQof8GDQOXUNQ"
+    "$kQ8oDk3uKKtdNf2odSygXW9PBeZTMndNfWCFnQAHMdA"
+)
+
+
 async def _is_bootstrap_admin(email: str, settings: Settings, db: AsyncSession) -> bool:
     """Decide whether a newly-registered user should be admin."""
     if email in settings.bootstrap_admin_emails:
@@ -75,10 +82,14 @@ async def register_user(
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+    user = result.scalars().first()
+
+    # To prevent user enumeration timing attacks, perform a dummy verification
+    # if the user doesn't exist or doesn't have a password set.
+    if user is None or not user.password_hash:
+        verify_password(password, _DUMMY_HASH)
         return None
-    if not user.password_hash:
-        return None
+
     if not verify_password(password, user.password_hash):
         return None
     return user
