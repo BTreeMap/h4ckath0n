@@ -1,0 +1,3 @@
+## 2024-05-21 - Centralize User Scope Normalization
+**Learning:** The codebase had duplicated and subtly inconsistent logic for parsing, normalizing, and formatting comma-separated string `scopes` across `cli.py`, `dependencies.py`, and `session_router.py`. Some inline implementations failed to trim whitespace properly or broke deterministic ordering when deduplicating.
+**Action:** Created `h4ckath0n.auth.scopes` as a central source of truth containing pure helpers (`parse_scopes`, `format_scopes`, `normalize_scope_list`). When working with comma-separated scopes, always use these functional utilities to guarantee deterministic deduplication, whitespace trimming, and order preservation.
