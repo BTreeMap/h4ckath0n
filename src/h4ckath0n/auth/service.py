@@ -72,15 +72,31 @@ async def register_user(
     return user
 
 
+# Pre-computed dummy Argon2 hash to normalize response times during auth failures
+# (prevents user enumeration timing attacks).
+# Matches the parameters of default Argon2 in passlib/argon2-cffi.
+DUMMY_PASSWORD_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$0uYeEjw7WO+Wnea9Z5twiw"
+    "$6PjLLDKddWxKiVotmc2+9s81xnDORxR3YjftpuZ8NO0"
+)
+
+
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+
+    # Use constant-time approach for early returns
+    # Even if user is not found or has no password hash, we verify against a dummy hash
+    # to consume a similar amount of CPU time.
+    user = result.scalars().first()
+
+    if user is None or not user.password_hash:
+        verify_password(password, DUMMY_PASSWORD_HASH)
         return None
-    if not user.password_hash:
-        return None
+
     if not verify_password(password, user.password_hash):
         return None
+
     return user
 
 
