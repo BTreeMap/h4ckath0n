@@ -15,6 +15,7 @@ from typing import Any
 from alembic import command as alembic_command
 from alembic.config import Config
 
+from h4ckath0n.auth.scopes import normalize_scope_list as _normalize_scopes
 from h4ckath0n.db.migrations.runtime import (
     PackagedMigrationsError,
     create_sync_engine,
@@ -122,13 +123,6 @@ def _get_db_url(args: argparse.Namespace) -> str:
 
 def _make_sync_engine(url: str):  # type: ignore[no-untyped-def]
     return create_sync_engine(url)
-
-
-def _normalize_scopes(raw: str) -> str:
-    """Normalize a comma-separated scopes string."""
-    parts = filter(None, map(str.strip, raw.split(",")))
-    # de-duplicate preserving order
-    return ",".join(dict.fromkeys(parts))
 
 
 def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-untyped-def]
