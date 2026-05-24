@@ -147,10 +147,10 @@ def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-un
         _err("specify exactly one of --user-id or --email")
         return None
 
+    # ⚡ Bolt: Use session.get() for primary key lookup
     if user_id:
-        stmt = select(User).where(User.id == user_id)
-    else:
-        stmt = select(User).where(User.email == email)
+        return session.get(User, user_id)
+    stmt = select(User).where(User.email == email)
 
     return session.execute(stmt).scalars().first()
 
