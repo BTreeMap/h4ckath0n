@@ -1,0 +1,3 @@
+## 2025-05-25 - Extracted pure `scopes` helpers
+**Learning:** `h4ckath0n` often represented scopes as comma-separated strings inside `User` models, and various modules (`cli.py`, `dependencies.py`, `session_router.py`) duplicated the logic for splitting, filtering out empty segments, and trimming whitespace. `cli.py` additionally performed sorting/deduplication which introduced a slight behavior change.
+**Action:** Created `src/h4ckath0n/auth/scopes.py` with pure helper functions (`parse_scopes`, `normalize_scope_list`, `format_scopes`) to centralize parsing, deduplication and serialization logic. Updated `cli.py` and existing tests to utilize these helpers, increasing clarity and standardizing normalization.
