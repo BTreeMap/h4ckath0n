@@ -24,10 +24,10 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
           enable-cache: true
@@ -52,7 +52,7 @@ jobs:
         run: uv run --locked pytest -v
 
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: "npm"
@@ -88,12 +88,12 @@ jobs:
       channel: ${{ steps.compute.outputs.channel }}
       base_version: ${{ steps.compute.outputs.base_version }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.14"
 
@@ -110,13 +110,13 @@ jobs:
       pypi_exists: ${{ steps.check_pypi.outputs.exists }}
     steps:
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.14"
 
@@ -165,17 +165,17 @@ jobs:
     needs: [compute-version, check-existing]
     if: needs.check-existing.outputs.pypi_exists != 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.14"
 
@@ -196,7 +196,7 @@ jobs:
         run: uv build
 
       - name: Upload dist
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: python-dist
           path: dist/*
@@ -213,7 +213,7 @@ jobs:
       url: https://pypi.org/p/h4ckath0n
     steps:
       - name: Download dist
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           name: python-dist
           path: dist
@@ -228,17 +228,17 @@ jobs:
     needs: [compute-version, check-existing]
     if: needs.check-existing.outputs.npm_exists != 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: "npm"
           cache-dependency-path: packages/create-h4ckath0n/package-lock.json
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.14"
 
@@ -271,7 +271,7 @@ jobs:
           npm pack --pack-destination ../../dist-npm
 
       - name: Upload npm dist
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: npm-dist
           path: dist-npm/*.tgz
@@ -287,13 +287,13 @@ jobs:
       name: npm
     steps:
       - name: Download npm dist
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           name: npm-dist
           path: dist-npm
 
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
@@ -318,13 +318,13 @@ jobs:
 
     steps:
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
           enable-cache: true
@@ -461,7 +461,7 @@ jobs:
 
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: post-release-playwright-report
           path: ${{ steps.scaffold.outputs.app_dir }}/web/playwright-report/
