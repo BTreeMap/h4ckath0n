@@ -18,6 +18,14 @@ def _validate_display_name(v: str | None) -> str | None:
     return v
 
 
+def clean_display_name(v: str) -> str:
+    """Trim whitespace and reject empty-after-trim values for required fields."""
+    v = v.strip()
+    if not v:
+        raise ValueError("Display name must not be empty")
+    return v
+
+
 class DeviceBindingMixin(BaseModel):
     device_public_key_jwk: dict | None = Field(
         None,
@@ -38,10 +46,7 @@ class RegisterRequest(DeviceBindingMixin):
     @field_validator("display_name")
     @classmethod
     def _clean_display_name(cls, v: str) -> str:
-        v = v.strip()
-        if not v:
-            raise ValueError("Display name must not be empty")
-        return v
+        return clean_display_name(v)
 
 
 class LoginRequest(DeviceBindingMixin):
