@@ -95,6 +95,12 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-4 focus:left-4 focus:p-4 focus:bg-surface focus:text-primary focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary"
+      >
+        Skip to main content
+      </a>
       <nav className="border-b border-border bg-surface/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -192,6 +198,11 @@ export function Layout() {
                 size="icon"
                 onClick={toggleTheme}
                 className="mr-2"
+                aria-label={
+                  themePreference === "system"
+                    ? `Theme: system (${effectiveTheme})`
+                    : `Theme: ${themePreference}`
+                }
               >
                 {effectiveTheme === "dark" ? (
                   <Sun className="w-4 h-4" />
@@ -203,6 +214,8 @@ export function Layout() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={isMobileMenuOpen}
               >
                 {isMobileMenuOpen ? (
                   <X className="w-5 h-5" />
@@ -266,7 +279,11 @@ export function Layout() {
         )}
       </nav>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 focus:outline-none"
+      >
         <Outlet />
       </main>
 
