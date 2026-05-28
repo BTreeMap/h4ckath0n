@@ -1,0 +1,3 @@
+## 2024-05-24 - Centralize collection parsing from text columns
+**Learning:** When database collections (like scopes) are stored in text columns (comma-separated), ad-hoc parsing (e.g., `.split()`, `.strip()`, deduplication via sets or `dict.fromkeys`) tends to leak into many call sites. This obscures the domain semantics and makes behavior inconsistent (e.g., some endpoints dropping order via `set`, others preserving it via list comprehensions).
+**Action:** Use pure functional helpers (e.g., `parse_scopes`, `format_scopes`) acting as a single source of truth for converting sequence text to and from the database schema, keeping intermediate values explicit and deterministic.
