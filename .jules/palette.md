@@ -1,0 +1,3 @@
+## 2024-04-21 - [Chat Input Keyboard Interaction]
+**Learning:** Users expect Enter-to-submit keyboard interactions in chat interfaces (like AI prompt textareas), but this can cause prompt mangling if the input isn't disabled during async operations (like streaming). Additionally, absolute-positioned keyboard hints can overlap with text if bottom padding isn't applied to the textarea.
+**Action:** When implementing Enter-to-submit, check that the input isn't empty, apply the disabled attribute directly to the textarea during async operations, and apply adequate bottom padding (e.g., pb-8) to prevent text overlap with hints.
