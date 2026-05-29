@@ -6,6 +6,7 @@ They will raise ``RuntimeError`` if called without the extra installed.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from datetime import UTC, datetime, timedelta
@@ -72,15 +73,28 @@ async def register_user(
     return user
 
 
+# 🛡️ Sentinel: Dummy Argon2id hash for mitigating timing attacks during failed logins.
+_DUMMY_PASSWORD_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$pAWMEv5VZazfNsViHMJS1Q"
+    "$x0vpzE6DZuY205yyO94fn8G0mpOvI8e8mREHSvn3jkE"
+)
+
+
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+    user = result.scalars().first()
+
+    # 🛡️ Sentinel: Perform dummy password verification when user is not found
+    # or lacks a password to prevent user enumeration via timing attacks.
+    # Using asyncio.to_thread to prevent event loop blocking during hashing.
+    if user is None or not user.password_hash:
+        await asyncio.to_thread(verify_password, password, _DUMMY_PASSWORD_HASH)
         return None
-    if not user.password_hash:
+
+    if not await asyncio.to_thread(verify_password, password, user.password_hash):
         return None
-    if not verify_password(password, user.password_hash):
-        return None
+
     return user
 
 
