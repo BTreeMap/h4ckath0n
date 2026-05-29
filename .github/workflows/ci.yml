@@ -47,6 +47,9 @@ jobs:
       - name: Check doc routes
         run: uv run --locked scripts/check_doc_routes.py
 
+      - name: Check env vars doc parity
+        run: uv run python scripts/check_env_vars.py
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
