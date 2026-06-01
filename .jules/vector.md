@@ -1,0 +1,4 @@
+## 2025-02-20 - Centralizing Validation with Pydantic V2 `Annotated`
+
+**Learning:** When using Pydantic V2, validation logic (like trimming or string sanitization) duplicated across multiple schemas can be elegantly centralized using `typing.Annotated` in combination with `pydantic.functional_validators.AfterValidator` or `StringConstraints`. In this repo, multiple models duplicated a `@field_validator("display_name")` method to strip whitespace and check for emptiness.
+**Action:** Always prefer creating a custom `Annotated` type (e.g., `ValidDisplayName = Annotated[str, Field(max_length=200), AfterValidator(_clean_display_name)]`) to serve as a single source of truth for validation rules over repeating `@field_validator` hooks on individual fields. This keeps data models cleaner, reduces boilerplate, and enforces consistent semantics.
