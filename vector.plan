@@ -1,0 +1,6 @@
+1. Remove `_validate_display_name` and the duplicate `@field_validator("display_name")` methods in `src/h4ckath0n/auth/schemas.py` and `src/h4ckath0n/auth/passkeys/schemas.py`.
+2. Introduce a reusable `ValidDisplayName` type in `src/h4ckath0n/auth/schemas.py` using `typing.Annotated` and `pydantic.functional_validators.AfterValidator` as recommended in `.jules/vector.md` memory for V2 models.
+3. Update `RegisterRequest` in `src/h4ckath0n/auth/schemas.py` and `PasskeyRegisterStartRequest` in `src/h4ckath0n/auth/passkeys/schemas.py` to use `ValidDisplayName`.
+4. Run tests to ensure everything still passes (`uv run pytest tests/`).
+5. Run linting and formatting.
+6. Commit the changes and open PR as Vector.
