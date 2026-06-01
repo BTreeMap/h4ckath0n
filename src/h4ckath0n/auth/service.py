@@ -55,6 +55,7 @@ async def register_user(
     *,
     display_name: str | None = None,
 ) -> User:
+    email = email.lower()
     hash_password, _verify = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
     if result.scalars().first():
@@ -73,6 +74,7 @@ async def register_user(
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
+    email = email.lower()
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
     if (user := result.scalars().first()) is None:
@@ -139,6 +141,7 @@ async def create_password_reset_token(
     expire_minutes: int = 30,
 ) -> str | None:
     """Create a password reset token. Returns raw token or None if email unknown."""
+    email = email.lower()
     # ⚡ Bolt: Fetch only the ID to avoid instantiating the full User ORM object.
     if (user_id := await db.scalar(select(User.id).filter(User.email == email))) is None:
         return None
