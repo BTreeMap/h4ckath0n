@@ -661,6 +661,7 @@
           "display_name": {
             "description": "Human-facing display name for the new account.",
             "maxLength": 200,
+            "minLength": 1,
             "title": "Display Name",
             "type": "string"
           }
@@ -855,6 +856,7 @@
           "display_name": {
             "description": "Human-facing display name for the account.",
             "maxLength": 200,
+            "minLength": 1,
             "title": "Display Name",
             "type": "string"
           },
