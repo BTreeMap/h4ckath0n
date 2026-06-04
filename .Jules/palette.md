@@ -1,0 +1,3 @@
+## 2024-06-04 - Fix ambiguous ARIA label matching in responsive UI
+**Learning:** Adding explicit `aria-label`s to UI elements like theme toggles or menu buttons that exist in both desktop and mobile views (even if hidden by CSS classes like `md:hidden`) will cause React Testing Library's `getByRole` to throw ambiguous match errors because the testing library queries the DOM regardless of visual visibility.
+**Action:** When adding `aria-label`s to responsive elements, always update related tests to use `getAllByRole(...)[0]!` or query specifically for visibility, and ensure `expect(button).toBeDefined()` is used in strict TypeScript environments prior to interactions.
