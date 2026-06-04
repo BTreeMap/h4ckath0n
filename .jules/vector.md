@@ -1,0 +1,3 @@
+## 2025-06-04 - Centralized display name validation using AfterValidator
+**Learning:** Found duplicated `@field_validator` methods for `display_name` validation (`_clean_display_name`) across `RegisterRequest` and `PasskeyRegisterStartRequest`. Pydantic V2 encourages composing reusable validation rules via `typing.Annotated` and `pydantic.functional_validators.AfterValidator` rather than repetitive `@field_validator` classes to adhere to FP principles (reusability and pure transformations).
+**Action:** Use `typing.Annotated` with `AfterValidator` to centralize validation logic. E.g., `DisplayName = Annotated[str, Field(max_length=DISPLAY_NAME_MAX_LENGTH), AfterValidator(_clean_display_name)]` and replace all `display_name: str` usages.
