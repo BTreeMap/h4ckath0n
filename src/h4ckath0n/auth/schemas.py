@@ -2,10 +2,24 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from typing import Annotated
+
+from pydantic import BaseModel, EmailStr, Field
+from pydantic.functional_validators import AfterValidator
 
 # Maximum length for display names (shared across DB, schemas, and API).
 DISPLAY_NAME_MAX_LENGTH = 200
+
+
+def _clean_display_name(v: str) -> str:
+    """Trim whitespace and reject empty names."""
+    v = v.strip()
+    if not v:
+        raise ValueError("Display name must not be empty")
+    return v
+
+
+DisplayName = Annotated[str, AfterValidator(_clean_display_name)]
 
 
 def _validate_display_name(v: str | None) -> str | None:
@@ -29,19 +43,11 @@ class DeviceBindingMixin(BaseModel):
 class RegisterRequest(DeviceBindingMixin):
     email: EmailStr = Field(..., description="Account email for password-based signup.")
     password: str = Field(..., description="Plaintext password, hashed server-side.")
-    display_name: str = Field(
+    display_name: DisplayName = Field(
         ...,
         description="Human-facing display name for the account.",
         max_length=DISPLAY_NAME_MAX_LENGTH,
     )
-
-    @field_validator("display_name")
-    @classmethod
-    def _clean_display_name(cls, v: str) -> str:
-        v = v.strip()
-        if not v:
-            raise ValueError("Display name must not be empty")
-        return v
 
 
 class LoginRequest(DeviceBindingMixin):
