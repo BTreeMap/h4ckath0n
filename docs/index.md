@@ -17,6 +17,10 @@ Use this index to navigate the main documentation set.
 
 - [Database and migrations](database/migrations.md)
 
+## Configuration
+
+- [Configuration](configuration/index.md)
+
 ## OpenAPI and client types
 
 - [OpenAPI generation](openapi/index.md)
