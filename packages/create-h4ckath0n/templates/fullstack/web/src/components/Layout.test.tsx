@@ -48,9 +48,10 @@ describe("Layout theme preference", () => {
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("system");
       expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-      expect(
-        screen.getByRole("button", { name: "Theme: system (dark)" }),
-      ).toBeInTheDocument();
+      const buttons = screen.getAllByRole("button", { name: "Theme: system (dark)" });
+      const button = buttons[0]!;
+      expect(button).toBeDefined();
+      expect(button).toBeInTheDocument();
     });
   });
 
@@ -58,15 +59,18 @@ describe("Layout theme preference", () => {
     mockMatchMedia(true);
     renderLayout();
 
-    const button = screen.getByRole("button", { name: "Theme: system (dark)" });
+    const buttons = screen.getAllByRole("button", { name: "Theme: system (dark)" });
+    const button = buttons[0]!;
+    expect(button).toBeDefined();
     fireEvent.click(button);
 
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("light");
       expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-      expect(
-        screen.getByRole("button", { name: "Theme: light" }),
-      ).toBeInTheDocument();
+      const buttons = screen.getAllByRole("button", { name: "Theme: light" });
+      const button = buttons[0]!;
+      expect(button).toBeDefined();
+      expect(button).toBeInTheDocument();
     });
   });
 
@@ -75,15 +79,18 @@ describe("Layout theme preference", () => {
     localStorage.setItem("theme-preference", "light");
     renderLayout();
 
-    const button = screen.getByRole("button", { name: "Theme: light" });
+    const buttons = screen.getAllByRole("button", { name: "Theme: light" });
+    const button = buttons[0]!;
+    expect(button).toBeDefined();
 
     fireEvent.click(button);
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("dark");
       expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-      expect(
-        screen.getByRole("button", { name: "Theme: dark" }),
-      ).toBeInTheDocument();
+      const buttons = screen.getAllByRole("button", { name: "Theme: dark" });
+      const button = buttons[0]!;
+      expect(button).toBeDefined();
+      expect(button).toBeInTheDocument();
     });
 
     fireEvent.click(button);
