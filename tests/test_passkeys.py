@@ -28,8 +28,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from h4ckath0n.app import create_app
 from h4ckath0n.auth.models import User, WebAuthnChallenge, WebAuthnCredential
 from h4ckath0n.auth.passkeys.ids import (
+    is_device_id,
     is_key_id,
     is_user_id,
+    new_device_id,
     new_key_id,
     new_user_id,
 )
@@ -117,6 +119,18 @@ class TestIdGenerators:
         kid = new_key_id()
         assert all(c in _ALLOWED_BASE32 for c in kid[1:])
 
+    def test_device_id_length(self):
+        did = new_device_id()
+        assert len(did) == 32
+
+    def test_device_id_prefix(self):
+        did = new_device_id()
+        assert did[0] == "d"
+
+    def test_device_id_charset(self):
+        did = new_device_id()
+        assert all(c in _ALLOWED_BASE32 for c in did[1:])
+
     def test_is_user_id(self):
         uid = new_user_id()
         assert is_user_id(uid)
@@ -130,6 +144,12 @@ class TestIdGenerators:
         assert not is_key_id("x" + kid[1:])
         assert not is_key_id(kid[:31])
 
+    def test_is_device_id(self):
+        did = new_device_id()
+        assert is_device_id(did)
+        assert not is_device_id("x" + did[1:])
+        assert not is_device_id(did[:31])
+
     def test_user_id_not_key_id(self):
         uid = new_user_id()
         assert not is_key_id(uid)
@@ -137,6 +157,14 @@ class TestIdGenerators:
     def test_key_id_not_user_id(self):
         kid = new_key_id()
         assert not is_user_id(kid)
+
+    def test_device_id_not_user_id(self):
+        did = new_device_id()
+        assert not is_user_id(did)
+
+    def test_device_id_not_key_id(self):
+        did = new_device_id()
+        assert not is_key_id(did)
 
     def test_uniqueness(self):
         ids = {new_user_id() for _ in range(100)}
