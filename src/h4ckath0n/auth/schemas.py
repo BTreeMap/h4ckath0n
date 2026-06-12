@@ -2,10 +2,24 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 # Maximum length for display names (shared across DB, schemas, and API).
 DISPLAY_NAME_MAX_LENGTH = 200
+
+
+def parse_scopes(raw: str) -> Iterable[str]:
+    """Parse a comma-separated scopes string into an iterable of normalized strings."""
+    return filter(None, map(str.strip, raw.split(","))) if raw else []
+
+
+def format_scopes(scopes: Iterable[str]) -> str:
+    """Format an iterable of scopes into a deduplicated, comma-separated string preserving
+    order.
+    """
+    return ",".join(dict.fromkeys(scopes))
 
 
 def _validate_display_name(v: str | None) -> str | None:
