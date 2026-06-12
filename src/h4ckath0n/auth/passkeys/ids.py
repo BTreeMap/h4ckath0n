@@ -37,22 +37,32 @@ _ID_LEN = 32
 _ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyz234567")
 
 
+def _new_prefixed_id(prefix: str) -> str:
+    s = random_base32()
+    return prefix + s[1:]
+
+
+def _is_valid_prefixed_id(value: str, prefix: str) -> bool:
+    return (
+        len(value) == _ID_LEN
+        and value[:1] == prefix
+        and all(c in _ALLOWED_CHARS for c in value[1:])
+    )
+
+
 def new_user_id() -> str:
     """Generate a user ID (32 chars, starts with ``u``)."""
-    s = random_base32()
-    return "u" + s[1:]
+    return _new_prefixed_id("u")
 
 
 def new_key_id() -> str:
     """Generate a credential key ID (32 chars, starts with ``k``)."""
-    s = random_base32()
-    return "k" + s[1:]
+    return _new_prefixed_id("k")
 
 
 def new_device_id() -> str:
     """Generate a device ID (32 chars, starts with ``d``)."""
-    s = random_base32()
-    return "d" + s[1:]
+    return _new_prefixed_id("d")
 
 
 def new_token_id() -> str:
@@ -62,20 +72,14 @@ def new_token_id() -> str:
 
 def is_user_id(value: str) -> bool:
     """Return ``True`` when *value* looks like a valid user ID."""
-    return (
-        len(value) == _ID_LEN and value[:1] == "u" and all(c in _ALLOWED_CHARS for c in value[1:])
-    )
+    return _is_valid_prefixed_id(value, "u")
 
 
 def is_key_id(value: str) -> bool:
     """Return ``True`` when *value* looks like a valid key ID."""
-    return (
-        len(value) == _ID_LEN and value[:1] == "k" and all(c in _ALLOWED_CHARS for c in value[1:])
-    )
+    return _is_valid_prefixed_id(value, "k")
 
 
 def is_device_id(value: str) -> bool:
     """Return ``True`` when *value* looks like a valid device ID."""
-    return (
-        len(value) == _ID_LEN and value[:1] == "d" and all(c in _ALLOWED_CHARS for c in value[1:])
-    )
+    return _is_valid_prefixed_id(value, "d")
