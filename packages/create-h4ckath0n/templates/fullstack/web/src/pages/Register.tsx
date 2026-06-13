@@ -13,7 +13,7 @@ import {
   CardFooter,
 } from "../components/Card";
 import { Alert } from "../components/Alert";
-import { Fingerprint, Loader2 } from "lucide-react";
+import { Fingerprint } from "lucide-react";
 
 const DISPLAY_NAME_MAX_LENGTH = 200;
 
@@ -98,15 +98,12 @@ export function Register() {
             <Button
               onClick={handlePasskeyRegister}
               disabled={isLoading || !displayName.trim()}
+              isLoading={passkeyLoading}
               className="w-full h-12 text-base font-semibold"
               size="lg"
               data-testid="register-submit"
             >
-              {passkeyLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Fingerprint className="mr-2 h-5 w-5" />
-              )}
+              {!passkeyLoading && <Fingerprint className="mr-2 h-5 w-5" />}
               Register with Passkey
             </Button>
           </div>
@@ -153,12 +150,10 @@ export function Register() {
                 !email.trim() ||
                 !password
               }
+              isLoading={passwordLoading}
               className="w-full"
               data-testid="register-password-btn"
             >
-              {passwordLoading && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
               Sign Up
             </Button>
           </form>
