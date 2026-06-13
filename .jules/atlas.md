@@ -9,3 +9,8 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+
+## 2026-02-28 - Env vars table in README drifts from Pydantic Settings
+
+**Learning:** The `README.md` hand-written environment variable table gets out of sync with `src/h4ckath0n/config.py` (e.g. missing Redis, Storage, and Email settings).
+**Action:** Replaced the hand-written table with a generated section using `scripts/generate_env_docs.py` and `Pydantic` field descriptions. Added a CI step to enforce `--check`.
