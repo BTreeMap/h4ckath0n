@@ -1,0 +1,3 @@
+## 2024-06-14 - Mobile Menu Toggle Accessibility
+**Learning:** Adding ARIA labels to mobile-only toggle buttons can cause existing tests that use `getByRole("button", { name: "Theme: light" })` to fail if the hidden desktop toggle has the same ARIA label. Playwright click events on hidden mobile elements can fail with timeouts if standard `click()` is used without specific targeting or evaluating.
+**Action:** When adding ARIA labels to hidden responsive elements, always update tests to use `getAllByRole(...)[0]!` with a non-null assertion in TypeScript to prevent `tsc` build errors. In Playwright scripts, use exact locators or `page.evaluate()` to interact with elements that might have overlapping ARIA labels.
