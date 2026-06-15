@@ -1,0 +1,3 @@
+## 2024-05-24 - Pydantic Annotated validation ordering
+**Learning:** When refactoring duplicated `@field_validator` logic into reusable `typing.Annotated` types to preserve custom `ValueError` messages, Pydantic's built-in `Field` constraints (like `max_length`) execute *before* `AfterValidator`. If the custom logic involves normalization (like `.strip()`) that must happen before length checks, you must use `BeforeValidator`.
+**Action:** Always use `BeforeValidator` for string normalization in `Annotated` types to ensure inputs are cleaned before built-in length or regex constraints are applied. Furthermore, since `BeforeValidator` receives raw input, add `if isinstance(v, str):` to safely handle non-string inputs.
