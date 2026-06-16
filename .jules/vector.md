@@ -1,0 +1,3 @@
+## 2024-04-11 - Centralize String Normalization
+**Learning:** In projects that store comma-separated lists in database columns (like roles or scopes), scattered `split(",")` and `strip()` logic often leads to subtle inconsistencies in filtering out empty strings and preserving list order. Python's `dict.fromkeys()` is a fast, idiomatic way to preserve order when deduplicating these parsed sequences compared to standard `set()`.
+**Action:** When extracting data normalization rules (like cleaning up string sequences), move them into a shared, pure-functional utility file rather than repeating the parsing/formatting ad-hoc at the DB interface or API layer.

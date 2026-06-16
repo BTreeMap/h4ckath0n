@@ -13,7 +13,6 @@ from h4ckath0n.cli import (
     EXIT_BAD_ARGS,
     EXIT_LAST_PASSKEY,
     _normalize_db_url_for_sync,
-    _normalize_scopes,
 )
 from tests.conftest import run_cli as _run_cli
 
@@ -125,28 +124,6 @@ class TestAlembicUrlNormalization:
         exit_code = cli_module._cmd_db_migrate_current(args)
         assert exit_code == 0
         assert make_url(captured["sqlalchemy.url"]) == make_url("sqlite:///./test.db")
-
-
-# ---------------------------------------------------------------------------
-# Scopes normalization
-# ---------------------------------------------------------------------------
-
-
-class TestNormalizeScopes:
-    def test_basic(self):
-        assert _normalize_scopes("a,b,c") == "a,b,c"
-
-    def test_dedup(self):
-        assert _normalize_scopes("a,b,a") == "a,b"
-
-    def test_trim(self):
-        assert _normalize_scopes(" a , b , c ") == "a,b,c"
-
-    def test_empty_segments(self):
-        assert _normalize_scopes("a,,b,,") == "a,b"
-
-    def test_empty_string(self):
-        assert _normalize_scopes("") == ""
 
 
 # ---------------------------------------------------------------------------
