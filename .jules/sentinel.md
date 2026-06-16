@@ -1,0 +1,4 @@
+## 2024-06-16 - Timing attack mitigation via dummy hash
+**Vulnerability:** Timing attack vulnerability in password authentication where looking up a non-existent user returns faster than looking up an existing user, allowing enumeration of registered emails.
+**Learning:** Returning early when the user doesn't exist skips the expensive password verification. To mitigate this, we need to always perform a verification even for non-existent users. Crucially, the dummy hash used for verification MUST be a valid Argon2id string. If it's improperly formatted, `argon2.PasswordHasher.verify` will fail fast with a decoding error, completely bypassing the intended artificial delay.
+**Prevention:** Always verify a structurally correct dummy hash when the user is not found or lacks a password hash to ensure authentication time is constant.
