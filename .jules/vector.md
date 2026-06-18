@@ -1,0 +1,3 @@
+## 2024-06-18 - Centralize scope parsing and serialization logic
+**Learning:** Logic for splitting, stripping, and deduplicating comma-separated string fields like scopes was duplicated across multiple architectural layers (router, dependencies, cli) using slightly different list and set comprehensions. Python string-splitting combined with SQLAlchemy text columns creates edge cases around empty strings that must be handled uniformly.
+**Action:** Extract list-parsing logic into pure helper pipelines that accept a raw string and return a deterministic, deduplicated, ordered list to serve as the single source of truth before any domain or database logic acts on it.
