@@ -28,3 +28,14 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+## 2026-03-24 - Leverage SQLAlchemy Identity Map via `db.get()`
+
+**Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. This pattern was found in credential lookup paths and the CLI user resolver.
+
+**Action:** Always use `await db.get(Model, pk)` or `session.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-24 - Avoid Full ORM Hydration for Existence Checks
+
+**Learning:** When checking if a record exists (e.g., verifying an email during registration) or only retrieving its ID, querying for the full ORM object using `result.scalars().first()` forces SQLAlchemy to parse and allocate the entire model instance, including all fields.
+
+**Action:** Always use `db.scalar(select(Model.id)...)` when only the identifier or existence is needed. This avoids full ORM overhead and significantly reduces memory allocation.
