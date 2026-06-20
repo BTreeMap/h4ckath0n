@@ -11,8 +11,12 @@ from h4ckath0n.auth import schemas as auth_schemas
 from h4ckath0n.auth.dependencies import _get_current_user
 from h4ckath0n.auth.models import User
 from h4ckath0n.auth.passkeys import schemas
-from h4ckath0n.auth.passkeys.service import (
+from h4ckath0n.auth.passkeys.errors import (
     LastPasskeyError,
+    PasskeyNotFoundError,
+    PasskeyRevokedError,
+)
+from h4ckath0n.auth.passkeys.service import (
     finish_add_credential,
     finish_authentication,
     finish_registration,
@@ -62,7 +66,7 @@ async def register_start(
     body: schemas.PasskeyRegisterStartRequest,
     request: Request,
     db: AsyncSession = Depends(_db_dep),
-):
+) -> schemas.PasskeyRegisterStartResponse:
     settings = request.app.state.settings
     flow_id, options = await start_registration(db, settings, display_name=body.display_name)
     return schemas.PasskeyRegisterStartResponse(flow_id=flow_id, options=options)
@@ -88,7 +92,7 @@ async def register_finish(
     body: schemas.PasskeyRegisterFinishRequest,
     request: Request,
     db: AsyncSession = Depends(_db_dep),
-):
+) -> schemas.PasskeyFinishResponse:
     settings = request.app.state.settings
     try:
         user = await finish_registration(db, body.flow_id, body.credential, settings)
@@ -115,7 +119,9 @@ async def register_finish(
         "Begin a username-less passkey login ceremony and return WebAuthn authentication options."
     ),
 )
-async def login_start(request: Request, db: AsyncSession = Depends(_db_dep)):
+async def login_start(
+    request: Request, db: AsyncSession = Depends(_db_dep)
+) -> schemas.PasskeyLoginStartResponse:
     settings = request.app.state.settings
     flow_id, options = await start_authentication(db, settings)
     return schemas.PasskeyLoginStartResponse(flow_id=flow_id, options=options)
@@ -140,7 +146,7 @@ async def login_finish(
     body: schemas.PasskeyLoginFinishRequest,
     request: Request,
     db: AsyncSession = Depends(_db_dep),
-):
+) -> schemas.PasskeyFinishResponse:
     settings = request.app.state.settings
     try:
         user = await finish_authentication(db, body.flow_id, body.credential, settings)
@@ -174,7 +180,7 @@ async def add_start(
     request: Request,
     user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(_db_dep),
-):
+) -> schemas.PasskeyAddStartResponse:
     settings = request.app.state.settings
     flow_id, options = await start_add_credential(db, user, settings)
     return schemas.PasskeyAddStartResponse(flow_id=flow_id, options=options)
@@ -199,7 +205,7 @@ async def add_finish(
     request: Request,
     user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(_db_dep),
-):
+) -> schemas.PasskeyFinishResponse:
     settings = request.app.state.settings
     try:
         await finish_add_credential(db, body.flow_id, body.credential, user, settings)
@@ -233,7 +239,7 @@ async def passkeys_list(
     request: Request,
     user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(_db_dep),
-):
+) -> schemas.PasskeyListResponse:
     creds = await list_passkeys(db, user)
     items = [
         schemas.PasskeyInfo(
@@ -280,18 +286,15 @@ async def passkey_revoke(
     request: Request,
     user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(_db_dep),
-):
+) -> schemas.PasskeyRevokeResponse:
     try:
         await revoke_passkey(db, user, key_id)
-    except LastPasskeyError:
+    except LastPasskeyError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=schemas.PasskeyRevokeError(
-                code="LAST_PASSKEY",
-                message=(
-                    "Cannot revoke the last active passkey. Add another passkey via "
-                    "POST /auth/passkey/add/start first."
-                ),
+                code=exc.code,
+                message=str(exc),
             ).model_dump(),
         ) from None
     except ValueError as exc:
@@ -320,11 +323,11 @@ async def passkey_rename(
     request: Request,
     user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(_db_dep),
-):
+) -> schemas.PasskeyRenameResponse:
     try:
         cred = await rename_passkey(db, user, key_id, body.name)
-    except ValueError as exc:
-        if "revoked" in (msg := str(exc)).lower():
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg) from None
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg) from None
+    except PasskeyRevokedError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
+    except PasskeyNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from None
     return schemas.PasskeyRenameResponse(id=cred.id, name=cred.name)

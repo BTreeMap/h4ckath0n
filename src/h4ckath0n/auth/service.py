@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,7 +85,7 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> User
     return user
 
 
-def _jwk_fingerprint(jwk: dict) -> str:
+def _jwk_fingerprint(jwk: dict[str, Any]) -> str:
     """Compute a deterministic SHA-256 fingerprint of a JWK.
 
     Uses only the essential key-material fields (kty, crv, x, y) in sorted
@@ -104,7 +105,7 @@ def _jwk_fingerprint(jwk: dict) -> str:
 async def register_device(
     db: AsyncSession,
     user_id: str,
-    public_key_jwk: dict | None,
+    public_key_jwk: dict[str, Any] | None,
     label: str | None = None,
 ) -> str:
     """Return a Device id for the given public key, creating one if needed.

@@ -73,8 +73,10 @@ ignore = ["B008"]
 
 [tool.mypy]
 python_version = "3.11"
-strict = false
-warn_return_any = true
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_any_generics = true
 warn_unused_configs = true
 plugins = ["pydantic.mypy"]
 

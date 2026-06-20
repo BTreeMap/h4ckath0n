@@ -8,12 +8,27 @@ The default auth path is passkeys (WebAuthn).  Password-based fields
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal
 
 from sqlalchemy import Boolean, DateTime, Index, LargeBinary, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from h4ckath0n.auth.passkeys.ids import new_device_id, new_key_id, new_token_id, new_user_id
+from h4ckath0n.auth.authz import Role
+from h4ckath0n.auth.passkeys.ids import (
+    DeviceId,
+    KeyId,
+    TokenId,
+    UserId,
+    new_device_id,
+    new_key_id,
+    new_token_id,
+    new_user_id,
+)
 from h4ckath0n.db.base import Base
+
+# WebAuthn ceremony kinds. A challenge is created for exactly one ceremony
+# type and may only be consumed by that same ceremony.
+ChallengeKind = Literal["register", "authenticate", "add_credential"]
 
 
 def _utcnow() -> datetime:
@@ -28,8 +43,8 @@ def _utcnow() -> datetime:
 class User(Base):
     __tablename__ = "h4ckath0n_users"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_user_id)
-    role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
+    id: Mapped[UserId] = mapped_column(String(32), primary_key=True, default=new_user_id)
+    role: Mapped[Role] = mapped_column(String(20), nullable=False, default="user")
     scopes: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -52,7 +67,7 @@ class User(Base):
 class WebAuthnCredential(Base):
     __tablename__ = "h4ckath0n_webauthn_credentials"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_key_id)
+    id: Mapped[KeyId] = mapped_column(String(32), primary_key=True, default=new_key_id)
     user_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     credential_id: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     public_key: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
@@ -76,9 +91,7 @@ class WebAuthnChallenge(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     challenge: Mapped[str] = mapped_column(Text, nullable=False)  # base64url-encoded
     user_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    kind: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )  # "register" | "authenticate" | "add_credential"
+    kind: Mapped[ChallengeKind] = mapped_column(String(20), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -96,7 +109,7 @@ class WebAuthnChallenge(Base):
 class PasswordResetToken(Base):
     __tablename__ = "h4ckath0n_password_reset_tokens"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_token_id)
+    id: Mapped[TokenId] = mapped_column(String(32), primary_key=True, default=new_token_id)
     user_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     token_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -112,7 +125,7 @@ class PasswordResetToken(Base):
 class Device(Base):
     __tablename__ = "h4ckath0n_devices"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_device_id)
+    id: Mapped[DeviceId] = mapped_column(String(32), primary_key=True, default=new_device_id)
     user_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     public_key_jwk: Mapped[str] = mapped_column(Text, nullable=False)  # JSON-serialized JWK
     fingerprint: Mapped[str | None] = mapped_column(

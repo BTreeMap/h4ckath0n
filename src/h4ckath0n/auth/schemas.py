@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 # Maximum length for display names (shared across DB, schemas, and API).
@@ -19,7 +21,7 @@ def _validate_display_name(v: str | None) -> str | None:
 
 
 class DeviceBindingMixin(BaseModel):
-    device_public_key_jwk: dict | None = Field(
+    device_public_key_jwk: dict[str, Any] | None = Field(
         None,
         description="Optional device public key in JWK format to bind a device identity.",
     )

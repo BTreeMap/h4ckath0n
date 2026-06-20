@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from h4ckath0n.auth.models import User, WebAuthnChallenge, WebAuthnCredential
+from h4ckath0n.auth.models import ChallengeKind, User, WebAuthnChallenge, WebAuthnCredential
+from h4ckath0n.auth.passkeys.errors import (
+    LastPasskeyError,
+    PasskeyAlreadyRevokedError,
+    PasskeyNotFoundError,
+    PasskeyRevokedError,
+)
 from h4ckath0n.auth.passkeys.ids import new_key_id
 from h4ckath0n.auth.passkeys.webauthn import (
     base64url_to_bytes,
@@ -22,9 +29,19 @@ from h4ckath0n.config import Settings
 from h4ckath0n.rng import random_bytes as _rng_bytes
 from h4ckath0n.rng import token_urlsafe as _rng_urlsafe
 
-
-class LastPasskeyError(Exception):
-    """Raised when attempting to revoke the last active passkey, which would prevent user login."""
+__all__ = [
+    "LastPasskeyError",
+    "start_registration",
+    "finish_registration",
+    "start_authentication",
+    "finish_authentication",
+    "start_add_credential",
+    "finish_add_credential",
+    "list_passkeys",
+    "rename_passkey",
+    "revoke_passkey",
+    "cleanup_expired_challenges",
+]
 
 
 # ---------------------------------------------------------------------------
@@ -42,7 +59,9 @@ def _new_challenge() -> bytes:
     return _rng_bytes(32)
 
 
-async def _get_valid_flow(db: AsyncSession, flow_id: str, kind: str) -> WebAuthnChallenge:
+async def _get_valid_flow(
+    db: AsyncSession, flow_id: str, kind: ChallengeKind
+) -> WebAuthnChallenge:
     """Fetch and validate an unconsumed, non-expired flow."""
     # ⚡ Bolt: Use db.get() for primary key lookup
     if (flow := await db.get(WebAuthnChallenge, flow_id)) is None:
@@ -74,7 +93,7 @@ async def start_registration(
     settings: Settings,
     *,
     display_name: str | None = None,
-) -> tuple[str, dict]:
+) -> tuple[str, dict[str, Any]]:
     """Begin passkey registration - create user + flow, return (flow_id, options_dict)."""
     rp_id = settings.effective_rp_id()
     origin = settings.effective_origin()
@@ -112,7 +131,7 @@ async def start_registration(
 async def finish_registration(
     db: AsyncSession,
     flow_id: str,
-    credential_json: dict,
+    credential_json: dict[str, Any],
     settings: Settings,
 ) -> User:
     """Complete passkey registration - verify attestation, store credential, return user."""
@@ -131,7 +150,7 @@ async def finish_registration(
     transports = credential_json.get("response", {}).get("transports")
     cred = WebAuthnCredential(
         id=new_key_id(),
-        user_id=flow.user_id,  # type: ignore[arg-type]
+        user_id=flow.user_id,
         credential_id=bytes_to_base64url(cred_id_bytes),
         public_key=public_key,
         sign_count=sign_count,
@@ -155,7 +174,7 @@ async def finish_registration(
 async def start_authentication(
     db: AsyncSession,
     settings: Settings,
-) -> tuple[str, dict]:
+) -> tuple[str, dict[str, Any]]:
     """Begin passkey login - return (flow_id, options_dict)."""
     rp_id = settings.effective_rp_id()
     origin = settings.effective_origin()
@@ -185,7 +204,7 @@ async def start_authentication(
 async def finish_authentication(
     db: AsyncSession,
     flow_id: str,
-    credential_json: dict,
+    credential_json: dict[str, Any],
     settings: Settings,
 ) -> User:
     """Complete passkey login - verify assertion, update counters, return user."""
@@ -232,7 +251,7 @@ async def start_add_credential(
     db: AsyncSession,
     user: User,
     settings: Settings,
-) -> tuple[str, dict]:
+) -> tuple[str, dict[str, Any]]:
     """Begin adding a passkey for an already-authenticated user."""
     rp_id = settings.effective_rp_id()
     origin = settings.effective_origin()
@@ -281,7 +300,7 @@ async def start_add_credential(
 async def finish_add_credential(
     db: AsyncSession,
     flow_id: str,
-    credential_json: dict,
+    credential_json: dict[str, Any],
     current_user: User,
     settings: Settings,
 ) -> WebAuthnCredential:
@@ -336,7 +355,8 @@ async def rename_passkey(
 ) -> WebAuthnCredential:
     """Rename a passkey. *name* is trimmed; empty-after-trim stored as NULL.
 
-    Raises ValueError if not found / not owned / revoked.
+    Raises :class:`PasskeyNotFoundError` if not found / not owned and
+    :class:`PasskeyRevokedError` if the credential is revoked.
     """
     result = await db.execute(
         select(WebAuthnCredential).filter(
@@ -345,9 +365,9 @@ async def rename_passkey(
         )
     )
     if (cred := result.scalars().first()) is None:
-        raise ValueError("Credential not found")
+        raise PasskeyNotFoundError
     if cred.revoked_at is not None:
-        raise ValueError("Cannot rename a revoked passkey")
+        raise PasskeyRevokedError
 
     clean: str | None = name.strip() if name else None
     if clean == "":
@@ -382,9 +402,9 @@ async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
             )
         )
         if (cred := result.scalars().first()) is None:
-            raise ValueError("Credential not found")
+            raise PasskeyNotFoundError
         if cred.revoked_at is not None:
-            raise ValueError("Credential already revoked")
+            raise PasskeyAlreadyRevokedError
 
         # Count active passkeys without FOR UPDATE (mutex is the User row lock above).
         active_count = await db.scalar(
@@ -396,10 +416,7 @@ async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
             )
         )
         if active_count is not None and int(active_count) <= 1:
-            raise LastPasskeyError(
-                "Cannot revoke the last active passkey. "
-                "Add another passkey via POST /auth/passkey/add/start first."
-            )
+            raise LastPasskeyError
 
         cred.revoked_at = datetime.now(UTC)
         await db.commit()

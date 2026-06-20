@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import AsyncGenerator
 
@@ -15,6 +16,8 @@ from h4ckath0n.auth.models import User
 from h4ckath0n.uploads.models import Upload
 from h4ckath0n.uploads.schemas import UploadResponse
 from h4ckath0n.uploads.storage import get_file_path, store_file
+
+logger = logging.getLogger(__name__)
 
 uploads_router = APIRouter(prefix="/uploads", tags=["uploads"])
 
@@ -103,7 +106,9 @@ async def upload_file(
             await db.commit()
             await db.refresh(upload)
         except Exception:
-            pass  # non-critical
+            # Text extraction is best-effort; the upload itself already
+            # succeeded. Log so failures are diagnosable rather than silent.
+            logger.exception("Failed to enqueue text extraction for upload %s", upload.id)
 
     return _upload_to_response(upload)
 

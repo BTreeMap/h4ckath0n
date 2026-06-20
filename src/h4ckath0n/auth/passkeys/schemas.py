@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -29,7 +30,7 @@ class PasskeyRegisterStartRequest(BaseModel):
 
 class PasskeyRegisterStartResponse(BaseModel):
     flow_id: str = Field(..., description="Server-generated flow ID for registration.")
-    options: dict = Field(
+    options: dict[str, Any] = Field(
         ...,
         description="PublicKeyCredentialCreationOptions payload as a JSON-safe dict.",
     )
@@ -37,7 +38,7 @@ class PasskeyRegisterStartResponse(BaseModel):
 
 class PasskeyRegisterFinishRequest(DeviceBindingMixin):
     flow_id: str = Field(..., description="Flow ID returned by register/start.")
-    credential: dict = Field(
+    credential: dict[str, Any] = Field(
         ...,
         description="Browser PublicKeyCredential response as JSON.",
     )
@@ -48,7 +49,7 @@ class PasskeyRegisterFinishRequest(DeviceBindingMixin):
 
 class PasskeyLoginStartResponse(BaseModel):
     flow_id: str = Field(..., description="Server-generated flow ID for login.")
-    options: dict = Field(
+    options: dict[str, Any] = Field(
         ...,
         description="PublicKeyCredentialRequestOptions payload as a JSON-safe dict.",
     )
@@ -56,7 +57,7 @@ class PasskeyLoginStartResponse(BaseModel):
 
 class PasskeyLoginFinishRequest(DeviceBindingMixin):
     flow_id: str = Field(..., description="Flow ID returned by login/start.")
-    credential: dict = Field(
+    credential: dict[str, Any] = Field(
         ...,
         description="Browser PublicKeyCredential response as JSON.",
     )
@@ -67,7 +68,7 @@ class PasskeyLoginFinishRequest(DeviceBindingMixin):
 
 class PasskeyAddStartResponse(BaseModel):
     flow_id: str = Field(..., description="Server-generated flow ID for add passkey.")
-    options: dict = Field(
+    options: dict[str, Any] = Field(
         ...,
         description="PublicKeyCredentialCreationOptions payload as a JSON-safe dict.",
     )
@@ -75,7 +76,7 @@ class PasskeyAddStartResponse(BaseModel):
 
 class PasskeyAddFinishRequest(DeviceBindingMixin):
     flow_id: str = Field(..., description="Flow ID returned by add/start.")
-    credential: dict = Field(
+    credential: dict[str, Any] = Field(
         ...,
         description="Browser PublicKeyCredential response as JSON.",
     )

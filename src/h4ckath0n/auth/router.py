@@ -61,7 +61,7 @@ def _password_router() -> APIRouter:
     )
     async def register(
         body: schemas.RegisterRequest, request: Request, db: AsyncSession = Depends(_db_dep)
-    ):
+    ) -> schemas.DeviceBindingResponse:
         settings = request.app.state.settings
         try:
             user = await register_user(
@@ -90,7 +90,7 @@ def _password_router() -> APIRouter:
     )
     async def login(
         body: schemas.LoginRequest, request: Request, db: AsyncSession = Depends(_db_dep)
-    ):
+    ) -> schemas.DeviceBindingResponse:
         if (user := await authenticate_user(db, body.email, body.password)) is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
@@ -115,7 +115,7 @@ def _password_router() -> APIRouter:
         body: schemas.PasswordResetRequestSchema,
         request: Request,
         db: AsyncSession = Depends(_db_dep),
-    ):
+    ) -> schemas.MessageResponse:
         settings = request.app.state.settings
         token = await create_password_reset_token(
             db, body.email, expire_minutes=settings.password_reset_expire_minutes
@@ -167,7 +167,7 @@ def _password_router() -> APIRouter:
     async def password_reset_confirm(
         body: schemas.PasswordResetConfirmSchema,
         db: AsyncSession = Depends(_db_dep),
-    ):
+    ) -> schemas.DeviceBindingResponse:
         try:
             user = await confirm_password_reset(db, body.token, body.new_password)
         except ValueError as exc:

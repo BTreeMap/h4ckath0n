@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator, Generator
-from typing import Any
+from collections.abc import AsyncGenerator, Callable, Generator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Session, sessionmaker
 
 
-def get_db_dependency(session_factory: sessionmaker) -> Any:  # noqa: ANN401
+def get_db_dependency(
+    session_factory: sessionmaker[Session],
+) -> Callable[[], Generator[Session, None, None]]:
     """Return a FastAPI ``Depends``-compatible generator."""
 
     def _get_db() -> Generator[Session, None, None]:
@@ -24,7 +25,7 @@ def get_db_dependency(session_factory: sessionmaker) -> Any:  # noqa: ANN401
 
 def get_async_db_dependency(
     session_factory: async_sessionmaker[AsyncSession],
-) -> Any:  # noqa: ANN401
+) -> Callable[[], AsyncGenerator[AsyncSession, None]]:
     """Return a FastAPI ``Depends``-compatible async generator."""
 
     async def _get_async_db() -> AsyncGenerator[AsyncSession, None]:

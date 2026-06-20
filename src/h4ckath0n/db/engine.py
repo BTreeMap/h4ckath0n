@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -13,7 +15,7 @@ def create_engine_from_settings(settings: Settings | None = None) -> Engine:
     if settings is None:
         settings = Settings()
     url = settings.database_url
-    connect_args: dict = {}
+    connect_args: dict[str, Any] = {}
     if url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
     return create_engine(url, connect_args=connect_args, pool_pre_ping=True)
@@ -35,10 +37,10 @@ def create_async_engine_from_settings(settings: Settings | None = None) -> Async
     if settings is None:
         settings = Settings()
     url = _sync_to_async_url(settings.database_url)
-    connect_args: dict = {}
+    connect_args: dict[str, Any] = {}
     if "sqlite" in url:
         connect_args["check_same_thread"] = False
-    kwargs: dict = {"connect_args": connect_args}
+    kwargs: dict[str, Any] = {"connect_args": connect_args}
     if "postgresql" in url or "asyncpg" in url:
         kwargs["pool_size"] = 10
         kwargs["max_overflow"] = 20

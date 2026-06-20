@@ -3,8 +3,14 @@
 from __future__ import annotations
 
 import warnings
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+UserVerification = Literal["required", "preferred", "discouraged"]
+AttestationConveyance = Literal["none", "indirect", "direct", "enterprise"]
+EmailBackend = Literal["file", "smtp"]
+StorageBackend = Literal["local"]
 
 
 class Settings(BaseSettings):
@@ -28,8 +34,8 @@ class Settings(BaseSettings):
     rp_id: str = ""
     origin: str = ""
     webauthn_ttl_seconds: int = 300
-    user_verification: str = "preferred"
-    attestation: str = "none"
+    user_verification: UserVerification = "preferred"
+    attestation: AttestationConveyance = "none"
 
     # --- password auth (optional extra) ---
     password_auth_enabled: bool = False
@@ -48,13 +54,13 @@ class Settings(BaseSettings):
     jobs_default_queue: str = "default"
 
     # --- Storage ---
-    storage_backend: str = "local"
+    storage_backend: StorageBackend = "local"
     storage_dir: str = "./.h4ckath0n_storage"
     max_upload_bytes: int = 50 * 1024 * 1024  # 50 MB
 
     # --- Email ---
     app_base_url: str = "http://localhost:5173"
-    email_backend: str = "file"  # "file" or "smtp"
+    email_backend: EmailBackend = "file"  # "file" or "smtp"
     email_from: str = "noreply@localhost"
     email_outbox_dir: str = "./.h4ckath0n_email_outbox"
     smtp_host: str = ""

@@ -18,9 +18,23 @@ the ID-scheme logic.
 
 from __future__ import annotations
 
+from typing import NewType, TypeGuard
+
 from h4ckath0n.rng import random_base32, random_bytes
 
+# Branded ID types.  Each is a distinct subtype of ``str`` so the type
+# checker can flag accidental mixing of, say, a user ID where a device ID
+# is expected.  Values are still plain strings at runtime.
+UserId = NewType("UserId", str)
+KeyId = NewType("KeyId", str)
+DeviceId = NewType("DeviceId", str)
+TokenId = NewType("TokenId", str)
+
 __all__ = [
+    "UserId",
+    "KeyId",
+    "DeviceId",
+    "TokenId",
     "new_user_id",
     "new_key_id",
     "new_device_id",
@@ -37,44 +51,44 @@ _ID_LEN = 32
 _ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyz234567")
 
 
-def new_user_id() -> str:
+def new_user_id() -> UserId:
     """Generate a user ID (32 chars, starts with ``u``)."""
     s = random_base32()
-    return "u" + s[1:]
+    return UserId("u" + s[1:])
 
 
-def new_key_id() -> str:
+def new_key_id() -> KeyId:
     """Generate a credential key ID (32 chars, starts with ``k``)."""
     s = random_base32()
-    return "k" + s[1:]
+    return KeyId("k" + s[1:])
 
 
-def new_device_id() -> str:
+def new_device_id() -> DeviceId:
     """Generate a device ID (32 chars, starts with ``d``)."""
     s = random_base32()
-    return "d" + s[1:]
+    return DeviceId("d" + s[1:])
 
 
-def new_token_id() -> str:
+def new_token_id() -> TokenId:
     """Generate a generic token/row ID (128-bit random hex, 32 chars)."""
-    return random_bytes(16).hex()
+    return TokenId(random_bytes(16).hex())
 
 
-def is_user_id(value: str) -> bool:
+def is_user_id(value: str) -> TypeGuard[UserId]:
     """Return ``True`` when *value* looks like a valid user ID."""
     return (
         len(value) == _ID_LEN and value[:1] == "u" and all(c in _ALLOWED_CHARS for c in value[1:])
     )
 
 
-def is_key_id(value: str) -> bool:
+def is_key_id(value: str) -> TypeGuard[KeyId]:
     """Return ``True`` when *value* looks like a valid key ID."""
     return (
         len(value) == _ID_LEN and value[:1] == "k" and all(c in _ALLOWED_CHARS for c in value[1:])
     )
 
 
-def is_device_id(value: str) -> bool:
+def is_device_id(value: str) -> TypeGuard[DeviceId]:
     """Return ``True`` when *value* looks like a valid device ID."""
     return (
         len(value) == _ID_LEN and value[:1] == "d" and all(c in _ALLOWED_CHARS for c in value[1:])

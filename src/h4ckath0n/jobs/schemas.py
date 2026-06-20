@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
 class EnqueueJobRequest(BaseModel):
     kind: str = Field(..., description="Registered job kind.")
-    payload: dict = Field(default_factory=dict, description="Job payload.")
+    payload: dict[str, Any] = Field(default_factory=dict, description="Job payload.")
     queue: str = Field(default="default", description="Target queue name.")
 
 
