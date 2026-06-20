@@ -152,7 +152,9 @@ def _resolve_user(session: Any, args: argparse.Namespace):  # type: ignore[no-un
     else:
         stmt = select(User).where(User.email == email)
 
-    return session.execute(stmt).scalars().first()
+    # ⚡ Bolt: Use session.scalar() instead of session.execute().scalars().first()
+    # to avoid full result hydration
+    return session.scalar(stmt)
 
 
 # ---------------------------------------------------------------------------
