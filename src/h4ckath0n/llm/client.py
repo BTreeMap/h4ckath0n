@@ -147,6 +147,10 @@ class AsyncLLMClient:
                 if chunk.choices and chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
 
+    async def aclose(self) -> None:
+        """Release the underlying HTTP connection pool."""
+        await self._client.close()
+
 
 def llm(
     *,

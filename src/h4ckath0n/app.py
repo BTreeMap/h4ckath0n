@@ -72,6 +72,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         yield
+        if (llm_client := getattr(app.state, "llm_client", None)) is not None:
+            await llm_client.aclose()
         await async_engine.dispose()
 
     app = FastAPI(
@@ -86,7 +88,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.async_engine = async_engine
     app.state.async_session_factory = async_session_factory
 
+    # Single shared LLM client (reuses HTTP pool + concurrency limiter).
+    # Built lazily on first use so a missing API key only fails LLM routes.
+    app.state.llm_client = None
+
     # --- routers ---
+    _register_routers(app, settings)
+    _register_default_routes(app)
+
+    return app
+
+
+def _register_routers(app: FastAPI, settings: Settings) -> None:
     # Passkey routes are always mounted (default auth).
     app.include_router(passkey_router)
     app.include_router(passkeys_router)
@@ -104,7 +117,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except RuntimeError:
             pass  # argon2-cffi not installed
 
-    # --- default routes ---
+
+def _register_default_routes(app: FastAPI) -> None:
     class RootResponse(BaseModel):
         message: str = Field(..., description="Welcome message.")
 
@@ -128,5 +142,3 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     def health() -> HealthResponse:
         return HealthResponse(status="healthy")
-
-    return app

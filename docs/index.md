@@ -32,3 +32,7 @@ Use this index to navigate the main documentation set.
 ## Security reference
 
 - [Frontend security design](security/frontend.md)
+
+## Decision records
+
+- [Decision records and known issues](decisions/index.md)

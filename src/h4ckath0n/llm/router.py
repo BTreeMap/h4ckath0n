@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import AsyncGenerator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, Request
 from sse_starlette.sse import EventSourceResponse
@@ -16,9 +16,24 @@ from h4ckath0n.auth.models import User
 from h4ckath0n.llm.schemas import ChatRequest
 from h4ckath0n.realtime.sse import sse_response
 
+if TYPE_CHECKING:
+    from h4ckath0n.llm.client import AsyncLLMClient
+
 logger = logging.getLogger(__name__)
 
 llm_router = APIRouter(prefix="/llm", tags=["llm"])
+
+
+def _get_llm_client(request: Request) -> AsyncLLMClient:
+    """Return the app-wide shared AsyncLLMClient, creating it on first use."""
+    settings = request.app.state.settings
+    client: AsyncLLMClient | None = request.app.state.llm_client
+    if client is None:
+        from h4ckath0n.llm.client import AsyncLLMClient
+
+        client = AsyncLLMClient(api_key=settings.openai_api_key)
+        request.app.state.llm_client = client
+    return client
 
 
 @llm_router.post(
@@ -33,9 +48,7 @@ async def chat(
     settings = request.app.state.settings
     if not settings.openai_api_key:
         return JSONResponse({"detail": "OpenAI API key not configured"}, status_code=503)
-    from h4ckath0n.llm.client import AsyncLLMClient
-
-    client = AsyncLLMClient(api_key=settings.openai_api_key)
+    client = _get_llm_client(request)
     resp = await client.chat(
         user=body.user,
         system=body.system or "You are a helpful assistant.",
@@ -58,9 +71,7 @@ async def chat_stream(
     if not settings.openai_api_key:
         return JSONResponse({"detail": "OpenAI API key not configured"}, status_code=503)
 
-    from h4ckath0n.llm.client import AsyncLLMClient
-
-    client = AsyncLLMClient(api_key=settings.openai_api_key)
+    client = _get_llm_client(request)
 
     async def generate() -> AsyncGenerator[dict[str, Any], None]:
         yield {
