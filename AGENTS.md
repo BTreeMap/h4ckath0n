@@ -283,6 +283,47 @@ E2E (Playwright) should cover:
 
 ## Commit hygiene for agents
 
+### Commit message format (Conventional Commits)
+
+All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/)
+specification. The full, authoritative rules live in the open Agent Skill at
+`.github/skills/git-commits/SKILL.md`. Read that skill before drafting, reviewing,
+or validating any commit message.
+
+Summary of the required schema:
+
+```text
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+- Subject line is **70 characters or less**, in the imperative mood, with the first
+  letter of the description capitalized and no trailing period.
+- `<type>` is lowercase and one of: `feat`, `fix`, `refactor`, `docs`, `style`,
+  `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- `<scope>` is optional, lowercase, in parentheses, naming the affected component
+  (e.g. `auth`, `db`, `cli`, `web`).
+- Separate subject and body with a blank line; wrap body lines at 72 characters and
+  explain the *what* and *why* (not the *how*).
+- Use the footer for issue references (`Resolves #123`) and breaking changes
+  (`BREAKING CHANGE: ...`).
+
+Example:
+
+```text
+feat(auth): Implement JWT token refresh mechanism
+
+The current flow logs users out after one hour. This introduces a
+background refresh worker that renews the session transparently.
+
+Resolves #89
+```
+
+This standard supersedes the older gitmoji/emoji commit prefixes going forward.
+
 ### Required pre commit checks (must run before committing)
 
 Before committing any changes, format the code and run the same checks used in CI (locked mode):
