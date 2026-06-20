@@ -30,8 +30,9 @@ when the task needs them — to keep context lean.
 ## Boundaries and constraints
 
 - Authorization is computed server side from DB state. Do not put privilege claims in JWTs;
-  enforce access with `require_user()`/`require_admin()`/`require_scopes([...])` in
-  [src/h4ckath0n/auth/authz.py](src/h4ckath0n/auth/authz.py).
+  enforce access with `require_user()`/`require_admin()`/`require_scopes("a", "b")` from
+  [src/h4ckath0n/auth/dependencies.py](src/h4ckath0n/auth/dependencies.py) (re-exported from
+  `h4ckath0n.auth`).
 - Do not document or reintroduce server-minted access/refresh token flows. The source of
   truth is [docs/security/frontend.md](docs/security/frontend.md); keep auth docs aligned.
 - Never use email as a user ID. Use the prefixed base32 generators in

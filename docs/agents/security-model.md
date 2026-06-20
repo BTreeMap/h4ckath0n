@@ -42,8 +42,10 @@ Server verification flow:
 
 - Built-in roles are `user` and `admin`, stored server side.
 - Scopes are stored as a comma-separated string on the user record.
-- Enforce access with `require_user()`, `require_admin()`, and `require_scopes([...])` in
-  `src/h4ckath0n/auth/authz.py`. These helpers must never trust JWT privilege claims.
+- Enforce access with `require_user()`, `require_admin()`, and `require_scopes("a", "b")`
+  from `src/h4ckath0n/auth/dependencies.py` (re-exported from `h4ckath0n.auth`). The role
+  and scope domain types live in `src/h4ckath0n/auth/authz.py`. These helpers must never
+  trust JWT privilege claims.
 
 ## Identity scheme
 
