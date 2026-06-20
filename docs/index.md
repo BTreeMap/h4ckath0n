@@ -2,6 +2,15 @@
 
 Use this index to navigate the main documentation set.
 
+## Agent documentation
+
+- [Agent docs index](agents/index.md) — operational manual for AI coding agents
+- [Operating protocol](agents/operating-protocol.md)
+- [Engineering standards](agents/engineering-standards.md)
+- [Security model](agents/security-model.md)
+- [Workflows](agents/workflows.md)
+- [Releases and dependencies](agents/release-and-deps.md)
+
 ## Architecture
 
 - [Architecture overview](architecture/overview.md)
