@@ -20,6 +20,12 @@ when the task needs them — to keep context lean.
 
 - Backend uses `uv`. Never call `pip` or `python` directly; run via `uv run`.
 - Sync: `uv sync --locked --all-extras`
+- Agent skills under `.github/skills` are a git submodule tracking
+  [BTreeMap/SKILLs](https://github.com/BTreeMap/SKILLs). Clone with
+  `git clone --recurse-submodules`, or initialize an existing checkout with
+  `git submodule update --init --recursive`. Refresh skills with
+  `git submodule update --remote .github/skills`, then commit the bumped pointer.
+  Edit skill content upstream in the SKILLs repo, not in this repo.
 - Format: `uv run --locked ruff format .`
 - CI gate: `uv run --locked ruff format --check . && uv run --locked ruff check . && uv run --locked mypy src && uv run --locked pytest -v`
 - Frontend template (from `packages/create-h4ckath0n/templates/fullstack/web/`):
@@ -61,4 +67,5 @@ when the task needs them — to keep context lean.
 - Commands, OpenAPI, tests, E2E, scaffold: [docs/agents/workflows.md](docs/agents/workflows.md)
 - Releases and dependencies: [docs/agents/release-and-deps.md](docs/agents/release-and-deps.md)
 - Commit message rules (Conventional Commits): [.github/skills/git-commits/SKILL.md](.github/skills/git-commits/SKILL.md)
+  (managed in the `.github/skills` submodule; see Tooling and commands)
 - Canonical reference docs: [docs/index.md](docs/index.md)
