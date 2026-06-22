@@ -211,13 +211,14 @@ async def finish_authentication(
     flow = await _get_valid_flow(db, flow_id, "authenticate")
 
     raw_id = credential_json.get("rawId") or credential_json.get("id", "")
-    result = await db.execute(
+    # ⚡ Bolt: Use db.scalar() to avoid intermediate full Result object hydration.
+    stored = await db.scalar(
         select(WebAuthnCredential).filter(
             WebAuthnCredential.credential_id == raw_id,
             WebAuthnCredential.revoked_at.is_(None),
         )
     )
-    if (stored := result.scalars().first()) is None:
+    if stored is None:
         raise ValueError("Unknown or revoked credential")
 
     challenge_bytes = base64url_to_bytes(flow.challenge)
@@ -358,13 +359,9 @@ async def rename_passkey(
     Raises :class:`PasskeyNotFoundError` if not found / not owned and
     :class:`PasskeyRevokedError` if the credential is revoked.
     """
-    result = await db.execute(
-        select(WebAuthnCredential).filter(
-            WebAuthnCredential.id == key_id,
-            WebAuthnCredential.user_id == user.id,
-        )
-    )
-    if (cred := result.scalars().first()) is None:
+    # ⚡ Bolt: Use db.get() for primary key lookup to utilize the identity map.
+    cred = await db.get(WebAuthnCredential, key_id)
+    if cred is None or cred.user_id != user.id:
         raise PasskeyNotFoundError
     if cred.revoked_at is not None:
         raise PasskeyRevokedError
@@ -395,13 +392,9 @@ async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
         # Per-user mutex. In SQLite, FOR UPDATE is ignored (acceptable for dev/tests).
         await db.execute(select(User.id).filter(User.id == user.id).with_for_update())
 
-        result = await db.execute(
-            select(WebAuthnCredential).filter(
-                WebAuthnCredential.id == key_id,
-                WebAuthnCredential.user_id == user.id,
-            )
-        )
-        if (cred := result.scalars().first()) is None:
+        # ⚡ Bolt: Use db.get() for primary key lookup to utilize the identity map.
+        cred = await db.get(WebAuthnCredential, key_id)
+        if cred is None or cred.user_id != user.id:
             raise PasskeyNotFoundError
         if cred.revoked_at is not None:
             raise PasskeyAlreadyRevokedError
