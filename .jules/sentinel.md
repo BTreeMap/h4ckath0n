@@ -1,0 +1,4 @@
+## 2024-05-25 - Prevent User Enumeration Timing Attack
+**Vulnerability:** User enumeration timing attack in `authenticate_user`. When a user was not found or had no password, the function returned immediately without verifying a password. This allowed an attacker to determine if an email address was registered by measuring the response time (which would be significantly shorter for non-existent users since argon2id hashing takes measurable time).
+**Learning:** Early returns in authentication flows leak information through timing differences. Security features like password hashing, intentionally designed to be slow, amplify this side channel.
+**Prevention:** Always ensure constant-time processing in authentication flows. For operations with variable work like password verification, perform a dummy verification against a pre-computed constant hash if the actual required work is skipped (e.g., when a user is not found).
