@@ -9,7 +9,6 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -74,7 +73,7 @@ async def register_user(
 
 
 # A valid Argon2id hash to mitigate timing attacks by performing dummy verification
-_DUMMY_PASSWORD_HASH = "$argon2id$v=19$m=65536,t=3,p=4$v+0ju36aspcVFWdpqb9BOg$gfKRhmvRA44qpM+LA5HPXuyAtsd4QHVqbvsayx7PJ8k"  # noqa: E501
+_DUMMY_PASSWORD_HASH = "$argon2id$v=19$m=65536,t=3,p=4$v+0ju36aspcVFWdpqb9BOg$gfKRhmvRA44qpM+LA5HPXuyAtsd4QHVqbvsayx7PJ8k"
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
@@ -91,7 +90,7 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> User
     return user
 
 
-def _jwk_fingerprint(jwk: dict[str, Any]) -> str:
+def _jwk_fingerprint(jwk: dict) -> str:
     """Compute a deterministic SHA-256 fingerprint of a JWK.
 
     Uses only the essential key-material fields (kty, crv, x, y) in sorted
@@ -111,7 +110,7 @@ def _jwk_fingerprint(jwk: dict[str, Any]) -> str:
 async def register_device(
     db: AsyncSession,
     user_id: str,
-    public_key_jwk: dict[str, Any] | None,
+    public_key_jwk: dict | None,
     label: str | None = None,
 ) -> str:
     """Return a Device id for the given public key, creating one if needed.
