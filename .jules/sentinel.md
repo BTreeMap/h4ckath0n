@@ -1,0 +1,4 @@
+## YYYY-MM-DD - Mitigate timing attacks on user authentication
+**Vulnerability:** When a user logs in with an incorrect email, the authentication function `authenticate_user` returns `None` immediately, taking very little time. If the email exists but the password is wrong, the function computes the Argon2 hash, which takes a significant amount of time. An attacker can use this timing difference to enumerate valid user emails.
+**Learning:** Argon2 verification dominates the time taken for user authentication. The immediate return upon user non-existence allows user enumeration via timing attack.
+**Prevention:** To mitigate timing attacks, a dummy hash calculation should be performed even when the user is not found or when the user doesn't have a password. The dummy hash needs to be structurally correct to avoid fast-fail by `argon2.PasswordHasher.verify`.
