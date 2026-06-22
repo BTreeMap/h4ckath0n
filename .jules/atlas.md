@@ -1,5 +1,9 @@
 # Atlas Journal: Critical Learnings
 
+## 2025-02-28 - Env var drift checks via pydantic-settings
+**Learning:** Using `Settings.model_fields` to verify environment variables prevents hardcoded README drift and enforces single source of truth for config keys.
+**Action:** When adding drift checks for environment variables using Pydantic Settings, dynamically parse `Settings.model_fields` and strictly match the variable name enclosed in backticks (e.g., `\`H4CKATH0N_ENV\``) to avoid false-positive substring matches.
+
 ## 2026-02-28 - API route substring matching is unreliable for drift checks
 
 **Learning:** Checking whether a path string appears *anywhere* in a README causes false negatives
