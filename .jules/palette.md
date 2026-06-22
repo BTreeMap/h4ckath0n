@@ -1,0 +1,3 @@
+## 2025-02-12 - Adding Skip Links and Responsive ARIA Labels
+**Learning:** When adding `aria-label` to identical desktop and mobile UI elements (like theme or menu toggles), test queries utilizing `getByRole` might fail due to multiple matches. Skip links should utilize a hidden but focusable strategy like `sr-only focus:not-sr-only`.
+**Action:** When adding ARIA labels to components duplicated for responsive design, immediately check and update the corresponding frontend tests to use `getAllByRole(...)[0] as HTMLElement` or similar array access. Always use `#main-content` paired with `tabIndex={-1}` for the main document skip-link target.
