@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import os
 
 from h4ckath0n.rng import token_hex as _rng_hex
 
 
-async def store_file(storage_dir: str, data: bytes) -> tuple[str, str]:
-    """Store file data and return (storage_key, sha256_hex).
-
-    The storage key is fully opaque – it never contains any user-supplied
-    values such as original filenames.
-    """
+def _store_file_sync(storage_dir: str, data: bytes) -> tuple[str, str]:
+    """Synchronous helper to store file data and return (storage_key, sha256_hex)."""
+    # Optimize: Offload CPU-bound hashing and blocking I/O to a worker thread
     sha256 = hashlib.sha256(data).hexdigest()
     prefix = sha256[:2]
     random_part = _rng_hex(16)  # 128-bit opaque path component.
@@ -27,6 +25,15 @@ async def store_file(storage_dir: str, data: bytes) -> tuple[str, str]:
         f.write(data)
 
     return storage_key, sha256
+
+
+async def store_file(storage_dir: str, data: bytes) -> tuple[str, str]:
+    """Store file data and return (storage_key, sha256_hex).
+
+    The storage key is fully opaque – it never contains any user-supplied
+    values such as original filenames.
+    """
+    return await asyncio.to_thread(_store_file_sync, storage_dir, data)
 
 
 def get_file_path(storage_dir: str, storage_key: str) -> str:
