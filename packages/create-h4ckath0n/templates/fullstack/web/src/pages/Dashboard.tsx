@@ -292,18 +292,36 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <textarea
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="Type a prompt…"
-              className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <Button
-              onClick={handleAiStream}
-              disabled={aiStreaming || !aiPrompt.trim()}
-            >
-              {aiStreaming ? "Streaming…" : "Send"}
-            </Button>
+            <div className="space-y-2">
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!aiStreaming && aiPrompt.trim()) {
+                      handleAiStream();
+                    }
+                  }
+                }}
+                placeholder="Type a prompt…"
+                aria-describedby="ai-chat-hint"
+                className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <div className="flex items-center justify-between">
+                <span id="ai-chat-hint" className="text-xs text-text-muted">
+                  Press <kbd className="font-sans px-1 py-0.5 rounded bg-surface-alt border border-border">Enter</kbd> to send,{" "}
+                  <kbd className="font-sans px-1 py-0.5 rounded bg-surface-alt border border-border">Shift</kbd> +{" "}
+                  <kbd className="font-sans px-1 py-0.5 rounded bg-surface-alt border border-border">Enter</kbd> for new line
+                </span>
+                <Button
+                  onClick={handleAiStream}
+                  disabled={aiStreaming || !aiPrompt.trim()}
+                >
+                  {aiStreaming ? "Streaming…" : "Send"}
+                </Button>
+              </div>
+            </div>
             {aiResponse && (
               <div className="p-3 rounded bg-surface-alt text-sm whitespace-pre-wrap font-mono">
                 {aiResponse}
