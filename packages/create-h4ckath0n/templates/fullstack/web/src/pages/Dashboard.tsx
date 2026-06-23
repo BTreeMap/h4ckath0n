@@ -201,10 +201,10 @@ export function Dashboard() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  className="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white"
+                  className="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white file:cursor-pointer file:hover:bg-primary-hover file:transition-colors cursor-pointer"
                 />
-                <Button onClick={handleUpload} disabled={uploading}>
-                  {uploading ? "Uploading…" : "Upload"}
+                <Button onClick={handleUpload} disabled={uploading} isLoading={uploading}>
+                  Upload
                 </Button>
               </div>
               {uploads.length > 0 && (
@@ -292,18 +292,35 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <textarea
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="Type a prompt…"
-              className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <Button
-              onClick={handleAiStream}
-              disabled={aiStreaming || !aiPrompt.trim()}
-            >
-              {aiStreaming ? "Streaming…" : "Send"}
-            </Button>
+            <div className="space-y-2">
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!aiStreaming && aiPrompt.trim()) {
+                      handleAiStream();
+                    }
+                  }
+                }}
+                placeholder="Type a prompt…"
+                className="w-full h-24 p-3 rounded-xl border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <div className="flex justify-between items-center text-xs text-text-muted">
+                <span className="flex items-center gap-1">
+                  Press <kbd className="px-1.5 py-0.5 rounded-md bg-surface-alt border border-border font-mono text-[10px]">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 rounded-md bg-surface-alt border border-border font-mono text-[10px]">Shift</kbd> + <kbd className="px-1.5 py-0.5 rounded-md bg-surface-alt border border-border font-mono text-[10px]">Enter</kbd> for new line
+                </span>
+                <Button
+                  onClick={handleAiStream}
+                  disabled={aiStreaming || !aiPrompt.trim()}
+                  isLoading={aiStreaming}
+                  size="sm"
+                >
+                  Send
+                </Button>
+              </div>
+            </div>
             {aiResponse && (
               <div className="p-3 rounded bg-surface-alt text-sm whitespace-pre-wrap font-mono">
                 {aiResponse}
