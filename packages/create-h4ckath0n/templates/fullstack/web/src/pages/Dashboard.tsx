@@ -295,15 +295,29 @@ export function Dashboard() {
             <textarea
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!aiStreaming && aiPrompt.trim()) {
+                    void handleAiStream();
+                  }
+                }
+              }}
+              disabled={aiStreaming}
               placeholder="Type a prompt…"
-              className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full h-24 p-3 rounded-xl border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            <Button
-              onClick={handleAiStream}
-              disabled={aiStreaming || !aiPrompt.trim()}
-            >
-              {aiStreaming ? "Streaming…" : "Send"}
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={handleAiStream}
+                disabled={aiStreaming || !aiPrompt.trim()}
+              >
+                {aiStreaming ? "Streaming…" : "Send"}
+              </Button>
+              <div className="text-xs text-text-muted">
+                Press <kbd className="font-sans px-1.5 py-0.5 rounded-lg border border-border bg-surface-alt">Enter</kbd> to send
+              </div>
+            </div>
             {aiResponse && (
               <div className="p-3 rounded bg-surface-alt text-sm whitespace-pre-wrap font-mono">
                 {aiResponse}
