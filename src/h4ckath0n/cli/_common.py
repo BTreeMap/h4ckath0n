@@ -165,11 +165,12 @@ def _resolve_user(session: Session, args: argparse.Namespace) -> User | None:
         return None
 
     if user_id:
-        stmt = select(User).where(User.id == user_id)
-    else:
-        stmt = select(User).where(User.email == email)
+        # ⚡ Bolt: Use session.get() for primary key lookup
+        return session.get(User, user_id)
 
-    return session.execute(stmt).scalars().first()
+    # ⚡ Bolt: Use session.scalar() to avoid intermediate Result hydration overhead
+    stmt = select(User).where(User.email == email)
+    return session.scalar(stmt)
 
 
 def _user_or_exit(session: Session, args: argparse.Namespace) -> tuple[User | None, int | None]:
