@@ -73,12 +73,21 @@ async def register_user(
     return user
 
 
+# 🛡️ Sentinel: Dummy Argon2 hash to mitigate timing attacks against email enumeration.
+# This is a structurally valid Argon2id string; using an invalid string causes
+# verify_password to fail fast with a decoding error, bypassing the delay.
+_DUMMY_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$eq4DvjufGoJepTVMd2LZ5A"
+    "$+1E1N4x+HuhUSj0BTiWx5hXlg5W83Bilfcn5+XC8tf0"
+)
+
+
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
-        return None
-    if not user.password_hash:
+    user = result.scalars().first()
+    if user is None or not user.password_hash:
+        verify_password(password, _DUMMY_HASH)
         return None
     if not verify_password(password, user.password_hash):
         return None
