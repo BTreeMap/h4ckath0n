@@ -45,7 +45,7 @@ async def enqueue_job(
             import redis.asyncio as aioredis
 
             r = aioredis.from_url(redis_url)
-            await r.lpush(f"h4ckath0n:jobs:{queue}", job.id)  # type: ignore[misc]
+            await r.lpush(f"h4ckath0n:jobs:{queue}", job.id)
             await r.close()
             logger.info("Job %s enqueued to Redis queue %s", job.id, queue)
         except Exception:

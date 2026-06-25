@@ -50,14 +50,14 @@ def _cmd_jobs_worker(args: argparse.Namespace) -> int:
 
         try:
             while True:
-                raw = await r.brpop(  # type: ignore[misc]
+                raw = await r.brpop(
                     [f"h4ckath0n:jobs:{queue}"],
                     timeout=int(poll_interval),
                 )
                 if raw is None:
                     continue
                 _, job_id_bytes = raw
-                job_id = job_id_bytes.decode()
+                job_id = job_id_bytes.decode() if isinstance(job_id_bytes, bytes) else job_id_bytes
                 print(f"Processing job {job_id}")
 
                 async with session_factory() as db:

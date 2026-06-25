@@ -86,11 +86,6 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = [
     "argon2.*",
-    "langchain.*",
-    "langchain_core.*",
-    "langchain_openai.*",
-    "langgraph.*",
-    "langsmith.*",
     "sse_starlette.*",
     "webauthn.*",
 ]
