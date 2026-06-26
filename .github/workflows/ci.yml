@@ -49,6 +49,14 @@ jobs:
       - name: Check doc routes
         run: uv run --locked scripts/check_doc_routes.py
 
+      - name: Check config docs
+        run: |
+          uv run --locked scripts/generate_config_docs.py
+          git diff --exit-code README.md || {
+            echo "::error::Generated config docs are out of date. Run 'uv run scripts/generate_config_docs.py' and commit the changes."
+            exit 1
+          }
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
