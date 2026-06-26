@@ -57,8 +57,8 @@ async def register_user(
     display_name: str | None = None,
 ) -> User:
     hash_password, _verify = _require_password_extra()
-    result = await db.execute(select(User).filter(User.email == email))
-    if result.scalars().first():
+    # ⚡ Bolt: Fetch only the scalar ID to avoid instantiating the full User ORM object.
+    if await db.scalar(select(User.id).filter(User.email == email)):
         raise ValueError("Email already registered")
     role = "admin" if await _is_bootstrap_admin(email, settings, db) else "user"
     user = User(
@@ -75,8 +75,8 @@ async def register_user(
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
-    result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+    # ⚡ Bolt: Use db.scalar to avoid intermediate Result object overhead
+    if (user := await db.scalar(select(User).filter(User.email == email))) is None:
         return None
     if not user.password_hash:
         return None
@@ -159,13 +159,14 @@ async def confirm_password_reset(db: AsyncSession, raw_token: str, new_password:
     """Confirm a password reset and return the user."""
     hash_password, _verify = _require_password_extra()
     hashed = _hash_token(raw_token)
-    prt_result = await db.execute(
+    # ⚡ Bolt: Use db.scalar to avoid intermediate Result object overhead
+    prt = await db.scalar(
         select(PasswordResetToken).filter(
             PasswordResetToken.token_hash == hashed,
             PasswordResetToken.used.is_(False),
         )
     )
-    if (prt := prt_result.scalars().first()) is None:
+    if prt is None:
         raise ValueError("Invalid or already-used reset token")
     if prt.expires_at.replace(tzinfo=UTC) < datetime.now(UTC):
         raise ValueError("Reset token expired")
