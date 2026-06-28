@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth, getOrMintToken } from "../auth";
 import { Card, CardContent, CardHeader } from "../components/Card";
+import { Button } from "../components/Button";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
@@ -99,22 +100,23 @@ function WebSocketPanel() {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={() => void connect()}
             disabled={connected}
-            className="px-3 py-1.5 text-sm bg-primary text-white rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50"
+            size="sm"
             data-testid="ws-connect"
           >
             Connect
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={disconnect}
             disabled={!connected}
-            className="px-3 py-1.5 text-sm bg-danger text-white rounded-xl hover:opacity-80 transition-colors disabled:opacity-50"
+            variant="danger"
+            size="sm"
             data-testid="ws-disconnect"
           >
             Disconnect
-          </button>
+          </Button>
         </div>
 
         <div
@@ -141,14 +143,14 @@ function WebSocketPanel() {
             className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-border bg-surface text-text"
             data-testid="ws-input"
           />
-          <button
+          <Button
             onClick={send}
             disabled={!connected}
-            className="px-3 py-1.5 text-sm bg-primary text-white rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50"
+            size="sm"
             data-testid="ws-send"
           >
             Send
-          </button>
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -248,22 +250,23 @@ function SSEPanel() {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={() => void startStream()}
             disabled={streaming}
-            className="px-3 py-1.5 text-sm bg-primary text-white rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50"
+            size="sm"
             data-testid="sse-start"
           >
             Start Stream
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={stopStream}
             disabled={!streaming}
-            className="px-3 py-1.5 text-sm bg-danger text-white rounded-xl hover:opacity-80 transition-colors disabled:opacity-50"
+            variant="danger"
+            size="sm"
             data-testid="sse-stop"
           >
             Stop Stream
-          </button>
+          </Button>
         </div>
 
         <div
