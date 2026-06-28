@@ -27,9 +27,9 @@ def _hash_token(token: str) -> str:
 def _require_password_extra() -> tuple:  # type: ignore[type-arg]
     """Import argon2 password helpers. Raises if extra not installed."""
     try:
-        from h4ckath0n.auth.passwords import hash_password, verify_password
+        from h4ckath0n.auth.passwords import DUMMY_HASH, hash_password, verify_password
 
-        return hash_password, verify_password
+        return DUMMY_HASH, hash_password, verify_password
     except ImportError as exc:
         raise RuntimeError(
             'Password auth requires the "password" extra: pip install "h4ckath0n[password]"'
@@ -56,7 +56,7 @@ async def register_user(
     *,
     display_name: str | None = None,
 ) -> User:
-    hash_password, _verify = _require_password_extra()
+    _dummy, hash_password, _verify = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
     if result.scalars().first():
         raise ValueError("Email already registered")
@@ -74,14 +74,18 @@ async def register_user(
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
-    _hash, verify_password = _require_password_extra()
+    dummy_hash, _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+    user = result.scalars().first()
+
+    # 🛡️ Sentinel: Mitigate timing attacks by always verifying a hash.
+    if user is None or not user.password_hash:
+        verify_password(password, dummy_hash)
         return None
-    if not user.password_hash:
-        return None
+
     if not verify_password(password, user.password_hash):
         return None
+
     return user
 
 
@@ -157,7 +161,7 @@ async def create_password_reset_token(
 
 async def confirm_password_reset(db: AsyncSession, raw_token: str, new_password: str) -> User:
     """Confirm a password reset and return the user."""
-    hash_password, _verify = _require_password_extra()
+    _dummy, hash_password, _verify = _require_password_extra()
     hashed = _hash_token(raw_token)
     prt_result = await db.execute(
         select(PasswordResetToken).filter(

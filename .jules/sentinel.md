@@ -1,0 +1,4 @@
+## 2025-02-24 - Fix Username Enumeration via Timing Attack
+**Vulnerability:** The `authenticate_user` function returned early if a user was not found, making it extremely fast compared to when a user was found (where it performed an expensive Argon2 hash verification). This difference allows attackers to enumerate valid email addresses.
+**Learning:** When mitigating timing attacks using a dummy hash with `argon2-cffi`, the dummy hash must be a fully valid, structurally correct Argon2id string. If an invalid format is used, `argon2.PasswordHasher.verify` fails fast with a decoding error, completely bypassing the intended processing delay.
+**Prevention:** Always verify a dummy hash of identical computational cost when a user isn't found, and ensure the dummy hash is a structurally valid Argon2id string so it processes correctly without failing fast.
