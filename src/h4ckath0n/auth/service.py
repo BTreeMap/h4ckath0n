@@ -75,7 +75,7 @@ async def register_user(
 
 
 # A valid Argon2id hash structure for dummy timing mitigation
-_DUMMY_PASSWORD_HASH = "$argon2id$v=19$m=65536,t=3,p=4$+fq4rkwuma4beDA0yUuZOw$6By0lCZYoxh8C6S2IntXqgguU/q9MVwGT6dAN4JzL6g"
+_DUMMY_PASSWORD_HASH = "$argon2id$v=19$m=65536,t=3,p=4$+fq4rkwuma4beDA0yUuZOw$6By0lCZYoxh8C6S2IntXqgguU/q9MVwGT6dAN4JzL6g"  # noqa: E501
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
