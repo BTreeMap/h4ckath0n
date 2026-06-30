@@ -393,15 +393,16 @@ async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
     """
     try:
         # Per-user mutex. In SQLite, FOR UPDATE is ignored (acceptable for dev/tests).
-        await db.execute(select(User.id).filter(User.id == user.id).with_for_update())
+        await db.scalar(select(User.id).filter(User.id == user.id).with_for_update())
 
-        result = await db.execute(
-            select(WebAuthnCredential).filter(
-                WebAuthnCredential.id == key_id,
-                WebAuthnCredential.user_id == user.id,
+        if (
+            cred := await db.scalar(
+                select(WebAuthnCredential).filter(
+                    WebAuthnCredential.id == key_id,
+                    WebAuthnCredential.user_id == user.id,
+                )
             )
-        )
-        if (cred := result.scalars().first()) is None:
+        ) is None:
             raise PasskeyNotFoundError
         if cred.revoked_at is not None:
             raise PasskeyAlreadyRevokedError
