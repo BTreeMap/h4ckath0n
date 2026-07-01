@@ -28,3 +28,7 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-24 - Avoid ORM Hydration for Single Record Retrieval
+**Learning:** When retrieving a single model instance using a select statement, using `db.execute(select(Model)).scalars().first()` forces SQLAlchemy to allocate and hydrate intermediate `Result` and `ScalarResult` objects, adding overhead.
+**Action:** Always prefer `db.scalar(select(Model))` or `session.scalar(select(Model))` over `db.execute(...).scalars().first()` when only a single scalar value or instance is needed to avoid unnecessary object allocation and hydration overhead.
