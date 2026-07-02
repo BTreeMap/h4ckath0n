@@ -1,11 +1,13 @@
-# Atlas Journal: Critical Learnings
+## 2024-05-01 - Docs Env Vars Drift
+**Learning:** Env vars described in the README drift quickly as new fields are added to `Settings` in `src/h4ckath0n/config.py`. For example, `H4CKATH0N_REDIS_URL`, `H4CKATH0N_SMTP_HOST`, `H4CKATH0N_STORAGE_DIR`, etc., were added to code but never documented in the README table.
+**Action:** Use a script `scripts/generate_env_docs.py` to auto-generate the markdown table for env vars directly from `Settings.model_fields`, add `--check` support for CI, and integrate into the main CI pipeline to prevent future drift.
 
-## 2026-02-28 - API route substring matching is unreliable for drift checks
+## 2024-05-01 - Docs Env Vars Drift
+**Learning:** Env vars described in the README drift quickly as new fields are added to `Settings` in `src/h4ckath0n/config.py`. For example, `H4CKATH0N_REDIS_URL`, `H4CKATH0N_SMTP_HOST`, `H4CKATH0N_STORAGE_DIR`, etc., were added to code but never documented in the README table.
+**Action:** Use a script `scripts/generate_env_docs.py` to auto-generate the markdown table for env vars directly from `Settings.model_fields`, add `--check` support for CI, and integrate into the main CI pipeline to prevent future drift.
 
-**Learning:** Checking whether a path string appears *anywhere* in a README causes false negatives
-when one route's path is a substring of another (e.g. `/auth/passkeys/{key_id}` inside
-`/auth/passkeys/{key_id}/revoke`). The drift check must match `METHOD /path` as a combined token,
-ideally inside backtick delimiters, to avoid this trap.
+## 2024-05-01 - Docs Env Vars Drift
 
-**Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
-that mirror the actual markdown formatting.
+**Learning:** Env vars described in the README drift quickly as new fields are added to `Settings` in `src/h4ckath0n/config.py`. For example, `H4CKATH0N_REDIS_URL`, `H4CKATH0N_SMTP_HOST`, `H4CKATH0N_STORAGE_DIR`, etc., were added to code but never documented in the README table.
+
+**Action:** Use a script `scripts/generate_env_docs.py` to auto-generate the markdown table for env vars directly from `Settings.model_fields`, add `--check` support for CI, and integrate into the main CI pipeline to prevent future drift.
