@@ -1,0 +1,4 @@
+## 2025-05-15 - [Medium] Fix user enumeration timing attack
+**Vulnerability:** `authenticate_user` returned early if the user was not found or had no password hash, without performing the costly Argon2id hashing. This allowed user enumeration via timing attacks.
+**Learning:** When using `argon2-cffi` to mitigate timing attacks via dummy password verification, ensure the dummy hash is a structurally valid Argon2id hash string (e.g., `$argon2id$v=19$...`). Passing an invalidly formatted string causes `verify_password` to raise an early parsing exception, which defeats the timing mitigation.
+**Prevention:** Always ensure an identical, costly operation is performed regardless of the database lookup result, and use structurally valid dummy hashes for verification libraries that perform early parsing validation.
