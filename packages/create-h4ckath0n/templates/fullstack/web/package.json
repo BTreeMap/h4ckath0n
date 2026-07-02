@@ -49,6 +49,6 @@
     "vitest": "^4.0.0"
   },
   "overrides": {
-    "js-yaml": "^4.2.0"
+    "js-yaml": "^5.0.0"
   }
 }
