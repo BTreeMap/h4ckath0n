@@ -292,12 +292,29 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <textarea
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="Type a prompt…"
-              className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <div className="relative">
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!aiStreaming && aiPrompt.trim()) {
+                      handleAiStream();
+                    }
+                  }
+                }}
+                placeholder="Type a prompt…"
+                className="w-full h-24 p-3 pb-8 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <div className="absolute bottom-2 right-2 flex items-center gap-1 text-xs text-text-muted pointer-events-none">
+                <span className="opacity-70">Press</span>
+                <kbd className="px-1.5 py-0.5 rounded border border-border bg-surface-alt font-sans text-[10px] font-medium opacity-70">
+                  Enter
+                </kbd>
+                <span className="opacity-70">to send</span>
+              </div>
+            </div>
             <Button
               onClick={handleAiStream}
               disabled={aiStreaming || !aiPrompt.trim()}
