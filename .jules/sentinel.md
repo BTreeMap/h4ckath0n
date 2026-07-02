@@ -1,0 +1,4 @@
+## 2025-04-04 - Mitigating User Enumeration Timing Attacks in Async Password Hashing
+**Vulnerability:** User enumeration timing attack in `authenticate_user`. The function returned early if a user was not found, skipping the ~200ms Argon2 verification, allowing attackers to distinguish between valid and invalid emails by observing response times.
+**Learning:** Async Python backends are susceptible to timing side-channels during authentication. Because CPU-bound hashing operations (like Argon2) are expensive, skipping them on invalid credentials introduces a significant timing discrepancy. Additionally, running Argon2 synchronously in an async route blocks the entire event loop.
+**Prevention:** Always perform a dummy verification (`verify_password(password, _DUMMY_HASH)`) when an account is not found or lacks a password hash to normalize execution time. Use `asyncio.to_thread()` to offload these heavy cryptographic operations from the main async event loop.
