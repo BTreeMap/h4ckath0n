@@ -175,6 +175,28 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 | `H4CKATH0N_FIRST_USER_IS_ADMIN` | `false` | First password signup becomes admin |
 | `OPENAI_API_KEY` | empty | OpenAI API key for the LLM wrapper |
 | `H4CKATH0N_OPENAI_API_KEY` | empty | Alternate OpenAI API key for the LLM wrapper |
+| `H4CKATH0N_REDIS_URL` | empty | Redis connection string |
+| `H4CKATH0N_JOBS_INLINE_IN_DEV` | `true` | Run background jobs inline in dev mode |
+| `H4CKATH0N_JOBS_DEFAULT_QUEUE` | `default` | Default queue name for background jobs |
+| `H4CKATH0N_STORAGE_BACKEND` | `local` | Storage backend type |
+| `H4CKATH0N_STORAGE_DIR` | `./.h4ckath0n_storage` | Local storage directory path |
+| `H4CKATH0N_MAX_UPLOAD_BYTES` | `52428800` | Maximum upload size in bytes (50 MB) |
+| `H4CKATH0N_APP_BASE_URL` | `http://localhost:5173` | Base URL of the app frontend |
+| `H4CKATH0N_EMAIL_BACKEND` | `file` | Email backend type (`file` or `smtp`) |
+| `H4CKATH0N_EMAIL_FROM` | `noreply@localhost` | Default sender email address |
+| `H4CKATH0N_EMAIL_OUTBOX_DIR` | `./.h4ckath0n_email_outbox` | Directory to save emails when backend is `file` |
+| `H4CKATH0N_SMTP_HOST` | empty | SMTP host for email backend |
+| `H4CKATH0N_SMTP_PORT` | `587` | SMTP port |
+| `H4CKATH0N_SMTP_USERNAME` | empty | SMTP username |
+| `H4CKATH0N_SMTP_PASSWORD` | empty | SMTP password |
+| `H4CKATH0N_SMTP_STARTTLS` | `true` | Whether to use STARTTLS for SMTP |
+| `H4CKATH0N_SMTP_SSL` | `false` | Whether to use SSL for SMTP |
+| `H4CKATH0N_DEMO_MODE` | `false` | Demo mode flag |
+| `LANGSMITH_TRACING` | `false` | Whether LangSmith tracing is enabled |
+| `LANGSMITH_API_KEY` | empty | API key for LangSmith |
+| `LANGSMITH_PROJECT` | `default` | LangSmith project name |
+| `OTEL_ENABLED` | `false` | Whether OpenTelemetry is enabled |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | empty | OpenTelemetry exporter endpoint |
 
 In development, missing `RP_ID` and `ORIGIN` fall back to localhost defaults with
 warnings. In production, missing values raise a runtime error when passkey flows start.
