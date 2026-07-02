@@ -49,6 +49,9 @@ jobs:
       - name: Check doc routes
         run: uv run --locked scripts/check_doc_routes.py
 
+      - name: Check config docs
+        run: uv run --locked scripts/check_config_docs.py
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
