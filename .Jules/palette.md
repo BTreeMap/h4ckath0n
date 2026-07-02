@@ -1,0 +1,3 @@
+## 2026-06-02 - Desktop/Mobile Component Duplication and Accessible Naming
+**Learning:** When adding ARIA labels to UI components that have identical counterparts hidden in responsive modes (e.g., desktop vs mobile theme toggles in `Layout.tsx`), tests using `getByRole` will begin to fail because there are now multiple elements matching the same accessible name query.
+**Action:** When adding accessible names to duplicated responsive components, update corresponding unit tests to use `getAllByRole(...)[0]` to handle the duplicate matches correctly without relying on fragile element ordering logic or over-complicating the mock DOM.
