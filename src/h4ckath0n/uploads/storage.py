@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import os
 
@@ -14,19 +15,26 @@ async def store_file(storage_dir: str, data: bytes) -> tuple[str, str]:
     The storage key is fully opaque – it never contains any user-supplied
     values such as original filenames.
     """
-    sha256 = hashlib.sha256(data).hexdigest()
-    prefix = sha256[:2]
+    # Generate random part on the main thread for predictable RNG state if needed
     random_part = _rng_hex(16)  # 128-bit opaque path component.
-    storage_key = f"{prefix}/{random_part}"
 
-    full_path = os.path.join(storage_dir, prefix)
-    os.makedirs(full_path, exist_ok=True)
+    def _store_sync() -> tuple[str, str]:
+        # Optimize: Offload CPU-bound hashing and blocking I/O to a worker thread
+        # to prevent event loop latency during large file uploads.
+        sha256 = hashlib.sha256(data).hexdigest()
+        prefix = sha256[:2]
+        storage_key = f"{prefix}/{random_part}"
 
-    file_path = os.path.join(storage_dir, storage_key)
-    with open(file_path, "wb") as f:
-        f.write(data)
+        full_path = os.path.join(storage_dir, prefix)
+        os.makedirs(full_path, exist_ok=True)
 
-    return storage_key, sha256
+        file_path = os.path.join(storage_dir, storage_key)
+        with open(file_path, "wb") as f:
+            f.write(data)
+
+        return storage_key, sha256
+
+    return await asyncio.to_thread(_store_sync)
 
 
 def get_file_path(storage_dir: str, storage_key: str) -> str:
