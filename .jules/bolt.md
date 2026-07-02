@@ -28,3 +28,9 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-24 - Offload Cryptographic CPU-Bound Tasks to Threads
+
+**Learning:** Operations like Argon2 password hashing and verification are intensely CPU-bound by design. Running them synchronously in asyncio request handlers directly blocks the main event loop, significantly increasing latency and dropping concurrency for all other parallel HTTP/WebSocket requests during the operation.
+
+**Action:** Use `await asyncio.to_thread()` to offload expensive CPU-bound computations (such as cryptographic hashing) to worker threads so the main event loop remains free to serve other requests.
