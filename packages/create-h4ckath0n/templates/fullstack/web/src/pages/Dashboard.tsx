@@ -201,7 +201,7 @@ export function Dashboard() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  className="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white"
+                  className="flex-1 text-sm cursor-pointer file:cursor-pointer file:hover:bg-primary-hover file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white"
                 />
                 <Button onClick={handleUpload} disabled={uploading}>
                   {uploading ? "Uploading…" : "Upload"}
@@ -292,12 +292,26 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <textarea
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="Type a prompt…"
-              className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <div className="relative">
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!aiStreaming && aiPrompt.trim()) {
+                      handleAiStream();
+                    }
+                  }
+                }}
+                disabled={aiStreaming}
+                placeholder="Type a prompt…"
+                className="w-full h-24 p-3 pb-8 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <div className="absolute bottom-3 right-3 text-xs text-text-muted select-none pointer-events-none">
+                Press <kbd className="font-sans px-1.5 py-0.5 rounded-md bg-surface-alt border border-border">Enter</kbd> to send
+              </div>
+            </div>
             <Button
               onClick={handleAiStream}
               disabled={aiStreaming || !aiPrompt.trim()}
