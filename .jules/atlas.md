@@ -1,11 +1,6 @@
-# Atlas Journal: Critical Learnings
-
-## 2026-02-28 - API route substring matching is unreliable for drift checks
-
-**Learning:** Checking whether a path string appears *anywhere* in a README causes false negatives
-when one route's path is a substring of another (e.g. `/auth/passkeys/{key_id}` inside
-`/auth/passkeys/{key_id}/revoke`). The drift check must match `METHOD /path` as a combined token,
-ideally inside backtick delimiters, to avoid this trap.
-
-**Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
-that mirror the actual markdown formatting.
+## 2024-06-07 - Documenting Environment Variables
+**Learning:** Env vars drift heavily between Pydantic config and docs. In this repo, configuration settings are driven by `pydantic-settings` in `src/h4ckath0n/config.py`. They use a prefix (`H4CKATH0N_`), except for some fields like `OPENAI_API_KEY` which are exempt or have aliases. The README has a hard-coded table of environment variables that is missing many new fields (like email and storage backend settings).
+**Action:** Replace the manually maintained env vars table in README.md with an automated list/table generated from Pydantic config, or add a drift-prevention script for env vars.
+## 2024-06-07 - Documenting Environment Variables
+**Learning:** Env vars drift heavily between Pydantic config and docs. In this repo, configuration settings are driven by `pydantic-settings` in `src/h4ckath0n/config.py`. They use a prefix (`H4CKATH0N_`), except for some fields like `OPENAI_API_KEY` which are exempt or have aliases. The README has a hard-coded table of environment variables that is missing many new fields (like email and storage backend settings).
+**Action:** Replace the manually maintained env vars table in README.md with an automated list/table generated from Pydantic config, or add a drift-prevention script for env vars.
