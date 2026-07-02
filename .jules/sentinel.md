@@ -1,0 +1,4 @@
+## 2024-05-15 - Prevent Email Enumeration via Timing Attack
+**Vulnerability:** The password authentication endpoint had a timing discrepancy allowing email enumeration. When a user was not found or had no password set, the endpoint returned immediately, bypassing the computationally expensive argon2 verification.
+**Learning:** Early exits before password verification functions (which are inherently slow) inadvertently reveal whether a user exists. A dummy hash verification is necessary to balance execution times. The dummy hash MUST be a structurally valid Argon2id hash string, otherwise `argon2-cffi` will throw a fast parsing error, defeating the mitigation.
+**Prevention:** Always verify a dummy hash of the password when short-circuiting an authentication flow due to a missing user or unset password. Ensure the dummy hash is properly formatted for the hashing algorithm.
