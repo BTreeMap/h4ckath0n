@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from h4ckath0n.auth.schemas import DISPLAY_NAME_MAX_LENGTH, DeviceBindingMixin
+from h4ckath0n.auth.schemas import DISPLAY_NAME_MAX_LENGTH, DeviceBindingMixin, clean_display_name
 
 # -- Registration --
 
@@ -22,10 +22,7 @@ class PasskeyRegisterStartRequest(BaseModel):
     @field_validator("display_name")
     @classmethod
     def _clean_display_name(cls, v: str) -> str:
-        v = v.strip()
-        if not v:
-            raise ValueError("Display name must not be empty")
-        return v
+        return clean_display_name(v)
 
 
 class PasskeyRegisterStartResponse(BaseModel):
