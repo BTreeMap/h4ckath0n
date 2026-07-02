@@ -1,0 +1,3 @@
+## 2024-05-18 - Identical responsive UI elements accessibility
+**Learning:** When adding ARIA labels to UI components that have identical counterparts hidden in responsive modes (e.g., desktop vs mobile theme toggles), existing tests using `getByRole` may fail by finding multiple elements, even if one is visually hidden.
+**Action:** Provide explicit `aria-label`s for responsive icon buttons. Update affected tests to handle multiple matches (e.g., using `getAllByRole(...)[0]`). Always ensure a hidden "skip to main content" link is present that becomes visible on focus, targeting an identifiable `#main-content` area for keyboard navigation.
