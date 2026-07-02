@@ -151,6 +151,11 @@ export function Layout() {
                       ? `Theme: system (${effectiveTheme})`
                       : `Theme: ${themePreference}`
                   }
+                title={
+                  themePreference === "system"
+                    ? `Theme: system (${effectiveTheme})`
+                    : `Theme: ${themePreference}`
+                }
                 >
                   {effectiveTheme === "dark" ? (
                     <Sun className="w-4 h-4" />
@@ -192,6 +197,16 @@ export function Layout() {
                 size="icon"
                 onClick={toggleTheme}
                 className="mr-2"
+                aria-label={
+                  themePreference === "system"
+                    ? `Theme: system (${effectiveTheme})`
+                    : `Theme: ${themePreference}`
+                }
+                title={
+                  themePreference === "system"
+                    ? `Theme: system (${effectiveTheme})`
+                    : `Theme: ${themePreference}`
+                }
               >
                 {effectiveTheme === "dark" ? (
                   <Sun className="w-4 h-4" />
@@ -203,6 +218,8 @@ export function Layout() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                title={isMobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileMenuOpen ? (
                   <X className="w-5 h-5" />
