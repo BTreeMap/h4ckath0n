@@ -169,7 +169,8 @@ def _resolve_user(session: Session, args: argparse.Namespace) -> User | None:
     else:
         stmt = select(User).where(User.email == email)
 
-    return session.execute(stmt).scalars().first()
+    # ⚡ Bolt: Use session.scalar() to avoid intermediate Result object hydration
+    return session.scalar(stmt)
 
 
 def _user_or_exit(session: Session, args: argparse.Namespace) -> tuple[User | None, int | None]:
