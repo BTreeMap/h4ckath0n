@@ -73,12 +73,15 @@ async def register_user(
     return user
 
 
+_DUMMY_HASH = "$argon2id$v=19$m=65536,t=3,p=4$Nm1QCNu1mnNbLlwkGe4gSQ$Rdz9ns6GI0v6fU46m41ipCl9S0cmIVP51UyCJnKWT90"
+
+
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
-        return None
-    if not user.password_hash:
+    user = result.scalars().first()
+    if user is None or not user.password_hash:
+        verify_password(password, _DUMMY_HASH)
         return None
     if not verify_password(password, user.password_hash):
         return None
