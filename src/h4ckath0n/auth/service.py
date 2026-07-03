@@ -73,7 +73,10 @@ async def register_user(
     return user
 
 
-_DUMMY_HASH = "$argon2id$v=19$m=65536,t=3,p=4$Nm1QCNu1mnNbLlwkGe4gSQ$Rdz9ns6GI0v6fU46m41ipCl9S0cmIVP51UyCJnKWT90"
+_DUMMY_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$Nm1QCNu1mnNbLlwkGe4gSQ"
+    "$Rdz9ns6GI0v6fU46m41ipCl9S0cmIVP51UyCJnKWT90"
+)
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
