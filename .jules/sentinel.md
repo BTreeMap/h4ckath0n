@@ -1,0 +1,4 @@
+## 2024-05-24 - Fix authentication timing attack leaking user existence
+**Vulnerability:** The `authenticate_user` function returned immediately if a user was not found or had no password, but performed an expensive Argon2 hash verification if the user existed and had a password. This allows an attacker to enumerate valid email addresses based on response time.
+**Learning:** When mitigating timing attacks using a dummy hash with `argon2-cffi`, the dummy hash must be a fully valid, structurally correct Argon2id string. If an invalid format is used, `argon2.PasswordHasher.verify` fails fast with a decoding error, completely bypassing the intended processing delay.
+**Prevention:** Always verify the structure of dummy hashes used in timing attack mitigations and ensure both branches (user exists vs does not exist) take approximately the same time.
