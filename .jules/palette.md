@@ -1,0 +1,3 @@
+## 2024-07-03 - Resolving Strict Mode Violations in Playwright Tests for Duplicate UI Elements
+ **Learning:** When adding ARIA labels to duplicate UI elements (like mobile/desktop navigation icons), automated UI tests (both React Testing Library and Playwright) will fail due to strict mode violations where multiple elements match the same accessible query.
+ **Action:** Update React Testing Library tests from `getByRole` to `getAllByRole(...)[0]!` and Playwright scripts from `page.get_by_label(...)` to `page.get_by_label(...).nth(1)` to explicitly target the intended element instance and maintain test stability.
