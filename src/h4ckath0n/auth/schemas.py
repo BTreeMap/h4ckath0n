@@ -10,6 +10,14 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 DISPLAY_NAME_MAX_LENGTH = 200
 
 
+def require_display_name(v: str) -> str:
+    """Trim whitespace; raise ValueError on empty."""
+    v = v.strip()
+    if not v:
+        raise ValueError("Display name must not be empty")
+    return v
+
+
 def _validate_display_name(v: str | None) -> str | None:
     """Trim whitespace; reject empty-after-trim values."""
     if v is None:
@@ -40,10 +48,7 @@ class RegisterRequest(DeviceBindingMixin):
     @field_validator("display_name")
     @classmethod
     def _clean_display_name(cls, v: str) -> str:
-        v = v.strip()
-        if not v:
-            raise ValueError("Display name must not be empty")
-        return v
+        return require_display_name(v)
 
 
 class LoginRequest(DeviceBindingMixin):
