@@ -1,0 +1,4 @@
+## 2026-07-04 - Fix user enumeration timing attack in password auth
+**Vulnerability:** The `authenticate_user` function returned immediately if a user was not found or had no password hash, while successful user lookups involved a slow Argon2 hash verification. This allowed an attacker to enumerate valid email addresses based on response times.
+**Learning:** Returning early in authentication flows without simulating the work required for valid users introduces severe timing vulnerabilities. Argon2 hashing timing attacks must be mitigated using a structurally valid dummy Argon2id hash, because invalid formats cause `verify` to fail fast with a decoding error.
+**Prevention:** Always ensure that both the "user exists" and "user does not exist" code paths in authentication logic take roughly the same amount of time by running a dummy hash verification when necessary.
