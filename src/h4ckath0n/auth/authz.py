@@ -22,14 +22,19 @@ ADMIN: Role = "admin"
 Scope = NewType("Scope", str)
 
 
-def parse_scopes(raw: str) -> list[Scope]:
-    """Parse a comma-separated scope string into an ordered, de-duplicated list.
+def clean_scopes(raw_scopes: Iterable[str]) -> list[Scope]:
+    """Clean, trim, and de-duplicate a sequence of raw scopes.
 
     Whitespace around each scope is trimmed and empty entries are dropped.
     Insertion order is preserved so serialisation round-trips stably.
     """
-    cleaned = (part.strip() for part in raw.split(","))
+    cleaned = (part.strip() for part in raw_scopes)
     return [Scope(part) for part in dict.fromkeys(p for p in cleaned if p)]
+
+
+def parse_scopes(raw: str) -> list[Scope]:
+    """Parse a comma-separated scope string into an ordered, de-duplicated list."""
+    return clean_scopes(raw.split(","))
 
 
 def serialize_scopes(scopes: Iterable[Scope]) -> str:

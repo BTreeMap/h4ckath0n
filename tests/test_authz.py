@@ -8,6 +8,7 @@ from h4ckath0n.auth.authz import (
     ADMIN,
     USER,
     Scope,
+    clean_scopes,
     missing_scopes,
     parse_scopes,
     serialize_scopes,
@@ -22,6 +23,12 @@ from h4ckath0n.auth.passkeys.errors import (
 
 
 class TestScopes:
+    def test_clean_scopes_trims_and_drops_empty(self):
+        assert clean_scopes(["  admin ", " demo", "", "  "]) == [Scope("admin"), Scope("demo")]
+
+    def test_clean_scopes_deduplicates_preserving_order(self):
+        assert clean_scopes(["a", "b", "a", "c", "b"]) == [Scope("a"), Scope("b"), Scope("c")]
+
     def test_parse_trims_and_drops_empty(self):
         assert parse_scopes("  admin , demo ,, ") == [Scope("admin"), Scope("demo")]
 
