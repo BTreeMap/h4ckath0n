@@ -28,3 +28,7 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2025-02-14 - Direct native object passing to JWT decode
+**Learning:** When using `pyjwt` to decode JWTs with `cryptography` elliptic curve public keys (e.g., `ECAlgorithm`), pass the native key object directly to `jwt.decode`. Serializing the key to a PEM string (`public_bytes().decode()`) introduces redundant parsing overhead and decreases CPU performance in hot paths.
+**Action:** Remove the `public_bytes().decode()` call and pass the native `cryptography` key object (which `pyjwt` understands) directly to `jwt.decode`.
