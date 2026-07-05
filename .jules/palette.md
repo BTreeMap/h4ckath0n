@@ -1,0 +1,3 @@
+## 2025-07-05 - Added missing ARIA attributes to Layout buttons
+**Learning:** In responsive layouts, duplicating interactive elements for desktop/mobile variants without distinct ARIA labels (or tests accounting for them) causes "multiple elements found" test failures and accessibility issues.
+**Action:** When adding accessible attributes (like `aria-label`) to duplicate UI elements (e.g., mobile vs. desktop variants) in the React frontend, update corresponding React Testing Library queries from `getByRole` to `getAllByRole(...)[0]!` to prevent 'multiple elements found' test failures. Ensure icon-only buttons have proper aria-labels and states like aria-expanded for toggles.
