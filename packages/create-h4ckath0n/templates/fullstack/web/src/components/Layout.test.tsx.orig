@@ -49,7 +49,7 @@ describe("Layout theme preference", () => {
       expect(localStorage.getItem("theme-preference")).toBe("system");
       expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
       expect(
-        screen.getAllByRole("button", { name: "Theme: system (dark)" })[0]!,
+        screen.getByRole("button", { name: "Theme: system (dark)" }),
       ).toBeInTheDocument();
     });
   });
@@ -58,14 +58,14 @@ describe("Layout theme preference", () => {
     mockMatchMedia(true);
     renderLayout();
 
-    const button = screen.getAllByRole("button", { name: "Theme: system (dark)" })[0]!;
+    const button = screen.getByRole("button", { name: "Theme: system (dark)" });
     fireEvent.click(button);
 
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("light");
       expect(document.documentElement.getAttribute("data-theme")).toBe("light");
       expect(
-        screen.getAllByRole("button", { name: "Theme: light" })[0]!,
+        screen.getByRole("button", { name: "Theme: light" }),
       ).toBeInTheDocument();
     });
   });
@@ -75,14 +75,14 @@ describe("Layout theme preference", () => {
     localStorage.setItem("theme-preference", "light");
     renderLayout();
 
-    const button = screen.getAllByRole("button", { name: "Theme: light" })[0]!;
+    const button = screen.getByRole("button", { name: "Theme: light" });
 
     fireEvent.click(button);
     await waitFor(() => {
       expect(localStorage.getItem("theme-preference")).toBe("dark");
       expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
       expect(
-        screen.getAllByRole("button", { name: "Theme: dark" })[0]!,
+        screen.getByRole("button", { name: "Theme: dark" }),
       ).toBeInTheDocument();
     });
 
@@ -91,8 +91,8 @@ describe("Layout theme preference", () => {
       expect(localStorage.getItem("theme-preference")).toBe("light");
       expect(document.documentElement.getAttribute("data-theme")).toBe("light");
       expect(
-        screen.queryAllByRole("button", { name: /Theme: system/ }),
-      ).toHaveLength(0);
+        screen.queryByRole("button", { name: /Theme: system/ }),
+      ).not.toBeInTheDocument();
     });
   });
 });
