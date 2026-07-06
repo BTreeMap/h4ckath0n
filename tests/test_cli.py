@@ -311,6 +311,57 @@ class TestCLIUsersOperations:
         assert "billing:read" in data["scopes"]
         assert "billing:write" in data["scopes"]
 
+    def test_users_scopes_add_comma_separated(self, tmp_path):
+        db_url = self._init_db(tmp_path)
+        uid = self._create_user(db_url)
+        result = _run_cli(
+            "users",
+            "scopes",
+            "add",
+            "--user-id",
+            uid,
+            "--scope",
+            "billing:read, billing:write ",
+            "--db",
+            db_url,
+            "--yes",
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert "billing:read" in data["scopes"]
+        assert "billing:write" in data["scopes"]
+
+    def test_users_scopes_remove_comma_separated(self, tmp_path):
+        db_url = self._init_db(tmp_path)
+        uid = self._create_user(db_url)
+        _run_cli(
+            "users",
+            "scopes",
+            "set",
+            "--user-id",
+            uid,
+            "--scopes",
+            "a,b,c",
+            "--db",
+            db_url,
+            "--yes",
+        )
+        result = _run_cli(
+            "users",
+            "scopes",
+            "remove",
+            "--user-id",
+            uid,
+            "--scope",
+            "a, c ",
+            "--db",
+            db_url,
+            "--yes",
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["scopes"] == "b"
+
     def test_users_scopes_set(self, tmp_path):
         db_url = self._init_db(tmp_path)
         uid = self._create_user(db_url)
