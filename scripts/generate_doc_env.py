@@ -13,7 +13,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-from pydantic.fields import FieldInfo
+from pydantic.fields import FieldInfo  # noqa: E402
 
 
 def format_default(field_info: FieldInfo) -> str:
