@@ -29,7 +29,13 @@ class TestScopes:
         assert parse_scopes("a,b,a,c,b") == [Scope("a"), Scope("b"), Scope("c")]
 
     def test_parse_multiple_args(self):
-        assert parse_scopes("a,b", " c , d ", "e") == [Scope("a"), Scope("b"), Scope("c"), Scope("d"), Scope("e")]
+        assert parse_scopes("a,b", " c , d ", "e") == [
+            Scope("a"),
+            Scope("b"),
+            Scope("c"),
+            Scope("d"),
+            Scope("e"),
+        ]
 
     def test_parse_empty_string_yields_empty_list(self):
         assert parse_scopes("") == []

@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 
-from h4ckath0n.auth.authz import Scope, parse_scopes, serialize_scopes
+from h4ckath0n.auth.authz import parse_scopes, serialize_scopes
 from h4ckath0n.auth.models import Device, User, WebAuthnCredential
 from h4ckath0n.cli._common import (
     EXIT_BAD_ARGS,
