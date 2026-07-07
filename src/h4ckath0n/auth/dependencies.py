@@ -84,7 +84,7 @@ def require_admin() -> Any:
 def require_scopes(*scopes: str) -> Any:
     """Dependency that requires the user to have specific scopes (from DB)."""
 
-    needed: set[Scope] = {Scope(s.strip()) for s in scopes if s.strip()}
+    needed: set[Scope] = set(parse_scopes(*scopes))
 
     async def _scoped(user: User = Depends(_get_current_user)) -> User:
         if missing := missing_scopes(parse_scopes(user.scopes), needed):
