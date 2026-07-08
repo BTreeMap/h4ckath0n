@@ -311,6 +311,31 @@ class TestCLIUsersOperations:
         assert "billing:read" in data["scopes"]
         assert "billing:write" in data["scopes"]
 
+    def test_users_scopes_remove(self, tmp_path):
+        db_url = self._init_db(tmp_path)
+        uid = self._create_user(db_url)
+        # Add first
+        _run_cli(
+            "users", "scopes", "add", "--user-id", uid, "--scope", "billing:read",
+            "--scope", "billing:write", "--db", db_url, "--yes"
+        )
+        result = _run_cli(
+            "users",
+            "scopes",
+            "remove",
+            "--user-id",
+            uid,
+            "--scope",
+            "billing:read",
+            "--db",
+            db_url,
+            "--yes",
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert "billing:write" in data["scopes"]
+        assert "billing:read" not in data["scopes"]
+
     def test_users_scopes_set(self, tmp_path):
         db_url = self._init_db(tmp_path)
         uid = self._create_user(db_url)
