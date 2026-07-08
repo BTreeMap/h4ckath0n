@@ -316,8 +316,18 @@ class TestCLIUsersOperations:
         uid = self._create_user(db_url)
         # Add first
         _run_cli(
-            "users", "scopes", "add", "--user-id", uid, "--scope", "billing:read",
-            "--scope", "billing:write", "--db", db_url, "--yes"
+            "users",
+            "scopes",
+            "add",
+            "--user-id",
+            uid,
+            "--scope",
+            "billing:read",
+            "--scope",
+            "billing:write",
+            "--db",
+            db_url,
+            "--yes",
         )
         result = _run_cli(
             "users",
