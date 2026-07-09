@@ -1,0 +1,3 @@
+## 2024-07-09 - Latent bug in CLI scopes due to missing centralized parsing
+**Learning:** In Python, unpacking variables generated from CLI inputs into a set via `{s.strip() for s in args.scope}` without properly unpacking nested comma-separated lists leads to silent logic failures. When users executed `--scope admin,demo`, the code checked for the literal string `"admin,demo"` rather than extracting `admin` and `demo`.
+**Action:** When handling variable multi-value inputs (like CLI variadic args or FastAPI dependencies), route all such inputs through a single, shared pure normalization helper (`parse_scopes`) to ensure deterministic deduplication and string splitting, rather than relying on inline set comprehensions.
