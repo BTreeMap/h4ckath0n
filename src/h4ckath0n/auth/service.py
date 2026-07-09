@@ -24,6 +24,13 @@ def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+# A valid Argon2id hash structure used to mitigate timing attacks when a user is not found.
+_DUMMY_PASSWORD_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4"
+    "$sAPHTIjjmtfC6HtmOj1Z+w$QxhLn7nUxdFLDCs2PpYkBSoCq8anPAlscIofMvfCw18"
+)
+
+
 def _require_password_extra() -> tuple:  # type: ignore[type-arg]
     """Import argon2 password helpers. Raises if extra not installed."""
     try:
@@ -76,12 +83,15 @@ async def register_user(
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+    user = result.scalars().first()
+
+    # Always perform a hash verification to mitigate timing attacks.
+    hash_to_verify = user.password_hash if user and user.password_hash else _DUMMY_PASSWORD_HASH
+    is_valid = verify_password(password, hash_to_verify)
+
+    if not user or not user.password_hash or not is_valid:
         return None
-    if not user.password_hash:
-        return None
-    if not verify_password(password, user.password_hash):
-        return None
+
     return user
 
 
