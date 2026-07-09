@@ -32,6 +32,13 @@ class TestScopes:
         assert parse_scopes("") == []
         assert parse_scopes("   ") == []
 
+    def test_parse_handles_iterables_of_strings(self):
+        assert parse_scopes(["admin, demo", " reports "]) == [
+            Scope("admin"),
+            Scope("demo"),
+            Scope("reports"),
+        ]
+
     def test_serialize_roundtrips(self):
         raw = "admin,demo,reports"
         assert serialize_scopes(parse_scopes(raw)) == raw
