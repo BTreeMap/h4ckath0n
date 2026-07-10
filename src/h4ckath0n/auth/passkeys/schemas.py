@@ -7,7 +7,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from h4ckath0n.auth.schemas import DISPLAY_NAME_MAX_LENGTH, DeviceBindingMixin, clean_required_string
+from h4ckath0n.auth.schemas import (
+    DISPLAY_NAME_MAX_LENGTH,
+    DeviceBindingMixin,
+    clean_required_string,
+)
 
 # -- Registration --
 
