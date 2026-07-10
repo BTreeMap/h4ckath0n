@@ -165,11 +165,10 @@ def _resolve_user(session: Session, args: argparse.Namespace) -> User | None:
         return None
 
     if user_id:
-        stmt = select(User).where(User.id == user_id)
+        return session.get(User, user_id)
     else:
         stmt = select(User).where(User.email == email)
-
-    return session.execute(stmt).scalars().first()
+        return session.execute(stmt).scalars().first()
 
 
 def _user_or_exit(session: Session, args: argparse.Namespace) -> tuple[User | None, int | None]:
