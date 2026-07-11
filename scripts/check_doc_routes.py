@@ -34,17 +34,14 @@ def get_app_routes() -> list[tuple[str, str]]:
     app = create_app(settings)
 
     routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Only check API routes (not Mount, WebSocket, etc.).
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+    openapi = app.openapi()
+    for path, path_item in openapi.get("paths", {}).items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
+        for method in sorted(path_item.keys()):
+            if method.upper() == "HEAD":
                 continue
-            routes.append((method, path))
+            routes.append((method.upper(), path))
     return sorted(routes)
 
 
