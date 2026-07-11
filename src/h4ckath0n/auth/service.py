@@ -73,15 +73,28 @@ async def register_user(
     return user
 
 
+# A valid Argon2id hash used to mitigate timing attacks during login enumeration.
+# This ensures verify_password processes a structurally correct hash when a user
+# is not found or has no password set.
+_DUMMY_PASSWORD_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$2ariaUqQ5MvdwG63U0M+2A"
+    "$B/LCbaEhf4zMeY+ye5OC3oH+YyhalLRc0TugxVa3zCk"
+)
+
+
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
+
+    user = result.scalars().first()
+
+    if user is None or not user.password_hash:
+        verify_password(password, _DUMMY_PASSWORD_HASH)
         return None
-    if not user.password_hash:
-        return None
+
     if not verify_password(password, user.password_hash):
         return None
+
     return user
 
 
