@@ -74,7 +74,11 @@ async def register_user(
 
 
 # A valid dummy Argon2id hash to mitigate timing attacks during login
-_DUMMY_HASH = "$argon2id$v=19$m=65536,t=3,p=4$sBe/4XHTiis/Rnh3OmC6MQ$Ey/bmXGmJQaFatFlEr3d1x8tJEnD2/aghBD9j4nrNmQ"
+_DUMMY_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$sBe/4XHTiis/Rnh3OmC6MQ"
+    "$Ey/bmXGmJQaFatFlEr3d1x8tJEnD2/aghBD9j4nrNmQ"
+)
+
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
