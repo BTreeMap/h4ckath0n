@@ -1,0 +1,4 @@
+## 2025-02-28 - Mitigating user enumeration via timing attack in login
+**Vulnerability:** The login endpoint bypassed password hashing when an email was not found or the user lacked a password hash, creating a timing difference that allowed attackers to enumerate valid email addresses.
+**Learning:** Argon2id hash verification introduces a significant intentional delay. When mitigating timing attacks, we must perform the exact same time-consuming cryptographic operation (verifying against a valid, structurally correct dummy Argon2id hash) regardless of whether the user exists. If an invalid format is used, `verify` fails fast, defeating the mitigation.
+**Prevention:** Always ensure authentication functions exhibit constant-time behavior across all return paths, and use a valid dummy hash for delays if the user lookup fails.
