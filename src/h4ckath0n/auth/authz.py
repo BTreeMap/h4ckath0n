@@ -23,7 +23,7 @@ Scope = NewType("Scope", str)
 
 
 def parse_scopes(raw: str | Iterable[str]) -> list[Scope]:
-    """Parse a comma-separated scope string, or iterable of strings, into an ordered, de-duplicated list.
+    """Parse a scope string (or iterable of strings) into an ordered, de-duplicated list.
 
     Whitespace around each scope is trimmed and empty entries are dropped.
     Insertion order is preserved so serialisation round-trips stably.
