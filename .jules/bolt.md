@@ -28,3 +28,7 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-18 - Skip Unnecessary JWT Key Serialization
+**Learning:** In hot paths like device JWT authentication (`verify_device_jwt`), parsing an elliptic curve public key and then unnecessarily serializing it back to a PEM string (`public_bytes(encoding=serialization.Encoding.PEM...`) to pass to `pyjwt` introduces measurable redundant CPU overhead. `pyjwt` supports decoding directly with the native `cryptography` key objects.
+**Action:** Pass the native `cryptography` EC key object directly to `jwt.decode()`. Avoid redundantly serializing and deserializing to PEM format in high-frequency validation logic.
