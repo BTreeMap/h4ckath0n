@@ -22,10 +22,7 @@ def main() -> int:
 
     # We iterate over the dictionary directly to avoid SIM118
     for field_name in Settings.model_fields:
-        if field_name == "env":
-            env_name = "H4CKATH0N_ENV"
-        else:
-            env_name = f"H4CKATH0N_{field_name.upper()}"
+        env_name = "H4CKATH0N_ENV" if field_name == "env" else f"H4CKATH0N_{field_name.upper()}"
 
         if env_name not in readme_text:
             missing.append(env_name)
