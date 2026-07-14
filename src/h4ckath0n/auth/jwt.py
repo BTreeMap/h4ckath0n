@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 import jwt
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from pydantic import BaseModel
 
 
@@ -25,12 +26,12 @@ class JWTClaims(BaseModel):
 def decode_device_token(
     token: str,
     *,
-    public_key_pem: str,
+    public_key: EllipticCurvePublicKey,
 ) -> JWTClaims:
     """Decode an ES256 device-signed JWT using the device's public key."""
     payload = jwt.decode(
         token,
-        public_key_pem,
+        public_key,
         algorithms=["ES256"],
         options={"verify_aud": False},
         leeway=timedelta(seconds=30),  # allow some clock skew

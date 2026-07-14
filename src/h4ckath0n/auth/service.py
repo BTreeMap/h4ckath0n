@@ -73,12 +73,20 @@ async def register_user(
     return user
 
 
+# A valid Argon2id hash verified when no password hash is available. This keeps
+# unknown-user login work comparable to verification of a registered user.
+_DUMMY_PASSWORD_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$sBe/4XHTiis/Rnh3OmC6MQ"
+    "$Ey/bmXGmJQaFatFlEr3d1x8tJEnD2/aghBD9j4nrNmQ"
+)
+
+
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
     result = await db.execute(select(User).filter(User.email == email))
-    if (user := result.scalars().first()) is None:
-        return None
-    if not user.password_hash:
+    user = result.scalars().first()
+    if user is None or not user.password_hash:
+        verify_password(password, _DUMMY_PASSWORD_HASH)
         return None
     if not verify_password(password, user.password_hash):
         return None

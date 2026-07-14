@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from h4ckath0n.app import create_app
 from h4ckath0n.auth.models import PasswordResetToken, User
 from h4ckath0n.auth.passwords import hash_password, verify_password
-from h4ckath0n.auth.service import _hash_token
+from h4ckath0n.auth.service import _DUMMY_PASSWORD_HASH, _hash_token
 from h4ckath0n.config import Settings
 
 
@@ -353,6 +353,26 @@ class TestSignupLogin:
             json={"email": "dave@example.com", "password": "wrong"},
         )
         assert r.status_code == 401
+
+    def test_login_unknown_user_checks_dummy_password_hash(self, client: TestClient, monkeypatch):
+        from h4ckath0n.auth import passwords
+
+        hashes: list[str] = []
+        verify_password = passwords.verify_password
+
+        def record_verification(password: str, password_hash: str) -> bool:
+            hashes.append(password_hash)
+            return verify_password(password, password_hash)
+
+        monkeypatch.setattr(passwords, "verify_password", record_verification)
+
+        r = client.post(
+            "/auth/login",
+            json={"email": "unknown@example.com", "password": "strongP@ss1"},
+        )
+
+        assert r.status_code == 401
+        assert hashes == [_DUMMY_PASSWORD_HASH]
 
 
 # ---------------------------------------------------------------------------

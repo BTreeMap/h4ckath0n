@@ -17,6 +17,7 @@ from jwt.algorithms import ECAlgorithm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from h4ckath0n.app import create_app
+from h4ckath0n.auth.jwt import decode_device_token
 from h4ckath0n.auth.models import Device, User
 from h4ckath0n.auth.passkeys.ids import new_device_id, new_user_id
 from h4ckath0n.config import Settings
@@ -60,6 +61,21 @@ def _make_token(
         algorithm="ES256",
         headers={"kid": device_id},
     )
+
+
+def test_decode_device_token_accepts_native_ec_public_key():
+    """Native EC keys avoid PEM serialization on the verification hot path."""
+    import jwt as pyjwt
+
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    now = datetime.now(UTC)
+    token = pyjwt.encode(
+        {"sub": "u" + "a" * 31, "iat": now, "exp": now + timedelta(minutes=15)},
+        private_key,
+        algorithm="ES256",
+    )
+
+    assert decode_device_token(token, public_key=private_key.public_key()).sub == "u" + "a" * 31
 
 
 @pytest.fixture()

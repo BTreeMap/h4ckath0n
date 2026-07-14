@@ -12,7 +12,7 @@ import json
 from dataclasses import dataclass
 
 import jwt
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from fastapi import WebSocket
 from jwt.algorithms import ECAlgorithm
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -91,15 +91,13 @@ async def verify_device_jwt(
     try:
         jwk_dict = json.loads(device.public_key_jwk)
         public_key = ECAlgorithm(ECAlgorithm.SHA256).from_jwk(jwk_dict)
-        pem = public_key.public_bytes(  # type: ignore[union-attr]
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
-        ).decode()
     except (ValueError, KeyError, TypeError):
         raise AuthError("Invalid device key") from None
+    if not isinstance(public_key, EllipticCurvePublicKey):
+        raise AuthError("Invalid device key")
 
     try:
-        claims = decode_device_token(raw_jwt, public_key_pem=pem)
+        claims = decode_device_token(raw_jwt, public_key=public_key)
     except jwt.ExpiredSignatureError:
         raise AuthError("Token expired") from None
     except jwt.InvalidTokenError:
