@@ -51,22 +51,34 @@ _ID_LEN = 32
 _ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyz234567")
 
 
+def _new_prefixed_id(prefix: str) -> str:
+    """Generate a 32-character ID with the given prefix."""
+    s = random_base32()
+    return prefix + s[1:]
+
+
+def _is_valid_prefixed_id(value: str, prefix: str) -> bool:
+    """Return ``True`` when *value* is a 32-character base32 string starting with *prefix*."""
+    return (
+        len(value) == _ID_LEN
+        and value[:1] == prefix
+        and all(c in _ALLOWED_CHARS for c in value[1:])
+    )
+
+
 def new_user_id() -> UserId:
     """Generate a user ID (32 chars, starts with ``u``)."""
-    s = random_base32()
-    return UserId("u" + s[1:])
+    return UserId(_new_prefixed_id("u"))
 
 
 def new_key_id() -> KeyId:
     """Generate a credential key ID (32 chars, starts with ``k``)."""
-    s = random_base32()
-    return KeyId("k" + s[1:])
+    return KeyId(_new_prefixed_id("k"))
 
 
 def new_device_id() -> DeviceId:
     """Generate a device ID (32 chars, starts with ``d``)."""
-    s = random_base32()
-    return DeviceId("d" + s[1:])
+    return DeviceId(_new_prefixed_id("d"))
 
 
 def new_token_id() -> TokenId:
@@ -76,20 +88,14 @@ def new_token_id() -> TokenId:
 
 def is_user_id(value: str) -> TypeGuard[UserId]:
     """Return ``True`` when *value* looks like a valid user ID."""
-    return (
-        len(value) == _ID_LEN and value[:1] == "u" and all(c in _ALLOWED_CHARS for c in value[1:])
-    )
+    return _is_valid_prefixed_id(value, "u")
 
 
 def is_key_id(value: str) -> TypeGuard[KeyId]:
     """Return ``True`` when *value* looks like a valid key ID."""
-    return (
-        len(value) == _ID_LEN and value[:1] == "k" and all(c in _ALLOWED_CHARS for c in value[1:])
-    )
+    return _is_valid_prefixed_id(value, "k")
 
 
 def is_device_id(value: str) -> TypeGuard[DeviceId]:
     """Return ``True`` when *value* looks like a valid device ID."""
-    return (
-        len(value) == _ID_LEN and value[:1] == "d" and all(c in _ALLOWED_CHARS for c in value[1:])
-    )
+    return _is_valid_prefixed_id(value, "d")
