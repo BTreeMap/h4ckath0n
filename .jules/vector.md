@@ -1,0 +1,3 @@
+## 2024-07-19 - Centralize scope transformation helpers
+**Learning:** The codebase had duplicated and ad-hoc scope normalization and manipulation logic (e.g. `_normalize_scopes` in `cli/_common.py`, list manipulation in `cli/users.py`). This duplication increases the risk of subtle bugs or inconsistent string normalization of comma-separated domains.
+**Action:** Centralize string parsing and array transformation functions (`normalize_scopes`, `add_scopes`, `remove_scopes`) into the core `authz.py` domain module. Using pure helpers creates a single source of truth for authorization value manipulation across the CLI and backend.

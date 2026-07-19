@@ -41,3 +41,19 @@ def serialize_scopes(scopes: Iterable[Scope]) -> str:
 def missing_scopes(granted: Iterable[Scope], required: Iterable[Scope]) -> set[Scope]:
     """Return the required scopes that are not present in *granted*."""
     return set(required).difference(granted)
+
+
+def normalize_scopes(raw: str | Iterable[str]) -> str:
+    """Normalize scopes into a canonical comma-separated string."""
+    return serialize_scopes(parse_scopes(raw))
+
+
+def add_scopes(existing: str | Iterable[str], to_add: str | Iterable[str]) -> str:
+    """Return a new serialized scope string with *to_add* appended."""
+    return serialize_scopes((*parse_scopes(existing), *parse_scopes(to_add)))
+
+
+def remove_scopes(existing: str | Iterable[str], to_remove: str | Iterable[str]) -> str:
+    """Return a new serialized scope string with *to_remove* stripped out."""
+    remove_set = set(parse_scopes(to_remove))
+    return serialize_scopes(s for s in parse_scopes(existing) if s not in remove_set)
