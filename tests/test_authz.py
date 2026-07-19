@@ -60,6 +60,25 @@ class TestScopes:
         assert USER == "user"
         assert ADMIN == "admin"
 
+    def test_normalize_scopes(self):
+        from h4ckath0n.auth.authz import normalize_scopes
+
+        assert normalize_scopes("a,b,c") == "a,b,c"
+        assert normalize_scopes("a,b,a") == "a,b"
+        assert normalize_scopes(" a , b , c ") == "a,b,c"
+        assert normalize_scopes("a,,b,,") == "a,b"
+        assert normalize_scopes("") == ""
+
+    def test_add_scopes(self):
+        from h4ckath0n.auth.authz import add_scopes
+
+        assert add_scopes("a,b", "b,c") == "a,b,c"
+
+    def test_remove_scopes(self):
+        from h4ckath0n.auth.authz import remove_scopes
+
+        assert remove_scopes("a,b,c", "b") == "a,c"
+
 
 class TestPasskeyErrors:
     def test_hierarchy_subclasses_value_error(self):
