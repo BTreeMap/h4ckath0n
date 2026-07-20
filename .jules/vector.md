@@ -1,0 +1,3 @@
+## 2024-07-20 - Centralize scope manipulation helpers in authz module
+**Learning:** The CLI module ad-hoc string manipulations for authorization scopes (e.g. `add`, `remove`, `set`) duplicate internal business logic that conceptually belongs to the domain module (`authz.py`). Passing strings around and mutating them using internal types (`parse_scopes`, `serialize_scopes`) inside the CLI commands exposes implementation details unnecessarily.
+**Action:** In Python, pure functional helpers like `normalize_scopes`, `add_scopes`, and `remove_scopes` should be placed close to the domain representations (like `h4ckath0n.auth.authz`) to prevent drift, lock down behavior with targeted unit tests, and provide a clean declarative transformation pipeline to callers.
