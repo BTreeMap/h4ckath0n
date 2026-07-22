@@ -8,8 +8,11 @@ from h4ckath0n.auth.authz import (
     ADMIN,
     USER,
     Scope,
+    add_scopes,
     missing_scopes,
+    normalize_scopes,
     parse_scopes,
+    remove_scopes,
     serialize_scopes,
 )
 from h4ckath0n.auth.passkeys.errors import (
@@ -55,6 +58,33 @@ class TestScopes:
         granted = parse_scopes("admin,demo,reports")
         required = parse_scopes("admin,demo")
         assert missing_scopes(granted, required) == set()
+
+    def test_normalize_scopes_basic(self):
+        assert normalize_scopes("a,b,c") == "a,b,c"
+
+    def test_normalize_scopes_dedup(self):
+        assert normalize_scopes("a,b,a") == "a,b"
+
+    def test_normalize_scopes_trim(self):
+        assert normalize_scopes(" a , b , c ") == "a,b,c"
+
+    def test_normalize_scopes_empty_segments(self):
+        assert normalize_scopes("a,,b,,") == "a,b"
+
+    def test_normalize_scopes_empty_string(self):
+        assert normalize_scopes("") == ""
+
+    def test_add_scopes_merges_and_deduplicates(self):
+        assert add_scopes("a,b", "b,c") == "a,b,c"
+        assert add_scopes("a,b", "a") == "a,b"
+        assert add_scopes("", "a,b") == "a,b"
+        assert add_scopes("a", "") == "a"
+
+    def test_remove_scopes_filters_out_targets(self):
+        assert remove_scopes("a,b,c", "b,d") == "a,c"
+        assert remove_scopes("a,b", "a,b") == ""
+        assert remove_scopes("a", "") == "a"
+        assert remove_scopes("", "a") == ""
 
     def test_role_constants(self):
         assert USER == "user"
