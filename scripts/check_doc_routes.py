@@ -1,11 +1,11 @@
 #!/usr/bin/env -S uv run python
-"""Drift-prevention check: verify that the API routes in README.md exactly match the app's OpenAPI schema.
+"""Drift-prevention check: verify that the API routes in README.md match the app's OpenAPI schema.
 
 Usage (from repo root):
     uv run scripts/check_doc_routes.py
 
 The script imports the h4ckath0n app, generates a markdown section of all routes,
-and checks that it matches the content between <!-- routes-start --> and <!-- routes-end --> in README.md.
+and checks that it matches the content between <!-- routes-start --> and <!-- routes-end -->.
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ TAG_TITLES = {
     "llm": "LLM Chat",
     "password-auth": "Password Auth (Optional)",
 }
+
 
 def generate_routes_markdown() -> str:
     """Generate the markdown table of routes from the OpenAPI schema."""
@@ -60,7 +61,9 @@ def generate_routes_markdown() -> str:
     lines.append("<!-- routes-start -->")
 
     order = ["System", "passkey", "password-auth", "auth", "jobs", "uploads", "llm"]
-    sorted_tags = sorted(routes_by_tag.keys(), key=lambda t: order.index(t) if t in order else len(order))
+    sorted_tags = sorted(
+        routes_by_tag.keys(), key=lambda t: order.index(t) if t in order else len(order)
+    )
 
     for tag in sorted_tags:
         title = TAG_TITLES.get(tag, tag.capitalize())
@@ -82,7 +85,9 @@ def main() -> int:
     end_marker = "<!-- routes-end -->"
 
     if start_marker not in readme_text or end_marker not in readme_text:
-        print("❌ Could not find <!-- routes-start --> or <!-- routes-end --> markers in README.md.")
+        print(
+            "❌ Could not find <!-- routes-start --> or <!-- routes-end --> markers in README.md."
+        )
         return 1
 
     expected_md = generate_routes_markdown()
@@ -95,7 +100,9 @@ def main() -> int:
         print("❌ The API routes in README.md are out of date or incorrectly formatted.")
         print("Expected block:\n")
         print(expected_md)
-        print("\n\nPlease update README.md to match exactly, or update scripts/check_doc_routes.py.")
+        print(
+            "\n\nPlease update README.md to match exactly, or update scripts/check_doc_routes.py."
+        )
         return 1
 
     print("✅ All API routes in README.md are correctly documented and up to date.")
