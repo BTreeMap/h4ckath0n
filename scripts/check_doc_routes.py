@@ -57,10 +57,10 @@ def main() -> int:
 
     generated = get_openapi_routes()
 
-    prefix = readme_text[:start_idx + len(START_MARKER)] + "\n"
+    prefix = readme_text[: start_idx + len(START_MARKER)] + "\n"
     suffix = readme_text[end_idx:]
 
-    current_block = readme_text[start_idx + len(START_MARKER):end_idx].lstrip("\n")
+    current_block = readme_text[start_idx + len(START_MARKER) : end_idx].lstrip("\n")
 
     if current_block == generated:
         print("✅ API routes in README.md are up to date.")
