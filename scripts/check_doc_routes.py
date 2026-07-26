@@ -2,28 +2,26 @@
 """Drift-prevention check: verify that every API route in the FastAPI app is documented.
 
 Usage (from repo root):
-    uv run scripts/check_doc_routes.py
+    uv run scripts/check_doc_routes.py [--fix]
 
-The script imports the h4ckath0n app, enumerates all routes, and checks that
-README.md mentions each one. Routes provided by FastAPI itself (e.g. /openapi.json,
-/docs, /redoc) are excluded from the check.
+The script imports the h4ckath0n app, extracts all routes via OpenAPI, and verifies
+that the Markdown table under "Built-in routes" in README.md is completely in sync.
+If out of sync and --fix is passed, it overwrites the generated table in README.md.
 """
 
 from __future__ import annotations
 
-import re
+import argparse
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 README = REPO_ROOT / "README.md"
-
-# FastAPI internal paths that we do not require in user docs.
 FRAMEWORK_PATHS = frozenset({"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"})
 
 
-def get_app_routes() -> list[tuple[str, str]]:
-    """Return (method, path) pairs from the live FastAPI app."""
+def get_app_routes_table() -> str:
+    """Return the generated Markdown table for API routes."""
     from h4ckath0n.app import create_app  # noqa: E402
     from h4ckath0n.config import Settings  # noqa: E402
 
@@ -33,57 +31,53 @@ def get_app_routes() -> list[tuple[str, str]]:
     )
     app = create_app(settings)
 
-    routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Only check API routes (not Mount, WebSocket, etc.).
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+    lines = ["| Method | Path | Summary |", "|---|---|---|"]
+    paths = app.openapi().get("paths", {})
+
+    for path, methods in sorted(paths.items()):
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
-                continue
-            routes.append((method, path))
-    return sorted(routes)
+        for method, details in sorted(methods.items()):
+            summary = details.get("summary", "")
+            lines.append(f"| `{method.upper()}` | `{path}` | {summary} |")
 
-
-def check_routes_in_readme(
-    routes: list[tuple[str, str]],
-) -> list[tuple[str, str]]:
-    """Return routes that are not mentioned anywhere in README.md.
-
-    We look for ``METHOD /path`` (e.g. ``GET /health``) so that sub-path
-    matches like ``/auth/passkeys/{key_id}`` inside
-    ``/auth/passkeys/{key_id}/revoke`` are not false positives.
-    """
-    readme_text = README.read_text()
-    missing: list[tuple[str, str]] = []
-    for method, path in routes:
-        # Build a pattern like "GET /health" or "PATCH /auth/passkeys/\{key_id\}"
-        # that must appear as a recognisable method+path token in the README.
-        path_re = re.escape(path)
-        combined = rf"`{method}\s+{path_re}`"
-        if not re.search(combined, readme_text, re.IGNORECASE):
-            missing.append((method, path))
-    return missing
+    return "\n".join(lines)
 
 
 def main() -> int:
-    routes = get_app_routes()
-    missing = check_routes_in_readme(routes)
+    parser = argparse.ArgumentParser(description="Verify or fix API routes documentation.")
+    parser.add_argument("--fix", action="store_true", help="Fix README.md in-place")
+    args = parser.parse_args()
 
-    if missing:
-        print("❌ The following API routes are NOT documented in README.md:\n")
-        for method, path in missing:
-            print(f"  {method:6s} {path}")
+    readme_content = README.read_text()
+
+    marker_start = "<!-- BEGIN API_ROUTES -->"
+    marker_end = "<!-- END API_ROUTES -->"
+
+    if marker_start not in readme_content or marker_end not in readme_content:
         print(
-            "\nAdd these routes to README.md or, if intentionally undocumented, "
-            "add them to FRAMEWORK_PATHS in this script."
+            "❌ Markers <!-- BEGIN API_ROUTES --> or <!-- END API_ROUTES --> "
+            "not found in README.md."
         )
         return 1
 
-    print(f"✅ All {len(routes)} API routes are documented in README.md.")
+    before = readme_content.split(marker_start)[0]
+    after = readme_content.split(marker_end)[1]
+
+    expected_table = get_app_routes_table()
+    expected_content = f"{before}{marker_start}\n{expected_table}\n{marker_end}{after}"
+
+    if readme_content != expected_content:
+        if args.fix:
+            README.write_text(expected_content)
+            print("✅ README.md updated with accurate API routes.")
+            return 0
+        else:
+            print("❌ README.md API routes are out of sync.")
+            print("Run `uv run scripts/check_doc_routes.py --fix` to update.")
+            return 1
+
+    print("✅ API routes in README.md are fully up to date.")
     return 0
 
 
