@@ -13,8 +13,8 @@ from h4ckath0n.cli import (
     EXIT_BAD_ARGS,
     EXIT_LAST_PASSKEY,
     _normalize_db_url_for_sync,
-    _normalize_scopes,
 )
+from h4ckath0n.auth.authz import normalize_scopes as _normalize_scopes
 from tests.conftest import run_cli as _run_cli
 
 # ---------------------------------------------------------------------------
