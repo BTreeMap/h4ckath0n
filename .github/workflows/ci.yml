@@ -49,6 +49,11 @@ jobs:
       - name: Check doc routes
         run: uv run --locked scripts/check_doc_routes.py
 
+      - name: Verify README API routes generation
+        run: |
+          uv run --locked scripts/generate_doc_routes.py
+          git diff --exit-code README.md || { echo "::error::README API routes are out of date. Run scripts/generate_doc_routes.py and commit."; exit 1; }
+
       - name: Check documented environments
         run: uv run --locked scripts/check_doc_env.py
 
