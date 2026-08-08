@@ -9,8 +9,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 README = REPO_ROOT / "README.md"
 MARKER_API_START = "<!-- BEGIN API ROUTES -->"
 MARKER_API_END = "<!-- END API ROUTES -->"
-MARKER_PW_START = "<!-- BEGIN PASSWORD ROUTES -->"
-MARKER_PW_END = "<!-- END PASSWORD ROUTES -->"
+MARKER_PWD_START = "<!-- BEGIN PASSWORD ROUTES -->"
+MARKER_PWD_END = "<!-- END PASSWORD ROUTES -->"
 
 
 def categorize_route(path: str, route_str: str, routes: dict):
@@ -25,7 +25,7 @@ def categorize_route(path: str, route_str: str, routes: dict):
     elif path.startswith("/llm"):
         routes["llm"].append(route_str)
     elif "password" in path or "register" in path or "login" in path:
-        routes["password"].append(route_str)
+        routes["pwd_auth"].append(route_str)
     elif not path.startswith("/auth/passkey"):
         routes["other"].append(route_str)
 
@@ -44,7 +44,7 @@ def get_routes():
         "jobs": [],
         "uploads": [],
         "llm": [],
-        "password": [],
+        "pwd_auth": [],
         "other": [],
     }
 
@@ -83,16 +83,16 @@ def get_routes():
         )
     )
 
-    pw_content = "\n".join(sorted(routes["password"]))
+    pwd_auth_text = "\n".join(sorted(routes["pwd_auth"]))
 
-    return api_content, pw_content
+    return api_content, pwd_auth_text
 
 
 def main() -> int:
     fix = "--fix" in sys.argv
     readme_text = README.read_text()
 
-    api_content, pw_content = get_routes()
+    api_content, pwd_auth_text = get_routes()
 
     new_text = readme_text
 
@@ -101,9 +101,9 @@ def main() -> int:
         pattern = re.compile(rf"{MARKER_API_START}.*?{MARKER_API_END}", re.DOTALL)
         new_text = pattern.sub(replacement, new_text)
 
-    if MARKER_PW_START in new_text:
-        replacement = f"{MARKER_PW_START}\n{pw_content}\n{MARKER_PW_END}"
-        pattern = re.compile(rf"{MARKER_PW_START}.*?{MARKER_PW_END}", re.DOTALL)
+    if MARKER_PWD_START in new_text:
+        replacement = f"{MARKER_PWD_START}\n{pwd_auth_text}\n{MARKER_PWD_END}"
+        pattern = re.compile(rf"{MARKER_PWD_START}.*?{MARKER_PWD_END}", re.DOTALL)
         new_text = pattern.sub(replacement, new_text)
 
     if new_text != readme_text:
