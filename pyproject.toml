@@ -64,6 +64,7 @@ dev = [
 ]
 
 [tool.ruff]
+exclude = [".github/skills/**"]
 target-version = "py311"
 line-length = 99
 
