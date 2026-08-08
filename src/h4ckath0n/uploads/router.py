@@ -108,7 +108,9 @@ async def upload_file(
         except Exception:
             # Text extraction is best-effort; the upload itself already
             # succeeded. Log so failures are diagnosable rather than silent.
-            logger.exception("Failed to enqueue text extraction for upload %s", upload.id)
+            logger.exception(
+                "Failed to enqueue text extraction for upload %s", upload.id
+            )
 
     return _upload_to_response(upload)
 
@@ -145,9 +147,13 @@ async def get_upload(
     # ⚡ Bolt: Use db.get() for primary key lookup
     upload = await db.get(Upload, upload_id)
     if upload is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Upload not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Upload not found"
+        )
     if upload.owner_user_id != user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
     return _upload_to_response(upload)
 
 
@@ -165,9 +171,13 @@ async def download_upload(
     # ⚡ Bolt: Use db.get() for primary key lookup
     upload = await db.get(Upload, upload_id)
     if upload is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Upload not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Upload not found"
+        )
     if upload.owner_user_id != user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
     settings = request.app.state.settings
     try:
@@ -178,7 +188,9 @@ async def download_upload(
         ) from exc
 
     if not os.path.isfile(file_path):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found on disk")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="File not found on disk"
+        )
 
     return FileResponse(
         path=file_path,

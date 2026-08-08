@@ -149,30 +149,42 @@ class TestIdGenerators:
 
 
 class TestFlowState:
-    async def test_register_start_creates_flow(self, db_session: AsyncSession, settings):
+    async def test_register_start_creates_flow(
+        self, db_session: AsyncSession, settings
+    ):
         flow_id, options = await start_registration(db_session, settings)
         assert flow_id
         assert "challenge" in options
-        result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
+        result = await db_session.execute(
+            select(WebAuthnChallenge).filter_by(id=flow_id)
+        )
         flow = result.scalars().first()
         assert flow is not None
         assert flow.kind == "register"
         assert flow.consumed_at is None
 
-    async def test_register_start_creates_user(self, db_session: AsyncSession, settings):
+    async def test_register_start_creates_user(
+        self, db_session: AsyncSession, settings
+    ):
         flow_id, _ = await start_registration(db_session, settings)
-        result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
+        result = await db_session.execute(
+            select(WebAuthnChallenge).filter_by(id=flow_id)
+        )
         flow = result.scalars().first()
         result = await db_session.execute(select(User).filter_by(id=flow.user_id))
         user = result.scalars().first()
         assert user is not None
         assert is_user_id(user.id)
 
-    async def test_authentication_start_creates_flow(self, db_session: AsyncSession, settings):
+    async def test_authentication_start_creates_flow(
+        self, db_session: AsyncSession, settings
+    ):
         flow_id, options = await start_authentication(db_session, settings)
         assert flow_id
         assert "challenge" in options
-        result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
+        result = await db_session.execute(
+            select(WebAuthnChallenge).filter_by(id=flow_id)
+        )
         flow = result.scalars().first()
         assert flow is not None
         assert flow.kind == "authenticate"
@@ -183,7 +195,9 @@ class TestFlowState:
 
         flow_id, _ = await start_registration(db_session, settings)
         # Manually expire the flow
-        result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
+        result = await db_session.execute(
+            select(WebAuthnChallenge).filter_by(id=flow_id)
+        )
         flow = result.scalars().first()
         flow.expires_at = datetime.now(UTC) - timedelta(minutes=1)
         await db_session.commit()
@@ -195,7 +209,9 @@ class TestFlowState:
         from h4ckath0n.auth.passkeys.service import _consume_flow, _get_valid_flow
 
         flow_id, _ = await start_registration(db_session, settings)
-        result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
+        result = await db_session.execute(
+            select(WebAuthnChallenge).filter_by(id=flow_id)
+        )
         flow = result.scalars().first()
         await _consume_flow(db_session, flow)
         await db_session.commit()
@@ -203,7 +219,9 @@ class TestFlowState:
         with pytest.raises(ValueError, match="consumed"):
             await _get_valid_flow(db_session, flow_id, "register")
 
-    async def test_flow_kind_mismatch_rejected(self, db_session: AsyncSession, settings):
+    async def test_flow_kind_mismatch_rejected(
+        self, db_session: AsyncSession, settings
+    ):
         from h4ckath0n.auth.passkeys.service import _get_valid_flow
 
         flow_id, _ = await start_registration(db_session, settings)
@@ -213,7 +231,9 @@ class TestFlowState:
     async def test_cleanup_expired_challenges(self, db_session: AsyncSession, settings):
         flow_id, _ = await start_registration(db_session, settings)
         # Expire it
-        result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
+        result = await db_session.execute(
+            select(WebAuthnChallenge).filter_by(id=flow_id)
+        )
         flow = result.scalars().first()
         flow.expires_at = datetime.now(UTC) - timedelta(minutes=1)
         await db_session.commit()
@@ -221,7 +241,9 @@ class TestFlowState:
         deleted = await cleanup_expired_challenges(db_session)
         assert deleted >= 1
 
-        result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
+        result = await db_session.execute(
+            select(WebAuthnChallenge).filter_by(id=flow_id)
+        )
         remaining = result.scalars().first()
         assert remaining is None
 
@@ -232,18 +254,24 @@ class TestFlowState:
 
 
 class TestDisplayName:
-    async def test_register_start_persists_display_name(self, db_session: AsyncSession, settings):
+    async def test_register_start_persists_display_name(
+        self, db_session: AsyncSession, settings
+    ):
         flow_id, options = await start_registration(
             db_session, settings, display_name="Alice Wonderland"
         )
-        result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
+        result = await db_session.execute(
+            select(WebAuthnChallenge).filter_by(id=flow_id)
+        )
         flow = result.scalars().first()
         result = await db_session.execute(select(User).filter_by(id=flow.user_id))
         user = result.scalars().first()
         assert user is not None
         assert user.display_name == "Alice Wonderland"
 
-    async def test_webauthn_options_use_display_name(self, db_session: AsyncSession, settings):
+    async def test_webauthn_options_use_display_name(
+        self, db_session: AsyncSession, settings
+    ):
         _flow_id, options = await start_registration(
             db_session, settings, display_name="Bob Builder"
         )
@@ -260,20 +288,30 @@ class TestDisplayName:
         r = client.post("/auth/passkey/register/start", json={"display_name": ""})
         assert r.status_code == 422
 
-    def test_register_start_route_rejects_whitespace_only_display_name(self, client: TestClient):
+    def test_register_start_route_rejects_whitespace_only_display_name(
+        self, client: TestClient
+    ):
         r = client.post("/auth/passkey/register/start", json={"display_name": "   "})
         assert r.status_code == 422
 
-    def test_register_start_route_rejects_missing_display_name(self, client: TestClient):
+    def test_register_start_route_rejects_missing_display_name(
+        self, client: TestClient
+    ):
         r = client.post("/auth/passkey/register/start", json={})
         assert r.status_code == 422
 
-    def test_register_start_route_rejects_too_long_display_name(self, client: TestClient):
-        r = client.post("/auth/passkey/register/start", json={"display_name": "x" * 201})
+    def test_register_start_route_rejects_too_long_display_name(
+        self, client: TestClient
+    ):
+        r = client.post(
+            "/auth/passkey/register/start", json={"display_name": "x" * 201}
+        )
         assert r.status_code == 422
 
     def test_register_start_route_trims_display_name(self, client: TestClient):
-        r = client.post("/auth/passkey/register/start", json={"display_name": "  Trimmed  "})
+        r = client.post(
+            "/auth/passkey/register/start", json={"display_name": "  Trimmed  "}
+        )
         assert r.status_code == 200
         # The user options should reflect the trimmed name
         options = r.json()["options"]
@@ -286,7 +324,9 @@ class TestDisplayName:
 
 
 class TestLastPasskeyInvariant:
-    async def _create_user_with_passkeys(self, db_session: AsyncSession, count: int = 1):
+    async def _create_user_with_passkeys(
+        self, db_session: AsyncSession, count: int = 1
+    ):
         """Helper to create a user with *count* active passkeys."""
         user = User()
         db_session.add(user)
@@ -358,7 +398,9 @@ class TestLastPasskeyInvariant:
 
 class TestPasskeyRoutes:
     def test_register_start_returns_options(self, client: TestClient):
-        r = client.post("/auth/passkey/register/start", json={"display_name": "Test User"})
+        r = client.post(
+            "/auth/passkey/register/start", json={"display_name": "Test User"}
+        )
         assert r.status_code == 200
         body = r.json()
         assert "flow_id" in body
@@ -406,7 +448,9 @@ class TestPasskeyRoutes:
         r = client.post("/auth/passkey/register/start", json={"display_name": "Alice"})
         assert r.status_code == 200
         flow_id = r.json()["flow_id"]
-        result = await db_session.execute(select(WebAuthnChallenge).filter_by(id=flow_id))
+        result = await db_session.execute(
+            select(WebAuthnChallenge).filter_by(id=flow_id)
+        )
         flow = result.scalars().first()
         assert flow is not None
         result = await db_session.execute(select(User).filter_by(id=flow.user_id))
@@ -452,7 +496,9 @@ class TestPasskeyRevokeRoute:
 
         # Create a device keypair and register it
         private_key = ec.generate_private_key(ec.SECP256R1())
-        private_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+        private_pem = private_key.private_bytes(
+            Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
+        )
         public_key = private_key.public_key()
         jwk_dict = json.loads(ECAlgorithm(ECAlgorithm.SHA256).to_jwk(public_key))
 
@@ -482,7 +528,9 @@ class TestPasskeyRevokeRoute:
         )
         assert r.status_code == 200
 
-    async def test_revoke_last_passkey_blocked_via_route(self, client, db_session, settings):
+    async def test_revoke_last_passkey_blocked_via_route(
+        self, client, db_session, settings
+    ):
         user, creds, token = await self._setup_user_with_device_token(
             client, db_session, settings, 1
         )
@@ -579,7 +627,9 @@ class TestPasswordAuthDisabled:
 
 
 class TestPasskeyRename:
-    async def _create_user_with_passkeys(self, db_session: AsyncSession, count: int = 1):
+    async def _create_user_with_passkeys(
+        self, db_session: AsyncSession, count: int = 1
+    ):
         """Helper to create a user with *count* active passkeys."""
         user = User()
         db_session.add(user)
@@ -694,7 +744,9 @@ class TestPasskeyRenameRoute:
         await db_session.refresh(user)
 
         private_key = ec.generate_private_key(ec.SECP256R1())
-        private_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+        private_pem = private_key.private_bytes(
+            Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
+        )
         public_key = private_key.public_key()
         jwk_dict = json.loads(ECAlgorithm(ECAlgorithm.SHA256).to_jwk(public_key))
 
@@ -715,7 +767,9 @@ class TestPasskeyRenameRoute:
         return user, creds, token
 
     async def test_rename_via_route(self, client, db_session, settings):
-        user, creds, token = await self._setup_user_with_device_token(client, db_session, settings)
+        user, creds, token = await self._setup_user_with_device_token(
+            client, db_session, settings
+        )
         r = client.patch(
             f"/auth/passkeys/{creds[0].id}",
             json={"name": "My Laptop"},
@@ -727,7 +781,9 @@ class TestPasskeyRenameRoute:
         assert body["id"] == creds[0].id
 
     async def test_rename_clear_name_via_route(self, client, db_session, settings):
-        user, creds, token = await self._setup_user_with_device_token(client, db_session, settings)
+        user, creds, token = await self._setup_user_with_device_token(
+            client, db_session, settings
+        )
         # Set name first
         client.patch(
             f"/auth/passkeys/{creds[0].id}",
@@ -744,7 +800,9 @@ class TestPasskeyRenameRoute:
         assert r.json()["name"] is None
 
     async def test_rename_too_long_via_route(self, client, db_session, settings):
-        user, creds, token = await self._setup_user_with_device_token(client, db_session, settings)
+        user, creds, token = await self._setup_user_with_device_token(
+            client, db_session, settings
+        )
         r = client.patch(
             f"/auth/passkeys/{creds[0].id}",
             json={"name": "x" * 65},
@@ -753,7 +811,9 @@ class TestPasskeyRenameRoute:
         assert r.status_code == 422
 
     async def test_rename_not_found_via_route(self, client, db_session, settings):
-        _, _, token = await self._setup_user_with_device_token(client, db_session, settings)
+        _, _, token = await self._setup_user_with_device_token(
+            client, db_session, settings
+        )
         r = client.patch(
             "/auth/passkeys/knonexistent00000000000000000000",
             json={"name": "No"},
@@ -784,8 +844,12 @@ class TestPasskeyRenameRoute:
         )
         assert r.status_code in (401, 403)
 
-    async def test_list_passkeys_includes_name_via_route(self, client, db_session, settings):
-        user, creds, token = await self._setup_user_with_device_token(client, db_session, settings)
+    async def test_list_passkeys_includes_name_via_route(
+        self, client, db_session, settings
+    ):
+        user, creds, token = await self._setup_user_with_device_token(
+            client, db_session, settings
+        )
         # Set a name
         client.patch(
             f"/auth/passkeys/{creds[0].id}",

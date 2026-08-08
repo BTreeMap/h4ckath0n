@@ -87,15 +87,23 @@ class PasskeyAddFinishRequest(DeviceBindingMixin):
 
 
 class PasskeyInfo(BaseModel):
-    id: str = Field(..., description="Internal passkey ID that starts with the k prefix.")
+    id: str = Field(
+        ..., description="Internal passkey ID that starts with the k prefix."
+    )
     name: str | None = Field(None, description="User-provided passkey name.")
     created_at: datetime = Field(..., description="Creation timestamp in UTC.")
-    last_used_at: datetime | None = Field(None, description="Last successful use timestamp.")
-    revoked_at: datetime | None = Field(None, description="Revocation timestamp, if revoked.")
+    last_used_at: datetime | None = Field(
+        None, description="Last successful use timestamp."
+    )
+    revoked_at: datetime | None = Field(
+        None, description="Revocation timestamp, if revoked."
+    )
 
 
 class PasskeyListResponse(BaseModel):
-    passkeys: list[PasskeyInfo] = Field(..., description="Passkeys for the current user.")
+    passkeys: list[PasskeyInfo] = Field(
+        ..., description="Passkeys for the current user."
+    )
 
 
 class PasskeyRevokeResponse(BaseModel):

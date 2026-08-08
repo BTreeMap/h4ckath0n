@@ -16,7 +16,9 @@ def get_settings_environment_names() -> frozenset[str]:
     """Return the environment variable name for each Settings field."""
     from h4ckath0n.config import Settings
 
-    return frozenset(f"H4CKATH0N_{field_name.upper()}" for field_name in Settings.model_fields)
+    return frozenset(
+        f"H4CKATH0N_{field_name.upper()}" for field_name in Settings.model_fields
+    )
 
 
 def get_documented_environment_names(readme_text: str) -> frozenset[str]:

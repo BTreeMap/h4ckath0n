@@ -63,12 +63,16 @@ class TestPackagedMigrations:
 class TestNormalizeDbUrl:
     def test_sqlite_aiosqlite(self):
         assert (
-            make_url(_normalize_db_url_for_sync("sqlite+aiosqlite:///test.db")).drivername
+            make_url(
+                _normalize_db_url_for_sync("sqlite+aiosqlite:///test.db")
+            ).drivername
             == "sqlite"
         )
 
     def test_postgresql_asyncpg(self):
-        normalized = make_url(_normalize_db_url_for_sync("postgresql+asyncpg://u:p@host/db"))
+        normalized = make_url(
+            _normalize_db_url_for_sync("postgresql+asyncpg://u:p@host/db")
+        )
         assert normalized.drivername == "postgresql+psycopg"
         assert normalized.username == "u"
         assert normalized.host == "host"
@@ -105,7 +109,10 @@ class TestNormalizeDbUrl:
         assert normalized.database == "db"
 
     def test_sqlite_unchanged(self):
-        assert make_url(_normalize_db_url_for_sync("sqlite:///test.db")).drivername == "sqlite"
+        assert (
+            make_url(_normalize_db_url_for_sync("sqlite:///test.db")).drivername
+            == "sqlite"
+        )
 
 
 class TestAlembicUrlNormalization:
@@ -192,7 +199,9 @@ class TestCLIDbMigrate:
 
     def test_upgrade_on_fresh_db(self, tmp_path):
         db_url = f"sqlite:///{tmp_path}/mig_test.db"
-        result = _run_cli("db", "migrate", "upgrade", "--to", "head", "--db", db_url, "--yes")
+        result = _run_cli(
+            "db", "migrate", "upgrade", "--to", "head", "--db", db_url, "--yes"
+        )
         assert result.returncode == 0, result.stderr
 
     def test_stamp_removed(self, tmp_path):
@@ -269,7 +278,15 @@ class TestCLIUsersOperations:
         db_url = self._init_db(tmp_path)
         uid = self._create_user(db_url)
         result = _run_cli(
-            "users", "set-role", "--user-id", uid, "--role", "admin", "--db", db_url, "--yes"
+            "users",
+            "set-role",
+            "--user-id",
+            uid,
+            "--role",
+            "admin",
+            "--db",
+            db_url,
+            "--yes",
         )
         assert result.returncode == 0
         data = json.loads(result.stdout)
@@ -388,11 +405,15 @@ class TestCLIPasskeysRevoke:
 
     def test_revoke_last_passkey_blocked(self, tmp_path):
         db_url, uid, key_ids = self._setup(tmp_path, n_creds=1)
-        result = _run_cli("passkeys", "revoke", "--key-id", key_ids[0], "--db", db_url, "--yes")
+        result = _run_cli(
+            "passkeys", "revoke", "--key-id", key_ids[0], "--db", db_url, "--yes"
+        )
         assert result.returncode == EXIT_LAST_PASSKEY
         assert "last active passkey" in result.stderr
 
     def test_revoke_one_of_two(self, tmp_path):
         db_url, uid, key_ids = self._setup(tmp_path, n_creds=2)
-        result = _run_cli("passkeys", "revoke", "--key-id", key_ids[0], "--db", db_url, "--yes")
+        result = _run_cli(
+            "passkeys", "revoke", "--key-id", key_ids[0], "--db", db_url, "--yes"
+        )
         assert result.returncode == 0

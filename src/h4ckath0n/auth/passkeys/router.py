@@ -68,7 +68,9 @@ async def register_start(
     db: AsyncSession = Depends(_db_dep),
 ) -> schemas.PasskeyRegisterStartResponse:
     settings = request.app.state.settings
-    flow_id, options = await start_registration(db, settings, display_name=body.display_name)
+    flow_id, options = await start_registration(
+        db, settings, display_name=body.display_name
+    )
     return schemas.PasskeyRegisterStartResponse(flow_id=flow_id, options=options)
 
 
@@ -97,12 +99,19 @@ async def register_finish(
     try:
         user = await finish_registration(db, body.flow_id, body.credential, settings)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from None
 
-    device_id = await register_device(db, user.id, body.device_public_key_jwk, body.device_label)
+    device_id = await register_device(
+        db, user.id, body.device_public_key_jwk, body.device_label
+    )
 
     return schemas.PasskeyFinishResponse(
-        user_id=user.id, device_id=device_id, role=user.role, display_name=user.display_name
+        user_id=user.id,
+        device_id=device_id,
+        role=user.role,
+        display_name=user.display_name,
     )
 
 
@@ -151,12 +160,19 @@ async def login_finish(
     try:
         user = await finish_authentication(db, body.flow_id, body.credential, settings)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)
+        ) from None
 
-    device_id = await register_device(db, user.id, body.device_public_key_jwk, body.device_label)
+    device_id = await register_device(
+        db, user.id, body.device_public_key_jwk, body.device_label
+    )
 
     return schemas.PasskeyFinishResponse(
-        user_id=user.id, device_id=device_id, role=user.role, display_name=user.display_name
+        user_id=user.id,
+        device_id=device_id,
+        role=user.role,
+        display_name=user.display_name,
     )
 
 
@@ -173,7 +189,10 @@ async def login_finish(
         "Begin adding a new passkey for the authenticated user and return registration options."
     ),
     responses={
-        401: {"model": auth_schemas.ErrorResponse, "description": "Missing or invalid token."}
+        401: {
+            "model": auth_schemas.ErrorResponse,
+            "description": "Missing or invalid token.",
+        }
     },
 )
 async def add_start(
@@ -197,7 +216,10 @@ async def add_start(
             "model": auth_schemas.ErrorResponse,
             "description": "Invalid or expired flow, or WebAuthn verification error.",
         },
-        401: {"model": auth_schemas.ErrorResponse, "description": "Missing or invalid token."},
+        401: {
+            "model": auth_schemas.ErrorResponse,
+            "description": "Missing or invalid token.",
+        },
     },
 )
 async def add_finish(
@@ -210,12 +232,19 @@ async def add_finish(
     try:
         await finish_add_credential(db, body.flow_id, body.credential, user, settings)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from None
 
-    device_id = await register_device(db, user.id, body.device_public_key_jwk, body.device_label)
+    device_id = await register_device(
+        db, user.id, body.device_public_key_jwk, body.device_label
+    )
 
     return schemas.PasskeyFinishResponse(
-        user_id=user.id, device_id=device_id, role=user.role, display_name=user.display_name
+        user_id=user.id,
+        device_id=device_id,
+        role=user.role,
+        display_name=user.display_name,
     )
 
 
@@ -232,7 +261,10 @@ passkeys_router = APIRouter(prefix="/auth/passkeys", tags=["passkey"])
     summary="List passkeys",
     description="List all passkeys, including revoked entries, for the current user.",
     responses={
-        401: {"model": auth_schemas.ErrorResponse, "description": "Missing or invalid token."}
+        401: {
+            "model": auth_schemas.ErrorResponse,
+            "description": "Missing or invalid token.",
+        }
     },
 )
 async def passkeys_list(
@@ -263,7 +295,10 @@ async def passkeys_list(
         "and returns the LAST_PASSKEY error."
     ),
     responses={
-        401: {"model": auth_schemas.ErrorResponse, "description": "Missing or invalid token."},
+        401: {
+            "model": auth_schemas.ErrorResponse,
+            "description": "Missing or invalid token.",
+        },
         404: {"model": auth_schemas.ErrorResponse, "description": "Passkey not found."},
         409: {
             "model": auth_schemas.ErrorResponse,
@@ -298,7 +333,9 @@ async def passkey_revoke(
             ).model_dump(),
         ) from None
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from None
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from None
     return schemas.PasskeyRevokeResponse(message="Passkey revoked")
 
 
@@ -308,7 +345,10 @@ async def passkey_revoke(
     summary="Rename a passkey",
     description="Update the user-facing name of a passkey.",
     responses={
-        401: {"model": auth_schemas.ErrorResponse, "description": "Missing or invalid token."},
+        401: {
+            "model": auth_schemas.ErrorResponse,
+            "description": "Missing or invalid token.",
+        },
         404: {"model": auth_schemas.ErrorResponse, "description": "Passkey not found."},
         409: {
             "model": auth_schemas.ErrorResponse,
@@ -327,7 +367,11 @@ async def passkey_rename(
     try:
         cred = await rename_passkey(db, user, key_id, body.name)
     except PasskeyRevokedError as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from None
     except PasskeyNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from None
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from None
     return schemas.PasskeyRenameResponse(id=cred.id, name=cred.name)

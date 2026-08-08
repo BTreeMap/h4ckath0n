@@ -171,7 +171,9 @@ def _resolve_user(session: Session, args: argparse.Namespace) -> User | None:
     return session.execute(stmt).scalars().first()
 
 
-def _user_or_exit(session: Session, args: argparse.Namespace) -> tuple[User | None, int | None]:
+def _user_or_exit(
+    session: Session, args: argparse.Namespace
+) -> tuple[User | None, int | None]:
     """Resolve a user or return the appropriate exit code.
 
     Returns ``(user, None)`` on success, or ``(None, exit_code)`` where the

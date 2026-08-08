@@ -53,7 +53,9 @@ def _make_device_token(
 def _create_device_keypair() -> tuple[bytes, dict]:
     """Generate an EC P-256 keypair. Returns (private_key_pem, public_key_jwk_dict)."""
     private_key = ec.generate_private_key(ec.SECP256R1())
-    private_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+    private_pem = private_key.private_bytes(
+        Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
+    )
     public_key = private_key.public_key()
     jwk_dict = json.loads(ECAlgorithm(ECAlgorithm.SHA256).to_jwk(public_key))
     return private_pem, jwk_dict
@@ -158,7 +160,9 @@ class TestSessionEndpoint:
         assert body["email"] == "sess@example.com"
 
     async def test_session_returns_scopes_as_list(self, client: TestClient, db_session):
-        uid, did, pem = _register_user_with_device(client, "scopes@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "scopes@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         # Set scopes directly in the DB
@@ -166,7 +170,9 @@ class TestSessionEndpoint:
 
         from h4ckath0n.auth.models import User
 
-        await db_session.execute(update(User).where(User.id == uid).values(scopes="read,write"))
+        await db_session.execute(
+            update(User).where(User.id == uid).values(scopes="read,write")
+        )
         await db_session.commit()
 
         r = client.get("/auth/session", headers=headers)
@@ -187,7 +193,9 @@ class TestSessionEndpoint:
 
 class TestJobsEndpoint:
     def test_enqueue_job_echo(self, client: TestClient):
-        uid, did, pem = _register_user_with_device(client, "jobs1@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "jobs1@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         r = client.post(
@@ -202,7 +210,9 @@ class TestJobsEndpoint:
         assert body["status"] in ("queued", "running", "succeeded")
 
     def test_enqueue_unknown_kind(self, client: TestClient):
-        uid, did, pem = _register_user_with_device(client, "jobs2@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "jobs2@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         r = client.post(
@@ -214,11 +224,17 @@ class TestJobsEndpoint:
         assert "Unknown job kind" in r.json()["detail"]
 
     def test_list_jobs(self, client: TestClient):
-        uid, did, pem = _register_user_with_device(client, "jobs3@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "jobs3@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
-        client.post("/jobs", json={"kind": "demo.echo", "payload": {"a": 1}}, headers=headers)
-        client.post("/jobs", json={"kind": "demo.echo", "payload": {"b": 2}}, headers=headers)
+        client.post(
+            "/jobs", json={"kind": "demo.echo", "payload": {"a": 1}}, headers=headers
+        )
+        client.post(
+            "/jobs", json={"kind": "demo.echo", "payload": {"b": 2}}, headers=headers
+        )
 
         r = client.get("/jobs", headers=headers)
         assert r.status_code == 200
@@ -227,7 +243,9 @@ class TestJobsEndpoint:
         assert len(jobs) >= 2
 
     def test_get_job(self, client: TestClient):
-        uid, did, pem = _register_user_with_device(client, "jobs4@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "jobs4@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         cr = client.post(
@@ -245,7 +263,9 @@ class TestJobsEndpoint:
 
     def test_get_job_access_denied(self, client: TestClient):
         # User A creates a job
-        uid_a, did_a, pem_a = _register_user_with_device(client, "jobs5a@example.com", "P@ssw0rd")
+        uid_a, did_a, pem_a = _register_user_with_device(
+            client, "jobs5a@example.com", "P@ssw0rd"
+        )
         headers_a = _auth_header(uid_a, did_a, pem_a)
 
         cr = client.post(
@@ -256,7 +276,9 @@ class TestJobsEndpoint:
         job_id = cr.json()["id"]
 
         # User B tries to access it
-        uid_b, did_b, pem_b = _register_user_with_device(client, "jobs5b@example.com", "P@ssw0rd")
+        uid_b, did_b, pem_b = _register_user_with_device(
+            client, "jobs5b@example.com", "P@ssw0rd"
+        )
         headers_b = _auth_header(uid_b, did_b, pem_b)
 
         r = client.get(f"/jobs/{job_id}", headers=headers_b)
@@ -264,7 +286,9 @@ class TestJobsEndpoint:
 
     def test_inline_job_execution(self, client: TestClient):
         """With jobs_inline_in_dev=True, the job runs to completion inline."""
-        uid, did, pem = _register_user_with_device(client, "jobs6@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "jobs6@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         cr = client.post(
@@ -290,7 +314,9 @@ class TestJobsEndpoint:
 
 class TestUploadsEndpoint:
     def test_upload_file(self, client: TestClient):
-        uid, did, pem = _register_user_with_device(client, "up1@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "up1@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         r = client.post(
@@ -307,7 +333,9 @@ class TestUploadsEndpoint:
         assert body["sha256"]
 
     def test_list_uploads(self, client: TestClient):
-        uid, did, pem = _register_user_with_device(client, "up2@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "up2@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         client.post(
@@ -328,7 +356,9 @@ class TestUploadsEndpoint:
         assert len(uploads) >= 2
 
     def test_download_file(self, client: TestClient):
-        uid, did, pem = _register_user_with_device(client, "up3@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "up3@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
         content = b"Download me!"
 
@@ -345,7 +375,9 @@ class TestUploadsEndpoint:
 
     def test_upload_ownership(self, client: TestClient):
         # User A uploads
-        uid_a, did_a, pem_a = _register_user_with_device(client, "up4a@example.com", "P@ssw0rd")
+        uid_a, did_a, pem_a = _register_user_with_device(
+            client, "up4a@example.com", "P@ssw0rd"
+        )
         headers_a = _auth_header(uid_a, did_a, pem_a)
 
         up = client.post(
@@ -356,7 +388,9 @@ class TestUploadsEndpoint:
         upload_id = up.json()["id"]
 
         # User B tries to download
-        uid_b, did_b, pem_b = _register_user_with_device(client, "up4b@example.com", "P@ssw0rd")
+        uid_b, did_b, pem_b = _register_user_with_device(
+            client, "up4b@example.com", "P@ssw0rd"
+        )
         headers_b = _auth_header(uid_b, did_b, pem_b)
 
         r = client.get(f"/uploads/{upload_id}/download", headers=headers_b)
@@ -364,7 +398,9 @@ class TestUploadsEndpoint:
 
     def test_upload_text_triggers_extraction(self, client: TestClient):
         """Uploading a text/plain file should trigger an extraction job."""
-        uid, did, pem = _register_user_with_device(client, "up5@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "up5@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         r = client.post(
@@ -388,7 +424,9 @@ class TestEmailIntegration:
         """Password reset for a known email writes an .eml file in the outbox dir."""
         _register_user_with_device(client, "reset@example.com", "P@ssw0rd")
 
-        r = client.post("/auth/password-reset/request", json={"email": "reset@example.com"})
+        r = client.post(
+            "/auth/password-reset/request", json={"email": "reset@example.com"}
+        )
         assert r.status_code == 200
         assert "reset link was sent" in r.json()["message"].lower()
 
@@ -405,7 +443,9 @@ class TestEmailIntegration:
 
     def test_password_reset_unknown_email_no_leak(self, client: TestClient, settings):
         """Reset for an unknown email returns the same message but writes no file."""
-        r = client.post("/auth/password-reset/request", json={"email": "nobody@example.com"})
+        r = client.post(
+            "/auth/password-reset/request", json={"email": "nobody@example.com"}
+        )
         assert r.status_code == 200
         assert "reset link was sent" in r.json()["message"].lower()
 
@@ -431,7 +471,9 @@ class TestLLMStreaming:
 
     def test_llm_chat_endpoint_without_key(self, client: TestClient):
         """POST /llm/chat without an OpenAI key returns 503."""
-        uid, did, pem = _register_user_with_device(client, "llm1@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "llm1@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         r = client.post(
@@ -444,7 +486,9 @@ class TestLLMStreaming:
 
     def test_llm_stream_endpoint_without_key(self, client: TestClient):
         """POST /llm/chat/stream without an OpenAI key returns 503."""
-        uid, did, pem = _register_user_with_device(client, "llm2@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "llm2@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         r = client.post(
@@ -466,12 +510,20 @@ class TestSecurityInvariants:
 
     def test_storage_key_opaque(self, client: TestClient):
         """Storage key must NOT contain the original filename."""
-        uid, did, pem = _register_user_with_device(client, "sec1@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "sec1@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         r = client.post(
             "/uploads",
-            files={"file": ("evil/../../../etc/passwd", b"test", "application/octet-stream")},
+            files={
+                "file": (
+                    "evil/../../../etc/passwd",
+                    b"test",
+                    "application/octet-stream",
+                )
+            },
             headers=headers,
         )
         assert r.status_code == 201
@@ -483,7 +535,9 @@ class TestSecurityInvariants:
 
     def test_internal_job_kind_rejected_from_api(self, client: TestClient):
         """Internal-only job kinds must not be callable from POST /jobs."""
-        uid, did, pem = _register_user_with_device(client, "sec2@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "sec2@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         r = client.post(
@@ -496,7 +550,9 @@ class TestSecurityInvariants:
 
     def test_llm_summarize_internal_only(self, client: TestClient):
         """llm.summarize_text must also be internal-only."""
-        uid, did, pem = _register_user_with_device(client, "sec3@example.com", "P@ssw0rd")
+        uid, did, pem = _register_user_with_device(
+            client, "sec3@example.com", "P@ssw0rd"
+        )
         headers = _auth_header(uid, did, pem)
 
         r = client.post(
@@ -509,7 +565,9 @@ class TestSecurityInvariants:
     def test_email_outbox_filename_opaque(self, client: TestClient, settings):
         """Email outbox files must not contain user-controlled address parts."""
         _register_user_with_device(client, "outbox@example.com", "P@ssw0rd")
-        client.post("/auth/password-reset/request", json={"email": "outbox@example.com"})
+        client.post(
+            "/auth/password-reset/request", json={"email": "outbox@example.com"}
+        )
 
         outbox = settings.email_outbox_dir
         assert os.path.isdir(outbox)

@@ -60,7 +60,9 @@ def _password_router() -> APIRouter:
         },
     )
     async def register(
-        body: schemas.RegisterRequest, request: Request, db: AsyncSession = Depends(_db_dep)
+        body: schemas.RegisterRequest,
+        request: Request,
+        db: AsyncSession = Depends(_db_dep),
     ) -> schemas.DeviceBindingResponse:
         settings = request.app.state.settings
         try:
@@ -68,12 +70,17 @@ def _password_router() -> APIRouter:
                 db, body.email, body.password, settings, display_name=body.display_name
             )
         except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+            ) from None
         device_id = await register_device(
             db, user.id, body.device_public_key_jwk, body.device_label
         )
         return schemas.DeviceBindingResponse(
-            user_id=user.id, device_id=device_id, role=user.role, display_name=user.display_name
+            user_id=user.id,
+            device_id=device_id,
+            role=user.role,
+            display_name=user.display_name,
         )
 
     @pw.post(
@@ -89,7 +96,9 @@ def _password_router() -> APIRouter:
         },
     )
     async def login(
-        body: schemas.LoginRequest, request: Request, db: AsyncSession = Depends(_db_dep)
+        body: schemas.LoginRequest,
+        request: Request,
+        db: AsyncSession = Depends(_db_dep),
     ) -> schemas.DeviceBindingResponse:
         if (user := await authenticate_user(db, body.email, body.password)) is None:
             raise HTTPException(
@@ -99,7 +108,10 @@ def _password_router() -> APIRouter:
             db, user.id, body.device_public_key_jwk, body.device_label
         )
         return schemas.DeviceBindingResponse(
-            user_id=user.id, device_id=device_id, role=user.role, display_name=user.display_name
+            user_id=user.id,
+            device_id=device_id,
+            role=user.role,
+            display_name=user.display_name,
         )
 
     @pw.post(
@@ -171,12 +183,17 @@ def _password_router() -> APIRouter:
         try:
             user = await confirm_password_reset(db, body.token, body.new_password)
         except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from None
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+            ) from None
         device_id = await register_device(
             db, user.id, body.device_public_key_jwk, body.device_label
         )
         return schemas.DeviceBindingResponse(
-            user_id=user.id, device_id=device_id, role=user.role, display_name=user.display_name
+            user_id=user.id,
+            device_id=device_id,
+            role=user.role,
+            display_name=user.display_name,
         )
 
     return pw

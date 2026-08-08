@@ -54,7 +54,9 @@ def _make_device_token(
 def _create_device_keypair() -> tuple[bytes, dict]:
     """Generate an EC P-256 keypair. Returns (private_key_pem, public_key_jwk_dict)."""
     private_key = ec.generate_private_key(ec.SECP256R1())
-    private_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+    private_pem = private_key.private_bytes(
+        Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
+    )
     public_key = private_key.public_key()
     # Export as JWK via PyJWT helper
     jwk_dict = json.loads(ECAlgorithm(ECAlgorithm.SHA256).to_jwk(public_key))
@@ -196,7 +198,9 @@ class TestDisplayNamePassword:
                 "device_public_key_jwk": public_jwk,
             },
         )
-        result = await db_session.execute(select(User).filter(User.email == "dn_db@example.com"))
+        result = await db_session.execute(
+            select(User).filter(User.email == "dn_db@example.com")
+        )
         user = result.scalars().first()
         assert user is not None
         assert user.display_name == "DB Persist"
@@ -354,7 +358,9 @@ class TestSignupLogin:
         )
         assert r.status_code == 401
 
-    def test_login_unknown_user_checks_dummy_password_hash(self, client: TestClient, monkeypatch):
+    def test_login_unknown_user_checks_dummy_password_hash(
+        self, client: TestClient, monkeypatch
+    ):
         from h4ckath0n.auth import passwords
 
         hashes: list[str] = []
@@ -427,7 +433,9 @@ class TestAdminGate:
         r = client.get("/admin-only", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 403
 
-    async def test_admin_accepted(self, client: TestClient, app, db_session: AsyncSession):
+    async def test_admin_accepted(
+        self, client: TestClient, app, db_session: AsyncSession
+    ):
         from h4ckath0n.auth import require_admin
 
         @app.get("/admin-only2")
@@ -438,7 +446,9 @@ class TestAdminGate:
             client, db_session, "grace@example.com", "strongP@ss1"
         )
         # Promote to admin directly in DB
-        result = await db_session.execute(select(User).filter(User.email == "grace@example.com"))
+        result = await db_session.execute(
+            select(User).filter(User.email == "grace@example.com")
+        )
         user = result.scalars().first()
         user.role = "admin"
         await db_session.commit()
@@ -468,7 +478,9 @@ class TestScopeGate:
         r = client.post("/billing/refund", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 403
 
-    async def test_present_scope_accepted(self, client: TestClient, app, db_session: AsyncSession):
+    async def test_present_scope_accepted(
+        self, client: TestClient, app, db_session: AsyncSession
+    ):
         from h4ckath0n.auth import require_scopes
 
         @app.post("/billing/refund2")
@@ -478,13 +490,17 @@ class TestScopeGate:
         user_id, device_id, private_pem = _register_user_with_device(
             client, db_session, "ivan@example.com", "strongP@ss1"
         )
-        result = await db_session.execute(select(User).filter(User.email == "ivan@example.com"))
+        result = await db_session.execute(
+            select(User).filter(User.email == "ivan@example.com")
+        )
         user = result.scalars().first()
         user.scopes = "billing:refund"
         await db_session.commit()
 
         token = _make_device_token(user_id, device_id, private_pem)
-        r = client.post("/billing/refund2", headers={"Authorization": f"Bearer {token}"})
+        r = client.post(
+            "/billing/refund2", headers={"Authorization": f"Bearer {token}"}
+        )
         assert r.status_code == 200
 
 
@@ -597,7 +613,9 @@ class TestPasswordReset:
         )
         assert r2.status_code == 400
 
-    async def test_expired_token_rejected(self, client: TestClient, db_session: AsyncSession):
+    async def test_expired_token_rejected(
+        self, client: TestClient, db_session: AsyncSession
+    ):
         _p, jwk = _create_device_keypair()
         client.post(
             "/auth/register",
@@ -610,11 +628,15 @@ class TestPasswordReset:
         )
         from h4ckath0n.auth.service import create_password_reset_token
 
-        raw = await create_password_reset_token(db_session, "nancy@example.com", expire_minutes=30)
+        raw = await create_password_reset_token(
+            db_session, "nancy@example.com", expire_minutes=30
+        )
         assert raw is not None
         # Manually expire the token
         result = await db_session.execute(
-            select(PasswordResetToken).filter(PasswordResetToken.token_hash == _hash_token(raw))
+            select(PasswordResetToken).filter(
+                PasswordResetToken.token_hash == _hash_token(raw)
+            )
         )
         prt = result.scalars().first()
         prt.expires_at = datetime.now(UTC) - timedelta(minutes=1)

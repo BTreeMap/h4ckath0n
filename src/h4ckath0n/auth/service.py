@@ -127,7 +127,9 @@ async def register_device(
     fp = _jwk_fingerprint(public_key_jwk)
 
     # ⚡ Bolt: Fetch only the ID to avoid instantiating the full Device ORM object.
-    if existing_id := await db.scalar(select(Device.id).filter(Device.fingerprint == fp)):
+    if existing_id := await db.scalar(
+        select(Device.id).filter(Device.fingerprint == fp)
+    ):
         return existing_id
 
     device = Device(
@@ -149,7 +151,9 @@ async def create_password_reset_token(
 ) -> str | None:
     """Create a password reset token. Returns raw token or None if email unknown."""
     # ⚡ Bolt: Fetch only the ID to avoid instantiating the full User ORM object.
-    if (user_id := await db.scalar(select(User.id).filter(User.email == email))) is None:
+    if (
+        user_id := await db.scalar(select(User.id).filter(User.email == email))
+    ) is None:
         return None
     # 32 bytes → 256-bit unguessable token; hashed before storage.
     raw = _rng_urlsafe(32)
@@ -163,7 +167,9 @@ async def create_password_reset_token(
     return raw
 
 
-async def confirm_password_reset(db: AsyncSession, raw_token: str, new_password: str) -> User:
+async def confirm_password_reset(
+    db: AsyncSession, raw_token: str, new_password: str
+) -> User:
     """Confirm a password reset and return the user."""
     hash_password, _verify = _require_password_extra()
     hashed = _hash_token(raw_token)

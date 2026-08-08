@@ -59,7 +59,9 @@ async def _get_current_user(
     try:
         # ⚡ Bolt: Use primary key lookup to hit the session identity map.
         if (user := await db.get(User, ctx.user_id)) is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+            )
         return user
     finally:
         await db.close()
@@ -75,7 +77,9 @@ def require_admin() -> Any:
 
     async def _admin(user: User = Depends(_get_current_user)) -> User:
         if user.role != "admin":
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin required")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Admin required"
+            )
         return user
 
     return Depends(_admin)

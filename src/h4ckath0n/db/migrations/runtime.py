@@ -98,7 +98,9 @@ def get_schema_status(db_url: str) -> SchemaStatus:
     try:
         with engine.connect() as conn:
             # Check for version table
-            migration_ctx = MigrationContext.configure(conn, opts={"version_table": VERSION_TABLE})
+            migration_ctx = MigrationContext.configure(
+                conn, opts={"version_table": VERSION_TABLE}
+            )
             current_revisions = tuple(sorted(migration_ctx.get_current_heads()))
 
     finally:

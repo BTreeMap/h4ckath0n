@@ -19,7 +19,8 @@ config = context.config
 if os.environ.get("H4CKATH0N_DATABASE_URL"):
     # Alembic env is sync; async driver URLs here trigger MissingGreenlet.
     config.set_main_option(
-        "sqlalchemy.url", normalize_db_url_for_sync(os.environ["H4CKATH0N_DATABASE_URL"])
+        "sqlalchemy.url",
+        normalize_db_url_for_sync(os.environ["H4CKATH0N_DATABASE_URL"]),
     )
 
 # Interpret the config file for Python logging.

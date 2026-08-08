@@ -77,19 +77,25 @@ def new_token_id() -> TokenId:
 def is_user_id(value: str) -> TypeGuard[UserId]:
     """Return ``True`` when *value* looks like a valid user ID."""
     return (
-        len(value) == _ID_LEN and value[:1] == "u" and all(c in _ALLOWED_CHARS for c in value[1:])
+        len(value) == _ID_LEN
+        and value[:1] == "u"
+        and all(c in _ALLOWED_CHARS for c in value[1:])
     )
 
 
 def is_key_id(value: str) -> TypeGuard[KeyId]:
     """Return ``True`` when *value* looks like a valid key ID."""
     return (
-        len(value) == _ID_LEN and value[:1] == "k" and all(c in _ALLOWED_CHARS for c in value[1:])
+        len(value) == _ID_LEN
+        and value[:1] == "k"
+        and all(c in _ALLOWED_CHARS for c in value[1:])
     )
 
 
 def is_device_id(value: str) -> TypeGuard[DeviceId]:
     """Return ``True`` when *value* looks like a valid device ID."""
     return (
-        len(value) == _ID_LEN and value[:1] == "d" and all(c in _ALLOWED_CHARS for c in value[1:])
+        len(value) == _ID_LEN
+        and value[:1] == "d"
+        and all(c in _ALLOWED_CHARS for c in value[1:])
     )

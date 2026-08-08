@@ -19,7 +19,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 README = REPO_ROOT / "README.md"
 
 # FastAPI internal paths that we do not require in user docs.
-FRAMEWORK_PATHS = frozenset({"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"})
+FRAMEWORK_PATHS = frozenset(
+    {"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
+)
 
 
 def get_app_routes() -> list[tuple[str, str]]:

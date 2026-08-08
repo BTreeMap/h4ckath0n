@@ -57,7 +57,11 @@ def _cmd_jobs_worker(args: argparse.Namespace) -> int:
                 if raw is None:
                     continue
                 _, job_id_bytes = raw
-                job_id = job_id_bytes.decode() if isinstance(job_id_bytes, bytes) else job_id_bytes
+                job_id = (
+                    job_id_bytes.decode()
+                    if isinstance(job_id_bytes, bytes)
+                    else job_id_bytes
+                )
                 print(f"Processing job {job_id}")
 
                 async with session_factory() as db:

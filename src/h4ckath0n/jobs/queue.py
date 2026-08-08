@@ -49,7 +49,9 @@ async def enqueue_job(
             await r.close()
             logger.info("Job %s enqueued to Redis queue %s", job.id, queue)
         except Exception:
-            logger.exception("Failed to push job %s to Redis, falling back to inline", job.id)
+            logger.exception(
+                "Failed to push job %s to Redis, falling back to inline", job.id
+            )
             if inline:
                 await _run_inline(db, job)
     elif inline:

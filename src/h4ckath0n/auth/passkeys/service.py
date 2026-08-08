@@ -9,7 +9,12 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from h4ckath0n.auth.models import ChallengeKind, User, WebAuthnChallenge, WebAuthnCredential
+from h4ckath0n.auth.models import (
+    ChallengeKind,
+    User,
+    WebAuthnChallenge,
+    WebAuthnCredential,
+)
 from h4ckath0n.auth.passkeys.errors import (
     LastPasskeyError,
     PasskeyAlreadyRevokedError,
@@ -267,7 +272,8 @@ async def start_add_credential(
     from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 
     exclude = [
-        PublicKeyCredentialDescriptor(id=base64url_to_bytes(c.credential_id)) for c in existing
+        PublicKeyCredentialDescriptor(id=base64url_to_bytes(c.credential_id))
+        for c in existing
     ]
 
     challenge_bytes = _new_challenge()
@@ -428,7 +434,9 @@ async def cleanup_expired_challenges(db: AsyncSession) -> int:
     from sqlalchemy import delete
 
     now = datetime.now(UTC)
-    result = await db.execute(delete(WebAuthnChallenge).filter(WebAuthnChallenge.expires_at < now))
+    result = await db.execute(
+        delete(WebAuthnChallenge).filter(WebAuthnChallenge.expires_at < now)
+    )
     await db.commit()
     count: int = result.rowcount  # type: ignore[attr-defined]
     return count

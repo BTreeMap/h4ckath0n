@@ -55,15 +55,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 )
             try:
                 await asyncio.to_thread(run_upgrade_to_head, settings.database_url)
-                logger.warning("database schema auto-upgrade completed to migration head")
+                logger.warning(
+                    "database schema auto-upgrade completed to migration head"
+                )
             except PackagedMigrationsError:
-                logger.warning("packaged migrations not found; installation may be broken")
+                logger.warning(
+                    "packaged migrations not found; installation may be broken"
+                )
             except Exception:  # noqa: BLE001
                 logger.exception("database auto-upgrade failed")
                 raise
 
         try:
-            schema_status = await asyncio.to_thread(get_schema_status, settings.database_url)
+            schema_status = await asyncio.to_thread(
+                get_schema_status, settings.database_url
+            )
             if schema_status.warning:
                 logger.warning(schema_status.warning)
         except PackagedMigrationsError:
@@ -113,7 +119,9 @@ def _register_routers(app: FastAPI, settings: Settings) -> None:
         try:
             from h4ckath0n.auth.router import get_password_router
 
-            app.include_router(get_password_router(), prefix="/auth", tags=["password-auth"])
+            app.include_router(
+                get_password_router(), prefix="/auth", tags=["password-auth"]
+            )
         except RuntimeError:
             pass  # argon2-cffi not installed
 

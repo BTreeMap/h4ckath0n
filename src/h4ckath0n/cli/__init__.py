@@ -119,7 +119,9 @@ def _dispatch_devices(args: argparse.Namespace, parser: argparse.ArgumentParser)
     return EXIT_BAD_ARGS
 
 
-def _dispatch_passkeys(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+def _dispatch_passkeys(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> int:
     passkeys_cmd = getattr(args, "passkeys_command", "")
     if passkeys_cmd == "list":
         return _cmd_passkeys_list(args)

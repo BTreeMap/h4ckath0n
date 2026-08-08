@@ -15,7 +15,9 @@ _registry: dict[str, JobHandler] = {}
 _internal_kinds: set[str] = set()
 
 
-def register(kind: str, *, internal: bool = False) -> Callable[[JobHandler], JobHandler]:
+def register(
+    kind: str, *, internal: bool = False
+) -> Callable[[JobHandler], JobHandler]:
     """Decorator to register a job handler.
 
     Parameters

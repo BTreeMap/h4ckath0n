@@ -32,7 +32,9 @@ from h4ckath0n.realtime.auth import (
 
 def _create_device_keypair() -> tuple[bytes, dict]:
     private_key = ec.generate_private_key(ec.SECP256R1())
-    private_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+    private_pem = private_key.private_bytes(
+        Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
+    )
     public_key = private_key.public_key()
     jwk_dict = json.loads(ECAlgorithm(ECAlgorithm.SHA256).to_jwk(public_key))
     return private_pem, jwk_dict
@@ -75,7 +77,10 @@ def test_decode_device_token_accepts_native_ec_public_key():
         algorithm="ES256",
     )
 
-    assert decode_device_token(token, public_key=private_key.public_key()).sub == "u" + "a" * 31
+    assert (
+        decode_device_token(token, public_key=private_key.public_key()).sub
+        == "u" + "a" * 31
+    )
 
 
 @pytest.fixture()
@@ -115,7 +120,9 @@ async def _seed_user_and_device(db_session: AsyncSession) -> tuple[str, str, byt
     from h4ckath0n.auth.service import _jwk_fingerprint
 
     fp = _jwk_fingerprint(jwk_dict)
-    device = Device(id=did, user_id=uid, public_key_jwk=json.dumps(jwk_dict), fingerprint=fp)
+    device = Device(
+        id=did, user_id=uid, public_key_jwk=json.dumps(jwk_dict), fingerprint=fp
+    )
     db_session.add(user)
     db_session.add(device)
     await db_session.commit()
@@ -240,7 +247,9 @@ class TestStableDeviceIdentity:
         assert did1 == did2
         assert did1.startswith("d")
 
-    async def test_different_jwk_gets_different_device_id(self, db_session: AsyncSession):
+    async def test_different_jwk_gets_different_device_id(
+        self, db_session: AsyncSession
+    ):
         from h4ckath0n.auth.service import register_device
 
         _pem1, jwk1 = _create_device_keypair()

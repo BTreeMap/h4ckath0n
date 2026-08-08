@@ -14,7 +14,9 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument(
         "--format", choices=["json", "jsonl"], default="json", help="Output format"
     )
-    common.add_argument("--pretty", action="store_true", default=False, help="Pretty-print output")
+    common.add_argument(
+        "--pretty", action="store_true", default=False, help="Pretty-print output"
+    )
 
     parser = argparse.ArgumentParser(
         prog="h4ckath0n",
@@ -34,8 +36,12 @@ def build_parser() -> argparse.ArgumentParser:
     migrate_sub = db_migrate.add_subparsers(dest="migrate_command")
 
     # db migrate upgrade
-    mig_upgrade = migrate_sub.add_parser("upgrade", parents=[common], help="Upgrade database")
-    mig_upgrade.add_argument("--to", default="head", help="Target revision (default: head)")
+    mig_upgrade = migrate_sub.add_parser(
+        "upgrade", parents=[common], help="Upgrade database"
+    )
+    mig_upgrade.add_argument(
+        "--to", default="head", help="Target revision (default: head)"
+    )
     mig_upgrade.add_argument("--yes", action="store_true", help="Confirm mutation")
 
     # db migrate downgrade
@@ -64,11 +70,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # users show
-    users_show = users_sub.add_parser("show", parents=[common], help="Show user details")
+    users_show = users_sub.add_parser(
+        "show", parents=[common], help="Show user details"
+    )
     _add_user_selector(users_show)
 
     # users set-role
-    users_set_role = users_sub.add_parser("set-role", parents=[common], help="Set user role")
+    users_set_role = users_sub.add_parser(
+        "set-role", parents=[common], help="Set user role"
+    )
     _add_user_selector(users_set_role)
     users_set_role.add_argument(
         "--role", required=True, choices=["user", "admin"], help="Role to set"
@@ -76,7 +86,9 @@ def build_parser() -> argparse.ArgumentParser:
     users_set_role.add_argument("--yes", action="store_true", help="Confirm mutation")
 
     # users disable
-    users_disable = users_sub.add_parser("disable", parents=[common], help="Disable user")
+    users_disable = users_sub.add_parser(
+        "disable", parents=[common], help="Disable user"
+    )
     _add_user_selector(users_disable)
     users_disable.add_argument("--yes", action="store_true", help="Confirm mutation")
 
@@ -92,17 +104,25 @@ def build_parser() -> argparse.ArgumentParser:
     # users scopes add
     scopes_add = scopes_sub.add_parser("add", parents=[common], help="Add scopes")
     _add_user_selector(scopes_add)
-    scopes_add.add_argument("--scope", action="append", required=True, help="Scope to add")
+    scopes_add.add_argument(
+        "--scope", action="append", required=True, help="Scope to add"
+    )
     scopes_add.add_argument("--yes", action="store_true", help="Confirm mutation")
 
     # users scopes remove
-    scopes_remove = scopes_sub.add_parser("remove", parents=[common], help="Remove scopes")
+    scopes_remove = scopes_sub.add_parser(
+        "remove", parents=[common], help="Remove scopes"
+    )
     _add_user_selector(scopes_remove)
-    scopes_remove.add_argument("--scope", action="append", required=True, help="Scope to remove")
+    scopes_remove.add_argument(
+        "--scope", action="append", required=True, help="Scope to remove"
+    )
     scopes_remove.add_argument("--yes", action="store_true", help="Confirm mutation")
 
     # users scopes set
-    scopes_set = scopes_sub.add_parser("set", parents=[common], help="Set scopes (replace all)")
+    scopes_set = scopes_sub.add_parser(
+        "set", parents=[common], help="Set scopes (replace all)"
+    )
     _add_user_selector(scopes_set)
     scopes_set.add_argument("--scopes", required=True, help="Comma-separated scopes")
     scopes_set.add_argument("--yes", action="store_true", help="Confirm mutation")
@@ -112,14 +132,18 @@ def build_parser() -> argparse.ArgumentParser:
     devices_sub = devices_parser.add_subparsers(dest="devices_command")
 
     # devices list
-    devices_list = devices_sub.add_parser("list", parents=[common], help="List devices for a user")
+    devices_list = devices_sub.add_parser(
+        "list", parents=[common], help="List devices for a user"
+    )
     _add_user_selector(devices_list)
     devices_list.add_argument(
         "--include-revoked", action="store_true", help="Include revoked devices"
     )
 
     # devices revoke
-    devices_revoke = devices_sub.add_parser("revoke", parents=[common], help="Revoke a device")
+    devices_revoke = devices_sub.add_parser(
+        "revoke", parents=[common], help="Revoke a device"
+    )
     devices_revoke.add_argument("--device-id", required=True, help="Device ID (d...)")
     devices_revoke.add_argument("--yes", action="store_true", help="Confirm mutation")
 
@@ -137,7 +161,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # passkeys revoke
-    passkeys_revoke = passkeys_sub.add_parser("revoke", parents=[common], help="Revoke a passkey")
+    passkeys_revoke = passkeys_sub.add_parser(
+        "revoke", parents=[common], help="Revoke a passkey"
+    )
     passkeys_revoke.add_argument("--key-id", required=True, help="Passkey ID (k...)")
     passkeys_revoke.add_argument("--yes", action="store_true", help="Confirm mutation")
 
@@ -149,7 +175,9 @@ def build_parser() -> argparse.ArgumentParser:
     jobs_worker = jobs_sub.add_parser(
         "worker", parents=[common], help="Run a background job worker"
     )
-    jobs_worker.add_argument("--queue", default="default", help="Queue name (default: default)")
+    jobs_worker.add_argument(
+        "--queue", default="default", help="Queue name (default: default)"
+    )
     jobs_worker.add_argument(
         "--poll-interval",
         type=float,

@@ -78,7 +78,9 @@ def show_diff(ch: Change) -> str:
     )
 
 
-def replace_project_version_in_pyproject(path: Path, old: str, new: str) -> Change | None:
+def replace_project_version_in_pyproject(
+    path: Path, old: str, new: str
+) -> Change | None:
     before = read_text(path)
     lines = before.splitlines(keepends=True)
 
@@ -107,7 +109,9 @@ def replace_project_version_in_pyproject(path: Path, old: str, new: str) -> Chan
     return Change(path, before, after)
 
 
-def replace_fallback_version_in_version_py(path: Path, old: str, new: str) -> Change | None:
+def replace_fallback_version_in_version_py(
+    path: Path, old: str, new: str
+) -> Change | None:
     before = read_text(path)
     after = re.sub(
         rf'(^\s*__fallback_version__\s*=\s*")({re.escape(old)})(")',
@@ -120,7 +124,9 @@ def replace_fallback_version_in_version_py(path: Path, old: str, new: str) -> Ch
     return Change(path, before, after)
 
 
-def replace_uv_lock_editable_package_version(path: Path, old: str, new: str) -> Change | None:
+def replace_uv_lock_editable_package_version(
+    path: Path, old: str, new: str
+) -> Change | None:
     before = read_text(path)
 
     # Find the [[package]] block for name="h4ckath0n" with source editable="."
@@ -204,7 +210,9 @@ def update_openapi_info_version(path: Path, old: str, new: str) -> Change | None
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--to", help="Set explicit new version, e.g. 0.1.2")
-    ap.add_argument("--bump", choices=["patch", "minor", "major"], help="Bump semver component")
+    ap.add_argument(
+        "--bump", choices=["patch", "minor", "major"], help="Bump semver component"
+    )
     ap.add_argument("--apply", action="store_true", help="Write changes to disk")
     args = ap.parse_args(argv)
 

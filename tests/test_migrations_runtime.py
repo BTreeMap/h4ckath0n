@@ -28,9 +28,13 @@ class TestMigrationStatusDetection:
         try:
             with engine.begin() as conn:
                 conn.execute(
-                    text(f"CREATE TABLE {VERSION_TABLE} (version_num VARCHAR(32) NOT NULL)")
+                    text(
+                        f"CREATE TABLE {VERSION_TABLE} (version_num VARCHAR(32) NOT NULL)"
+                    )
                 )
-                conn.execute(text(f"INSERT INTO {VERSION_TABLE} (version_num) VALUES ('0004')"))
+                conn.execute(
+                    text(f"INSERT INTO {VERSION_TABLE} (version_num) VALUES ('0004')")
+                )
             status = get_schema_status(db_url)
             assert status.state == "at_head"
             assert status.warning is None
@@ -43,9 +47,13 @@ class TestMigrationStatusDetection:
         try:
             with engine.begin() as conn:
                 conn.execute(
-                    text(f"CREATE TABLE {VERSION_TABLE} (version_num VARCHAR(32) NOT NULL)")
+                    text(
+                        f"CREATE TABLE {VERSION_TABLE} (version_num VARCHAR(32) NOT NULL)"
+                    )
                 )
-                conn.execute(text(f"INSERT INTO {VERSION_TABLE} (version_num) VALUES ('0001')"))
+                conn.execute(
+                    text(f"INSERT INTO {VERSION_TABLE} (version_num) VALUES ('0001')")
+                )
             status = get_schema_status(db_url)
             assert status.state == "behind"
             assert status.warning is not None
@@ -93,7 +101,9 @@ class TestAutoUpgradeStartup:
             patch("h4ckath0n.app.Base.metadata.create_all"),
             caplog.at_level(logging.WARNING),
         ):
-            mock_status.return_value.warning = "database schema revision is behind code migrations"
+            mock_status.return_value.warning = (
+                "database schema revision is behind code migrations"
+            )
             from fastapi.testclient import TestClient
 
             with TestClient(app):
@@ -128,7 +138,11 @@ class TestAsyncMigrationHelper:
             "h4ckath0n.db.migrations.runtime.asyncio.to_thread", new_callable=AsyncMock
         ) as mock_to_thread:
             mock_to_thread.return_value = expected
-            result = asyncio.run(run_upgrade_to_head_async("sqlite+aiosqlite:///tmp/test.db"))
+            result = asyncio.run(
+                run_upgrade_to_head_async("sqlite+aiosqlite:///tmp/test.db")
+            )
 
-        mock_to_thread.assert_awaited_once_with(run_upgrade_to_head_sync, "sqlite:///tmp/test.db")
+        mock_to_thread.assert_awaited_once_with(
+            run_upgrade_to_head_sync, "sqlite:///tmp/test.db"
+        )
         assert result == expected

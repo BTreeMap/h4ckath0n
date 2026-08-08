@@ -47,7 +47,9 @@ async def chat(
 ) -> JSONResponse | dict[str, Any]:
     settings = request.app.state.settings
     if not settings.openai_api_key:
-        return JSONResponse({"detail": "OpenAI API key not configured"}, status_code=503)
+        return JSONResponse(
+            {"detail": "OpenAI API key not configured"}, status_code=503
+        )
     client = _get_llm_client(request)
     resp = await client.chat(
         user=body.user,
@@ -69,7 +71,9 @@ async def chat_stream(
 ) -> JSONResponse | EventSourceResponse:
     settings = request.app.state.settings
     if not settings.openai_api_key:
-        return JSONResponse({"detail": "OpenAI API key not configured"}, status_code=503)
+        return JSONResponse(
+            {"detail": "OpenAI API key not configured"}, status_code=503
+        )
 
     client = _get_llm_client(request)
 

@@ -43,14 +43,22 @@ def _utcnow() -> datetime:
 class User(Base):
     __tablename__ = "h4ckath0n_users"
 
-    id: Mapped[UserId] = mapped_column(String(32), primary_key=True, default=new_user_id)
+    id: Mapped[UserId] = mapped_column(
+        String(32), primary_key=True, default=new_user_id
+    )
     role: Mapped[Role] = mapped_column(String(20), nullable=False, default="user")
     scopes: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    disabled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Human-facing display name, set during registration.
-    display_name: Mapped[str | None] = mapped_column(String(200), nullable=True, default=None)
+    display_name: Mapped[str | None] = mapped_column(
+        String(200), nullable=True, default=None
+    )
 
     # Optional password fields (only when password extra enabled)
     email: Mapped[str | None] = mapped_column(
@@ -75,9 +83,15 @@ class WebAuthnCredential(Base):
     aaguid: Mapped[str | None] = mapped_column(String(36), nullable=True)
     transports: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
     name: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    last_used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -92,13 +106,21 @@ class WebAuthnChallenge(Base):
     challenge: Mapped[str] = mapped_column(Text, nullable=False)  # base64url-encoded
     user_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
     kind: Mapped[ChallengeKind] = mapped_column(String(20), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    consumed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     rp_id: Mapped[str] = mapped_column(String(255), nullable=False)
     origin: Mapped[str] = mapped_column(String(512), nullable=False)
 
-    __table_args__ = (Index("ix_h4ckath0n_webauthn_challenges_expires_at", "expires_at"),)
+    __table_args__ = (
+        Index("ix_h4ckath0n_webauthn_challenges_expires_at", "expires_at"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -109,12 +131,18 @@ class WebAuthnChallenge(Base):
 class PasswordResetToken(Base):
     __tablename__ = "h4ckath0n_password_reset_tokens"
 
-    id: Mapped[TokenId] = mapped_column(String(32), primary_key=True, default=new_token_id)
+    id: Mapped[TokenId] = mapped_column(
+        String(32), primary_key=True, default=new_token_id
+    )
     user_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     token_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     used: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -125,12 +153,20 @@ class PasswordResetToken(Base):
 class Device(Base):
     __tablename__ = "h4ckath0n_devices"
 
-    id: Mapped[DeviceId] = mapped_column(String(32), primary_key=True, default=new_device_id)
+    id: Mapped[DeviceId] = mapped_column(
+        String(32), primary_key=True, default=new_device_id
+    )
     user_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
-    public_key_jwk: Mapped[str] = mapped_column(Text, nullable=False)  # JSON-serialized JWK
+    public_key_jwk: Mapped[str] = mapped_column(
+        Text, nullable=False
+    )  # JSON-serialized JWK
     fingerprint: Mapped[str | None] = mapped_column(
         String(64), unique=True, nullable=True, index=True
     )  # SHA-256 hex of canonical JWK
     label: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )

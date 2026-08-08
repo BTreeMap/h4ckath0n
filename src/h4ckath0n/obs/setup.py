@@ -14,7 +14,9 @@ from h4ckath0n.obs.settings import ObservabilitySettings
 class _TraceIdMiddleware(BaseHTTPMiddleware):
     """Attach a ``X-Trace-Id`` header to every response."""
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         trace_id = request.headers.get("x-trace-id", uuid.uuid4().hex)
         request.state.trace_id = trace_id
         response = await call_next(request)

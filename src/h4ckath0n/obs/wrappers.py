@@ -35,7 +35,10 @@ def traced_tool(
     @functools.wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> R:
         if redact:
-            kwargs = {k: redact_value(v) if isinstance(v, str) else v for k, v in kwargs.items()}
+            kwargs = {
+                k: redact_value(v) if isinstance(v, str) else v
+                for k, v in kwargs.items()
+            }
         return fn(*args, **kwargs)
 
     wrapper.__name__ = tool_name
@@ -58,7 +61,10 @@ def traced_node(
     @functools.wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> R:
         if redact:
-            kwargs = {k: redact_value(v) if isinstance(v, str) else v for k, v in kwargs.items()}
+            kwargs = {
+                k: redact_value(v) if isinstance(v, str) else v
+                for k, v in kwargs.items()
+            }
         return fn(*args, **kwargs)
 
     wrapper.__name__ = node_name

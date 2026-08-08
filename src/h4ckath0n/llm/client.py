@@ -160,7 +160,9 @@ def llm(
     max_retries: int = 2,
 ) -> LLMClient:
     """Convenience factory. Equivalent to ``LLMClient(...)``."""
-    return LLMClient(api_key=api_key, model=model, timeout=timeout, max_retries=max_retries)
+    return LLMClient(
+        api_key=api_key, model=model, timeout=timeout, max_retries=max_retries
+    )
 
 
 def async_llm(
