@@ -63,37 +63,39 @@ uv run uvicorn your_module:app --reload
 
 ## Built-in routes
 
-- `GET /` — welcome message confirming the app is reachable.
-- `GET /health` — returns `{"status": "healthy"}` for load balancer and deployment checks.
-
-### Session
-- `GET /auth/session` — returns the current user session details.
-
-### Background Jobs
-- `GET /jobs` — list jobs.
-- `POST /jobs` — enqueue a background job.
-- `GET /jobs/{job_id}` — get the status and result of a job.
-
-### Uploads
-- `GET /uploads` — list uploaded files.
-- `POST /uploads` — upload a new file.
-- `GET /uploads/{upload_id}` — get metadata for a specific upload.
-- `GET /uploads/{upload_id}/download` — download the uploaded file.
-
-### LLM Chat
-- `POST /llm/chat` — send a message to the language model.
-- `POST /llm/chat/stream` — stream responses from the language model.
+<!-- BEGIN API ROUTES -->
+- `GET /` — welcome. Default root route provided by h4ckath0n.
+- `GET /auth/passkeys` — list passkeys. List all passkeys, including revoked entries, for the current user.
+- `GET /auth/session` — current session. Return information about the currently authenticated session.
+- `GET /health` — health. Basic health check for the app.
+- `GET /jobs` — list jobs. List recent jobs for the current user.
+- `GET /jobs/{job_id}` — get job. Get details of a specific job.
+- `GET /uploads` — list uploads. List uploads for the current user.
+- `GET /uploads/{upload_id}` — get upload metadata.
+- `GET /uploads/{upload_id}/download` — download a file. Stream the file back to the owner.
+- `PATCH /auth/passkeys/{key_id}` — rename a passkey. Update the user-facing name of a passkey.
+- `POST /auth/login` — login with password. Verify email and password, then bind an optional device key.
+- `POST /auth/passkey/add/finish` — finish adding a passkey. Verify the WebAuthn attestation and attach the new passkey to the user.
+- `POST /auth/passkey/add/start` — start adding a passkey. Begin adding a new passkey for the authenticated user and return registration options.
+- `POST /auth/passkey/login/finish` — finish passkey login. Finish passkey login by verifying the WebAuthn assertion for the flow and binding an optional device key.
+- `POST /auth/passkey/login/start` — start passkey login. Begin a username-less passkey login ceremony and return WebAuthn authentication options.
+- `POST /auth/passkey/register/finish` — finish passkey registration. Finish passkey registration by verifying the WebAuthn attestation for the flow and binding an optional device key.
+- `POST /auth/passkey/register/start` — start passkey registration. Begin a passkey registration ceremony. Creates a new user and a single-use challenge flow, then returns WebAuthn registration options.
+- `POST /auth/passkeys/{key_id}/revoke` — revoke a passkey. Revoke a passkey by its internal key ID. The last active passkey cannot be revoked and returns the LAST_PASSKEY error.
+- `POST /auth/password-reset/confirm` — confirm password reset. Confirm a password reset token, set a new password, and bind an optional device key.
+- `POST /auth/password-reset/request` — request a password reset. Request a password reset token for the account. Returns the same message even when the email is unknown.
+- `POST /auth/register` — register with password. Create a new account using email and password, then bind an optional device key.
+- `POST /jobs` — enqueue a job. Create a new background job.
+- `POST /llm/chat` — chat completion. Non-streaming chat completion. Requires OpenAI API key.
+- `POST /llm/chat/stream` — streaming chat completion. Stream LLM tokens via SSE. Requires OpenAI API key.
+- `POST /uploads` — upload a file. Upload a file (multipart/form-data).
+<!-- END API ROUTES -->
 
 ## Auth model
 
 ### Passkeys by default
 
-The default authentication path uses passkeys (WebAuthn). The core flows are:
-
-1. `POST /auth/passkey/register/start` and `POST /auth/passkey/register/finish`
-2. `POST /auth/passkey/login/start` and `POST /auth/passkey/login/finish`
-3. `POST /auth/passkey/add/start` and `POST /auth/passkey/add/finish` for adding devices
-4. `GET /auth/passkeys`, `POST /auth/passkeys/{key_id}/revoke`, and `PATCH /auth/passkeys/{key_id}` for management
+The default authentication path uses passkeys (WebAuthn).
 
 ### Device signed JWTs
 
@@ -146,11 +148,6 @@ def refund(user=require_scopes("billing:refund")):
 
 Password routes mount only when the password extra is installed and
 `H4CKATH0N_PASSWORD_AUTH_ENABLED=true`.
-
-- `POST /auth/register`
-- `POST /auth/login`
-- `POST /auth/password-reset/request`
-- `POST /auth/password-reset/confirm`
 
 Password auth is only an identity bootstrap. It binds a device key but does not return
 access tokens, refresh tokens, or cookies.
