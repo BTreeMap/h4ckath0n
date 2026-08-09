@@ -262,18 +262,19 @@ async def start_add_credential(
     origin = settings.effective_origin()
 
     # Build excludeCredentials from user's existing active credentials
+    # ⚡ Bolt: Fetch only the credential_id to avoid instantiating full ORM objects.
     result = await db.execute(
-        select(WebAuthnCredential).filter(
+        select(WebAuthnCredential.credential_id).filter(
             WebAuthnCredential.user_id == user.id,
             WebAuthnCredential.revoked_at.is_(None),
         )
     )
-    existing = result.scalars().all()
+    existing_ids = result.scalars().all()
     from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 
     exclude = [
-        PublicKeyCredentialDescriptor(id=base64url_to_bytes(c.credential_id))
-        for c in existing
+        PublicKeyCredentialDescriptor(id=base64url_to_bytes(cid))
+        for cid in existing_ids
     ]
 
     challenge_bytes = _new_challenge()
