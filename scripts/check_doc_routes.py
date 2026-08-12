@@ -24,8 +24,8 @@ FRAMEWORK_PATHS = frozenset(
 )
 
 
-def get_app_routes() -> list[tuple[str, str]]:
-    """Return (method, path) pairs from the live FastAPI app."""
+def get_app_routes() -> tuple[list[tuple[str, str]], dict[str, dict[str, str]]]:
+    """Return (method, path) pairs and route details from the live FastAPI app."""
     from h4ckath0n.app import create_app  # noqa: E402
     from h4ckath0n.config import Settings  # noqa: E402
 
@@ -34,20 +34,21 @@ def get_app_routes() -> list[tuple[str, str]]:
         password_auth_enabled=True,
     )
     app = create_app(settings)
+    paths = app.openapi().get("paths", {})
 
     routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Only check API routes (not Mount, WebSocket, etc.).
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+    details: dict[str, dict[str, str]] = {}
+    for path, methods in paths.items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
-                continue
-            routes.append((method, path))
-    return sorted(routes)
+        for method, op in methods.items():
+            method_upper = method.upper()
+            routes.append((method_upper, path))
+            details[f"{method_upper} {path}"] = {
+                "summary": op.get("summary", ""),
+                "description": op.get("description", ""),
+            }
+    return sorted(routes), details
 
 
 def check_routes_in_readme(
@@ -71,18 +72,45 @@ def check_routes_in_readme(
     return missing
 
 
+def fix_readme(
+    routes: list[tuple[str, str]], details: dict[str, dict[str, str]]
+) -> None:
+    """Generate and inject the API routes list into README.md."""
+    readme_text = README.read_text()
+
+    lines = []
+    for method, path in routes:
+        info = details.get(f"{method} {path}", {})
+        summary = info.get("summary", "")
+        if summary:
+            lines.append(f"- `{method} {path}` — {summary.lower()}")
+        else:
+            lines.append(f"- `{method} {path}`")
+
+    generated = "\n".join(lines)
+
+    pattern = r"(<!-- BEGIN API ROUTES -->\n).*?(<!-- END API ROUTES -->)"
+    replacement = rf"\1{generated}\n\2"
+
+    new_text = re.sub(pattern, replacement, readme_text, flags=re.DOTALL)
+    README.write_text(new_text)
+    print("✅ Regenerated API routes in README.md.")
+
+
 def main() -> int:
-    routes = get_app_routes()
+    routes, details = get_app_routes()
+
+    if "--fix" in sys.argv:
+        fix_readme(routes, details)
+        return 0
+
     missing = check_routes_in_readme(routes)
 
     if missing:
         print("❌ The following API routes are NOT documented in README.md:\n")
         for method, path in missing:
             print(f"  {method:6s} {path}")
-        print(
-            "\nAdd these routes to README.md or, if intentionally undocumented, "
-            "add them to FRAMEWORK_PATHS in this script."
-        )
+        print("\nAdd these routes to README.md or run this script with --fix.")
         return 1
 
     print(f"✅ All {len(routes)} API routes are documented in README.md.")
