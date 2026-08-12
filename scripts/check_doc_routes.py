@@ -11,6 +11,7 @@ README.md mentions each one. Routes provided by FastAPI itself (e.g. /openapi.js
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -25,7 +26,7 @@ FRAMEWORK_PATHS = frozenset(
 
 
 def get_app_routes() -> list[tuple[str, str]]:
-    """Return (method, path) pairs from the live FastAPI app."""
+    """Return (method, path) pairs from the live FastAPI app's OpenAPI schema."""
     from h4ckath0n.app import create_app  # noqa: E402
     from h4ckath0n.config import Settings  # noqa: E402
 
@@ -36,17 +37,16 @@ def get_app_routes() -> list[tuple[str, str]]:
     app = create_app(settings)
 
     routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Only check API routes (not Mount, WebSocket, etc.).
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+    openapi_schema = app.openapi()
+    paths = openapi_schema.get("paths", {})
+    for path, path_item in paths.items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
+        for method in path_item:
+            method_upper = method.upper()
+            if method_upper == "HEAD":
                 continue
-            routes.append((method, path))
+            routes.append((method_upper, path))
     return sorted(routes)
 
 
@@ -72,7 +72,68 @@ def check_routes_in_readme(
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Check or fix API routes documentation in README.md."
+    )
+    parser.add_argument(
+        "--fix",
+        action="store_true",
+        help="Automatically update the API routes in README.md.",
+    )
+    args = parser.parse_args()
+
     routes = get_app_routes()
+
+    if args.fix:
+        readme_text = README.read_text()
+
+        # Generate the routes table or list
+        from h4ckath0n.app import create_app
+        from h4ckath0n.config import Settings
+
+        app = create_app(
+            Settings(
+                database_url="sqlite+aiosqlite://",
+                password_auth_enabled=True,
+            )
+        )
+        paths = app.openapi().get("paths", {})
+
+        routes_md_lines = []
+        for method, path in routes:
+            method_lower = method.lower()
+            summary = paths.get(path, {}).get(method_lower, {}).get("summary", "")
+            description = (
+                paths.get(path, {}).get(method_lower, {}).get("description", "")
+            )
+
+            line = f"- `{method} {path}`"
+            if summary:
+                line += f" — {summary.lower()}"
+                if not line.endswith("."):
+                    line += "."
+            if description and description.lower() != summary.lower():
+                line += f" {description}"
+            routes_md_lines.append(line)
+
+        routes_md = "\n".join(routes_md_lines)
+
+        # Replace everything between the markers
+        pattern = re.compile(
+            r"(<!-- BEGIN API ROUTES -->).*?(<!-- END API ROUTES -->)", re.DOTALL
+        )
+        if not pattern.search(readme_text):
+            print(
+                "❌ Could not find <!-- BEGIN API ROUTES --> and "
+                "<!-- END API ROUTES --> markers in README.md."
+            )
+            return 1
+
+        new_readme_text = pattern.sub(rf"\g<1>\n{routes_md}\n\g<2>", readme_text)
+        README.write_text(new_readme_text)
+        print("✅ Fixed API routes in README.md.")
+        return 0
+
     missing = check_routes_in_readme(routes)
 
     if missing:
@@ -81,7 +142,8 @@ def main() -> int:
             print(f"  {method:6s} {path}")
         print(
             "\nAdd these routes to README.md or, if intentionally undocumented, "
-            "add them to FRAMEWORK_PATHS in this script."
+            "add them to FRAMEWORK_PATHS in this script.\n"
+            "Alternatively, run this script with --fix to automatically update README.md."
         )
         return 1
 
