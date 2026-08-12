@@ -1,0 +1,3 @@
+## 2024-07-22 - Centralized authorization scope manipulation
+**Learning:** When handling user scope inputs (e.g., from CLI arguments or variadic dependencies), always use the centralized pure helpers in `h4ckath0n.auth.authz` (such as `parse_scopes`, `normalize_scopes`, `add_scopes`, and `remove_scopes`) rather than implementing ad-hoc string manipulation locally. This ensures consistent deduplication, order preservation, and validation.
+**Action:** Prefer explicit transformation pipelines and centralized normalization logic. Do not duplicate domain-specific string manipulation in CLI or routing modules.
