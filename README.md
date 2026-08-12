@@ -63,26 +63,28 @@ uv run uvicorn your_module:app --reload
 
 ## Built-in routes
 
-- `GET /` — welcome message confirming the app is reachable.
-- `GET /health` — returns `{"status": "healthy"}` for load balancer and deployment checks.
+<!-- BEGIN API ROUTES -->
+- `GET /` — Welcome.
+- `GET /health` — Health.
 
 ### Session
-- `GET /auth/session` — returns the current user session details.
+- `GET /auth/session` — Current session.
 
 ### Background Jobs
-- `GET /jobs` — list jobs.
-- `POST /jobs` — enqueue a background job.
-- `GET /jobs/{job_id}` — get the status and result of a job.
+- `GET /jobs/{job_id}` — Get job.
+- `GET /jobs` — List jobs.
+- `POST /jobs` — Enqueue a job.
 
 ### Uploads
-- `GET /uploads` — list uploaded files.
-- `POST /uploads` — upload a new file.
-- `GET /uploads/{upload_id}` — get metadata for a specific upload.
-- `GET /uploads/{upload_id}/download` — download the uploaded file.
+- `GET /uploads/{upload_id}/download` — Download a file.
+- `GET /uploads/{upload_id}` — Get upload metadata.
+- `GET /uploads` — List uploads.
+- `POST /uploads` — Upload a file.
 
 ### LLM Chat
-- `POST /llm/chat` — send a message to the language model.
-- `POST /llm/chat/stream` — stream responses from the language model.
+- `POST /llm/chat/stream` — Streaming chat completion.
+- `POST /llm/chat` — Chat completion.
+<!-- END API ROUTES -->
 
 ## Auth model
 
@@ -147,10 +149,16 @@ def refund(user=require_scopes("billing:refund")):
 Password routes mount only when the password extra is installed and
 `H4CKATH0N_PASSWORD_AUTH_ENABLED=true`.
 
-- `POST /auth/register`
-- `POST /auth/login`
-- `POST /auth/password-reset/request`
-- `POST /auth/password-reset/confirm`
+<!-- BEGIN PASSWORD ROUTES -->
+- `POST /auth/login` — Login with password.
+- `POST /auth/passkey/login/finish` — Finish passkey login.
+- `POST /auth/passkey/login/start` — Start passkey login.
+- `POST /auth/passkey/register/finish` — Finish passkey registration.
+- `POST /auth/passkey/register/start` — Start passkey registration.
+- `POST /auth/password-reset/confirm` — Confirm password reset.
+- `POST /auth/password-reset/request` — Request a password reset.
+- `POST /auth/register` — Register with password.
+<!-- END PASSWORD ROUTES -->
 
 Password auth is only an identity bootstrap. It binds a device key but does not return
 access tokens, refresh tokens, or cookies.
@@ -159,13 +167,14 @@ access tokens, refresh tokens, or cookies.
 
 All settings use the `H4CKATH0N_` prefix unless noted.
 
+<!-- BEGIN ENV VARS -->
 | Variable | Default | Description |
 |---|---|---|
 | `H4CKATH0N_ENV` | `development` | `development` or `production` |
 | `H4CKATH0N_DATABASE_URL` | `sqlite:///./h4ckath0n.db` | SQLAlchemy connection string |
 | `H4CKATH0N_AUTO_UPGRADE` | `false` | Auto-run packaged DB migrations to head on startup |
-| `H4CKATH0N_RP_ID` | `localhost` in development | WebAuthn relying party ID, required in production |
-| `H4CKATH0N_ORIGIN` | `http://localhost:8000` in development | WebAuthn origin, required in production |
+| `H4CKATH0N_RP_ID` | empty | WebAuthn relying party ID, required in production |
+| `H4CKATH0N_ORIGIN` | empty | WebAuthn origin, required in production |
 | `H4CKATH0N_WEBAUTHN_TTL_SECONDS` | `300` | WebAuthn challenge TTL in seconds |
 | `H4CKATH0N_USER_VERIFICATION` | `preferred` | WebAuthn user verification requirement |
 | `H4CKATH0N_ATTESTATION` | `none` | WebAuthn attestation preference |
@@ -173,8 +182,7 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 | `H4CKATH0N_PASSWORD_RESET_EXPIRE_MINUTES` | `30` | Password reset token expiry in minutes |
 | `H4CKATH0N_BOOTSTRAP_ADMIN_EMAILS` | `[]` | JSON list of emails that become admin on password signup |
 | `H4CKATH0N_FIRST_USER_IS_ADMIN` | `false` | First password signup becomes admin |
-| `OPENAI_API_KEY` | empty | OpenAI API key for the LLM wrapper |
-| `H4CKATH0N_OPENAI_API_KEY` | empty | Alternate OpenAI API key for the LLM wrapper |
+| `OPENAI_API_KEY / H4CKATH0N_OPENAI_API_KEY` | empty | OpenAI API key for the LLM wrapper |
 | `H4CKATH0N_REDIS_URL` | empty | Redis connection string |
 | `H4CKATH0N_JOBS_INLINE_IN_DEV` | `true` | Run background jobs inline in development mode |
 | `H4CKATH0N_JOBS_DEFAULT_QUEUE` | `default` | Default Redis queue for background jobs |
@@ -192,6 +200,7 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 | `H4CKATH0N_SMTP_STARTTLS` | `true` | Enable SMTP STARTTLS |
 | `H4CKATH0N_SMTP_SSL` | `false` | Enable SMTP-over-SSL |
 | `H4CKATH0N_DEMO_MODE` | `false` | Enable demo mode |
+<!-- END ENV VARS -->
 
 In development, missing `RP_ID` and `ORIGIN` fall back to localhost defaults with
 warnings. In production, missing values raise a runtime error when passkey flows start.

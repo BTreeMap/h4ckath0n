@@ -1,7 +1,5 @@
 #!/usr/bin/env -S uv run python
-"""Verify that every ``Settings`` environment variable is documented in the README."""
-
-from __future__ import annotations
+"""Drift-prevention check: Verify and auto-update environment variables in README.md."""
 
 import re
 import sys
@@ -9,34 +7,60 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 README = REPO_ROOT / "README.md"
-_DOCUMENTED_ENVIRONMENT = re.compile(r"^\|\s*`([A-Z][A-Z0-9_]*)`\s*\|", re.MULTILINE)
+MARKER_START = "<!-- BEGIN ENV VARS -->"
+MARKER_END = "<!-- END ENV VARS -->"
 
 
-def get_settings_environment_names() -> frozenset[str]:
-    """Return the environment variable name for each Settings field."""
+def get_env_table() -> str:
     from h4ckath0n.config import Settings
 
-    return frozenset(
-        f"H4CKATH0N_{field_name.upper()}" for field_name in Settings.model_fields
-    )
+    lines = ["| Variable | Default | Description |", "|---|---|---|"]
+    for name, field in Settings.model_fields.items():
+        name_upper = name.upper()
+        env_name = f"H4CKATH0N_{name_upper}"
+        if name == "openai_api_key":
+            env_name = "OPENAI_API_KEY / H4CKATH0N_OPENAI_API_KEY"
 
+        default = field.default if field.default != "" else "empty"
+        if default == []:
+            default = "`[]`"
+        elif isinstance(default, str) and default != "empty":
+            default = f"`{default}`"
+        elif isinstance(default, bool):
+            default = f"`{'true' if default else 'false'}`"
+        elif isinstance(default, int):
+            default = f"`{default}`"
 
-def get_documented_environment_names(readme_text: str) -> frozenset[str]:
-    """Return environment variable names from the first column of README tables."""
-    return frozenset(_DOCUMENTED_ENVIRONMENT.findall(readme_text))
+        desc = field.description or "TBD"
+        lines.append(f"| `{env_name}` | {default} | {desc} |")
+
+    return "\n".join(lines)
 
 
 def main() -> int:
-    documented = get_documented_environment_names(README.read_text())
-    missing = sorted(get_settings_environment_names().difference(documented))
-    if missing:
-        print("The following environment variables are not documented in README.md:\n")
-        for environment_name in missing:
-            print(f"  {environment_name}")
+    fix = "--fix" in sys.argv
+    readme_text = README.read_text()
+
+    if MARKER_START not in readme_text or MARKER_END not in readme_text:
+        print("❌ Markers not found in README.md")
         return 1
 
-    environment_count = len(get_settings_environment_names())
-    print(f"All {environment_count} Settings environment variables are documented.")
+    table = get_env_table()
+    replacement = f"{MARKER_START}\n{table}\n{MARKER_END}"
+
+    pattern = re.compile(rf"{MARKER_START}.*?{MARKER_END}", re.DOTALL)
+    new_text = pattern.sub(replacement, readme_text)
+
+    if new_text != readme_text:
+        if fix:
+            README.write_text(new_text)
+            print("✅ Updated environment variables in README.md")
+            return 0
+        else:
+            print("❌ README.md environment variables are out of date. Run with --fix.")
+            return 1
+
+    print("✅ Environment variables in README.md are up to date.")
     return 0
 
 

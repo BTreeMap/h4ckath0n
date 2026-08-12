@@ -1,15 +1,5 @@
 #!/usr/bin/env -S uv run python
-"""Drift-prevention check: verify that every API route in the FastAPI app is documented.
-
-Usage (from repo root):
-    uv run scripts/check_doc_routes.py
-
-The script imports the h4ckath0n app, enumerates all routes, and checks that
-README.md mentions each one. Routes provided by FastAPI itself (e.g. /openapi.json,
-/docs, /redoc) are excluded from the check.
-"""
-
-from __future__ import annotations
+"""Drift-prevention check: Verify and auto-update API routes in README.md."""
 
 import re
 import sys
@@ -17,75 +7,115 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 README = REPO_ROOT / "README.md"
+MARKER_API_START = "<!-- BEGIN API ROUTES -->"
+MARKER_API_END = "<!-- END API ROUTES -->"
+MARKER_PWD_START = "<!-- BEGIN PASSWORD ROUTES -->"
+MARKER_PWD_END = "<!-- END PASSWORD ROUTES -->"
 
-# FastAPI internal paths that we do not require in user docs.
-FRAMEWORK_PATHS = frozenset(
-    {"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
-)
+
+def categorize_route(path: str, route_str: str, routes: dict):
+    if path in ["/", "/health"]:
+        routes["core"].append(route_str)
+    elif path.startswith("/auth/session"):
+        routes["session"].append(route_str)
+    elif path.startswith("/jobs"):
+        routes["jobs"].append(route_str)
+    elif path.startswith("/uploads"):
+        routes["uploads"].append(route_str)
+    elif path.startswith("/llm"):
+        routes["llm"].append(route_str)
+    elif "password" in path or "register" in path or "login" in path:
+        routes["pwd_auth"].append(route_str)
+    elif not path.startswith("/auth/passkey"):
+        routes["other"].append(route_str)
 
 
-def get_app_routes() -> list[tuple[str, str]]:
-    """Return (method, path) pairs from the live FastAPI app."""
-    from h4ckath0n.app import create_app  # noqa: E402
-    from h4ckath0n.config import Settings  # noqa: E402
+def get_routes():
+    from h4ckath0n.app import create_app
+    from h4ckath0n.config import Settings
 
-    settings = Settings(
-        database_url="sqlite+aiosqlite://",
-        password_auth_enabled=True,
-    )
+    settings = Settings(password_auth_enabled=True)
     app = create_app(settings)
+    schema = app.openapi()
 
-    routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Only check API routes (not Mount, WebSocket, etc.).
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
-        if path in FRAMEWORK_PATHS:
-            continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
-                continue
-            routes.append((method, path))
-    return sorted(routes)
+    routes = {
+        "core": [],
+        "session": [],
+        "jobs": [],
+        "uploads": [],
+        "llm": [],
+        "pwd_auth": [],
+        "other": [],
+    }
 
+    for path, methods in schema.get("paths", {}).items():
+        for method, endpoint in methods.items():
+            summary = endpoint.get("summary", "")
+            route_str = f"- `{method.upper()} {path}` — {summary}."
+            categorize_route(path, route_str, routes)
 
-def check_routes_in_readme(
-    routes: list[tuple[str, str]],
-) -> list[tuple[str, str]]:
-    """Return routes that are not mentioned anywhere in README.md.
+    if routes["other"]:
+        # If there are uncategorized routes, the script should fail
+        # and require the developer to update it.
+        print(
+            "❌ Error: Uncategorized API routes found. "
+            "Please update scripts/check_doc_routes.py to categorize:"
+        )
+        for r in routes["other"]:
+            print(f"  {r}")
+        sys.exit(1)
 
-    We look for ``METHOD /path`` (e.g. ``GET /health``) so that sub-path
-    matches like ``/auth/passkeys/{key_id}`` inside
-    ``/auth/passkeys/{key_id}/revoke`` are not false positives.
-    """
-    readme_text = README.read_text()
-    missing: list[tuple[str, str]] = []
-    for method, path in routes:
-        # Build a pattern like "GET /health" or "PATCH /auth/passkeys/\{key_id\}"
-        # that must appear as a recognisable method+path token in the README.
-        path_re = re.escape(path)
-        combined = rf"`{method}\s+{path_re}`"
-        if not re.search(combined, readme_text, re.IGNORECASE):
-            missing.append((method, path))
-    return missing
+    def format_section(title, lst):
+        if not lst:
+            return ""
+        return f"### {title}\n" + "\n".join(sorted(lst))
+
+    api_content = "\n\n".join(
+        filter(
+            None,
+            [
+                "\n".join(sorted(routes["core"])),
+                format_section("Session", routes["session"]),
+                format_section("Background Jobs", routes["jobs"]),
+                format_section("Uploads", routes["uploads"]),
+                format_section("LLM Chat", routes["llm"]),
+            ],
+        )
+    )
+
+    pwd_auth_text = "\n".join(sorted(routes["pwd_auth"]))
+
+    return api_content, pwd_auth_text
 
 
 def main() -> int:
-    routes = get_app_routes()
-    missing = check_routes_in_readme(routes)
+    fix = "--fix" in sys.argv
+    readme_text = README.read_text()
 
-    if missing:
-        print("❌ The following API routes are NOT documented in README.md:\n")
-        for method, path in missing:
-            print(f"  {method:6s} {path}")
-        print(
-            "\nAdd these routes to README.md or, if intentionally undocumented, "
-            "add them to FRAMEWORK_PATHS in this script."
-        )
-        return 1
+    api_content, pwd_auth_text = get_routes()
 
-    print(f"✅ All {len(routes)} API routes are documented in README.md.")
+    new_text = readme_text
+
+    if MARKER_API_START in new_text:
+        replacement = f"{MARKER_API_START}\n{api_content}\n{MARKER_API_END}"
+        pattern = re.compile(rf"{MARKER_API_START}.*?{MARKER_API_END}", re.DOTALL)
+        new_text = pattern.sub(replacement, new_text)
+
+    if MARKER_PWD_START in new_text:
+        replacement = f"{MARKER_PWD_START}\n{pwd_auth_text}\n{MARKER_PWD_END}"
+        pattern = re.compile(rf"{MARKER_PWD_START}.*?{MARKER_PWD_END}", re.DOTALL)
+        new_text = pattern.sub(replacement, new_text)
+
+    if new_text != readme_text:
+        if fix:
+            README.write_text(new_text)
+            print("✅ Updated API routes in README.md")
+            return 0
+        else:
+            print("❌ README.md API routes are out of date. Run with --fix.")
+            return 1
+
+    print("✅ API routes in README.md are up to date.")
     return 0
 
 
