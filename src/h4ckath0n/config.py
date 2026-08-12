@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # --- environment ---
     env: str = "development"
 
+    # --- CORS ---
+    cors_origins: list[str] = ["http://localhost:5173"]
+
     # --- database ---
     database_url: str = "sqlite:///./h4ckath0n.db"
     auto_upgrade: bool = False
