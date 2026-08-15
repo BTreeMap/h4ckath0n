@@ -26,18 +26,12 @@ from h4ckath0n.auth.passkeys.ids import (
 )
 from h4ckath0n.db.base import Base
 
-# WebAuthn ceremony kinds. A challenge is created for exactly one ceremony
-# type and may only be consumed by that same ceremony.
+# Challenge kind must match its ceremony.
 ChallengeKind = Literal["register", "authenticate", "add_credential"]
 
 
 def _utcnow() -> datetime:
     return datetime.now(UTC)
-
-
-# ---------------------------------------------------------------------------
-# User
-# ---------------------------------------------------------------------------
 
 
 class User(Base):
@@ -55,21 +49,16 @@ class User(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    # Human-facing display name, set during registration.
+    # Human-facing display name set during registration.
     display_name: Mapped[str | None] = mapped_column(
         String(200), nullable=True, default=None
     )
 
-    # Optional password fields (only when password extra enabled)
+    # Optional password fields when password extra is enabled.
     email: Mapped[str | None] = mapped_column(
         String(320), unique=True, nullable=True, index=True, default=None
     )
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
-
-
-# ---------------------------------------------------------------------------
-# WebAuthnCredential  (many-to-one with User)
-# ---------------------------------------------------------------------------
 
 
 class WebAuthnCredential(Base):
@@ -92,11 +81,6 @@ class WebAuthnCredential(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-
-
-# ---------------------------------------------------------------------------
-# WebAuthnChallenge  (ceremony state store)
-# ---------------------------------------------------------------------------
 
 
 class WebAuthnChallenge(Base):
@@ -123,11 +107,6 @@ class WebAuthnChallenge(Base):
     )
 
 
-# ---------------------------------------------------------------------------
-# PasswordResetToken  (only used with password extra)
-# ---------------------------------------------------------------------------
-
-
 class PasswordResetToken(Base):
     __tablename__ = "h4ckath0n_password_reset_tokens"
 
@@ -143,11 +122,6 @@ class PasswordResetToken(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
     )
-
-
-# ---------------------------------------------------------------------------
-# Device  (stores device public keys for ES256 JWT verification)
-# ---------------------------------------------------------------------------
 
 
 class Device(Base):

@@ -19,9 +19,7 @@ from jwt.algorithms import ECAlgorithm
 from h4ckath0n.app import create_app
 from h4ckath0n.config import Settings
 
-# ---------------------------------------------------------------------------
-# Helpers (same patterns as test_integration.py)
-# ---------------------------------------------------------------------------
+# Helpers.
 
 
 def _make_device_token(
@@ -90,9 +88,7 @@ def _auth_header(user_id: str, device_id: str, private_pem: bytes) -> dict[str, 
     return {"Authorization": f"Bearer {token}"}
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+# Fixtures.
 
 
 @pytest.fixture()
@@ -136,9 +132,7 @@ async def db_session(app):
         yield session
 
 
-# ---------------------------------------------------------------------------
-# 1. TestSessionEndpoint
-# ---------------------------------------------------------------------------
+# Session endpoint.
 
 
 class TestSessionEndpoint:
@@ -165,7 +159,7 @@ class TestSessionEndpoint:
         )
         headers = _auth_header(uid, did, pem)
 
-        # Set scopes directly in the DB
+        # Set scopes directly in the DB.
         from sqlalchemy import update
 
         from h4ckath0n.auth.models import User
@@ -186,9 +180,7 @@ class TestSessionEndpoint:
         assert r.status_code == 401
 
 
-# ---------------------------------------------------------------------------
-# 2. TestJobsEndpoint
-# ---------------------------------------------------------------------------
+# Jobs endpoint.
 
 
 class TestJobsEndpoint:
@@ -262,7 +254,7 @@ class TestJobsEndpoint:
         assert body["kind"] == "demo.echo"
 
     def test_get_job_access_denied(self, client: TestClient):
-        # User A creates a job
+        # User A creates the job.
         uid_a, did_a, pem_a = _register_user_with_device(
             client, "jobs5a@example.com", "P@ssw0rd"
         )
@@ -275,7 +267,7 @@ class TestJobsEndpoint:
         )
         job_id = cr.json()["id"]
 
-        # User B tries to access it
+        # User B attempts access.
         uid_b, did_b, pem_b = _register_user_with_device(
             client, "jobs5b@example.com", "P@ssw0rd"
         )
@@ -307,9 +299,7 @@ class TestJobsEndpoint:
         assert result == {"echo": {"ping": "pong"}}
 
 
-# ---------------------------------------------------------------------------
-# 3. TestUploadsEndpoint
-# ---------------------------------------------------------------------------
+# Uploads endpoint.
 
 
 class TestUploadsEndpoint:
@@ -374,7 +364,7 @@ class TestUploadsEndpoint:
         assert r.content == content
 
     def test_upload_ownership(self, client: TestClient):
-        # User A uploads
+        # User A uploads the file.
         uid_a, did_a, pem_a = _register_user_with_device(
             client, "up4a@example.com", "P@ssw0rd"
         )
@@ -387,7 +377,7 @@ class TestUploadsEndpoint:
         )
         upload_id = up.json()["id"]
 
-        # User B tries to download
+        # User B attempts download.
         uid_b, did_b, pem_b = _register_user_with_device(
             client, "up4b@example.com", "P@ssw0rd"
         )
@@ -414,9 +404,7 @@ class TestUploadsEndpoint:
         assert body["extraction_job_id"].startswith("j")
 
 
-# ---------------------------------------------------------------------------
-# 4. TestEmailIntegration
-# ---------------------------------------------------------------------------
+# Email integration.
 
 
 class TestEmailIntegration:
@@ -435,7 +423,6 @@ class TestEmailIntegration:
         eml_files = [f for f in os.listdir(outbox) if f.endswith(".eml")]
         assert len(eml_files) >= 1
 
-        # Verify the email content contains the reset link
         with open(os.path.join(outbox, eml_files[0]), encoding="utf-8") as f:
             content = f.read()
         assert "reset@example.com" in content
@@ -450,15 +437,13 @@ class TestEmailIntegration:
         assert "reset link was sent" in r.json()["message"].lower()
 
         outbox = settings.email_outbox_dir
-        # Outbox may not even be created, or should have no files
+        # Outbox may be absent or empty.
         if os.path.isdir(outbox):
             eml_files = [f for f in os.listdir(outbox) if f.endswith(".eml")]
             assert len(eml_files) == 0
 
 
-# ---------------------------------------------------------------------------
-# 5. TestLLMStreaming
-# ---------------------------------------------------------------------------
+# LLM streaming.
 
 
 class TestLLMStreaming:
@@ -500,9 +485,7 @@ class TestLLMStreaming:
         assert "api key" in r.json()["detail"].lower()
 
 
-# ---------------------------------------------------------------------------
-# 6. Security invariants
-# ---------------------------------------------------------------------------
+# Security invariants.
 
 
 class TestSecurityInvariants:
@@ -528,8 +511,7 @@ class TestSecurityInvariants:
         )
         assert r.status_code == 201
         body = r.json()
-        # The original filename is preserved in metadata but must not appear in
-        # the on-disk storage key (which is only in the DB, not in the API response).
+        # Preserve original name in metadata, not the storage key.
         assert body["original_filename"] == "evil/../../../etc/passwd"
         assert body["sha256"]
 
@@ -573,7 +555,7 @@ class TestSecurityInvariants:
         assert os.path.isdir(outbox)
         eml_files = [f for f in os.listdir(outbox) if f.endswith(".eml")]
         assert len(eml_files) >= 1
-        # Filename must NOT contain the email address or parts of it
+        # Filename must not contain email parts.
         for fname in eml_files:
             assert "outbox" not in fname
             assert "example" not in fname

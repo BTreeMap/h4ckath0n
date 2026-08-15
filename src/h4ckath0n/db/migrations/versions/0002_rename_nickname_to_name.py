@@ -14,7 +14,7 @@ Safe, additive migration:
 import sqlalchemy as sa
 from alembic import op
 
-# revision identifiers
+# Revision identifiers.
 revision = "0002"
 down_revision = "0001"
 branch_labels = None

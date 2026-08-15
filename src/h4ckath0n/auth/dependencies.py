@@ -57,7 +57,7 @@ async def _get_current_user(
 ) -> User:
     db: AsyncSession = await _get_async_db_from_request(request)
     try:
-        # ⚡ Bolt: Use primary key lookup to hit the session identity map.
+        # Use primary-key lookup for the session identity map.
         if (user := await db.get(User, ctx.user_id)) is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"

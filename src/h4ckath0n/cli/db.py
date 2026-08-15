@@ -78,7 +78,7 @@ def _cmd_db_migrate_upgrade(args: argparse.Namespace) -> int:
     revision = getattr(args, "to", "head")
     try:
         if revision == "head":
-            # Using our high-level helper which handles fresh install nicely
+            # Helper handles fresh installs.
             run_upgrade_to_head(url)
         else:
             with packaged_migrations_dir() as migrations_path:

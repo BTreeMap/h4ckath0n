@@ -48,9 +48,7 @@ from h4ckath0n.config import Settings
 _ALLOWED_BASE32 = set("abcdefghijklmnopqrstuvwxyz234567")
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+# Fixtures.
 
 
 @pytest.fixture()
@@ -85,9 +83,7 @@ async def db_session(app):
         yield session
 
 
-# ---------------------------------------------------------------------------
-# ID generator tests
-# ---------------------------------------------------------------------------
+# ID generators.
 
 
 class TestIdGenerators:
@@ -102,7 +98,6 @@ class TestIdGenerators:
     def test_user_id_charset(self):
         uid = new_user_id()
         assert all(c in _ALLOWED_BASE32 | {"u"} for c in uid)
-        # chars after first must be base32
         assert all(c in _ALLOWED_BASE32 for c in uid[1:])
 
     def test_key_id_length(self):
@@ -121,8 +116,8 @@ class TestIdGenerators:
         uid = new_user_id()
         assert is_user_id(uid)
         assert not is_user_id("x" + uid[1:])
-        assert not is_user_id(uid[:31])  # too short
-        assert not is_user_id(uid + "a")  # too long
+        assert not is_user_id(uid[:31])
+        assert not is_user_id(uid + "a")
 
     def test_is_key_id(self):
         kid = new_key_id()
@@ -140,12 +135,10 @@ class TestIdGenerators:
 
     def test_uniqueness(self):
         ids = {new_user_id() for _ in range(100)}
-        assert len(ids) == 100  # all unique
+        assert len(ids) == 100
 
 
-# ---------------------------------------------------------------------------
-# Flow state tests (challenge lifecycle)
-# ---------------------------------------------------------------------------
+# Flow state and challenge lifecycle.
 
 
 class TestFlowState:
@@ -188,13 +181,12 @@ class TestFlowState:
         flow = result.scalars().first()
         assert flow is not None
         assert flow.kind == "authenticate"
-        assert flow.user_id is None  # username-less
+        assert flow.user_id is None
 
     async def test_expired_flow_rejected(self, db_session: AsyncSession, settings):
         from h4ckath0n.auth.passkeys.service import _get_valid_flow
 
         flow_id, _ = await start_registration(db_session, settings)
-        # Manually expire the flow
         result = await db_session.execute(
             select(WebAuthnChallenge).filter_by(id=flow_id)
         )
@@ -230,7 +222,6 @@ class TestFlowState:
 
     async def test_cleanup_expired_challenges(self, db_session: AsyncSession, settings):
         flow_id, _ = await start_registration(db_session, settings)
-        # Expire it
         result = await db_session.execute(
             select(WebAuthnChallenge).filter_by(id=flow_id)
         )
@@ -248,9 +239,7 @@ class TestFlowState:
         assert remaining is None
 
 
-# ---------------------------------------------------------------------------
-# Display-name persistence and validation (passkey registration)
-# ---------------------------------------------------------------------------
+# Display-name persistence and validation.
 
 
 class TestDisplayName:
@@ -281,7 +270,7 @@ class TestDisplayName:
         self, db_session: AsyncSession, settings
     ):
         _flow_id, options = await start_registration(db_session, settings)
-        # When no display_name, should fall back to the user ID
+        # Falls back to user ID when display_name is absent.
         assert is_user_id(options["user"]["displayName"])
 
     def test_register_start_route_rejects_empty_display_name(self, client: TestClient):
@@ -313,14 +302,12 @@ class TestDisplayName:
             "/auth/passkey/register/start", json={"display_name": "  Trimmed  "}
         )
         assert r.status_code == 200
-        # The user options should reflect the trimmed name
+        # Options use the trimmed name.
         options = r.json()["options"]
         assert options["user"]["displayName"] == "Trimmed"
 
 
-# ---------------------------------------------------------------------------
-# Last-passkey invariant
-# ---------------------------------------------------------------------------
+# Last-passkey invariant.
 
 
 class TestLastPasskeyInvariant:
@@ -356,14 +343,13 @@ class TestLastPasskeyInvariant:
     async def test_revoke_one_of_two_allowed(self, db_session: AsyncSession):
         user, creds = await self._create_user_with_passkeys(db_session, count=2)
         await revoke_passkey(db_session, user, creds[0].id)
-        # Credential should now be revoked
         await db_session.refresh(creds[0])
         assert creds[0].revoked_at is not None
 
     async def test_revoke_down_to_one_then_blocked(self, db_session: AsyncSession):
         user, creds = await self._create_user_with_passkeys(db_session, count=2)
         await revoke_passkey(db_session, user, creds[0].id)
-        # Now only one active – should block
+        # One active passkey remains, so revocation must fail.
         with pytest.raises(LastPasskeyError):
             await revoke_passkey(db_session, user, creds[1].id)
 
@@ -391,9 +377,7 @@ class TestLastPasskeyInvariant:
         assert all(is_key_id(c.id) for c in listed)
 
 
-# ---------------------------------------------------------------------------
-# Route wiring tests
-# ---------------------------------------------------------------------------
+# Route wiring.
 
 
 class TestPasskeyRoutes:
@@ -460,9 +444,7 @@ class TestPasskeyRoutes:
         assert user.display_name == "Alice"
 
 
-# ---------------------------------------------------------------------------
-# Revoke route tests (via HTTP, using DB-seeded credentials)
-# ---------------------------------------------------------------------------
+# Revoke routes with DB-seeded credentials.
 
 
 class TestPasskeyRevokeRoute:
@@ -494,7 +476,6 @@ class TestPasskeyRevokeRoute:
             await db_session.refresh(c)
         await db_session.refresh(user)
 
-        # Create a device keypair and register it
         private_key = ec.generate_private_key(ec.SECP256R1())
         private_pem = private_key.private_bytes(
             Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
@@ -555,9 +536,7 @@ class TestPasskeyRevokeRoute:
         assert len(body["passkeys"]) == 3
 
 
-# ---------------------------------------------------------------------------
-# WebAuthn config tests
-# ---------------------------------------------------------------------------
+# WebAuthn configuration.
 
 
 class TestWebAuthnConfig:
@@ -592,9 +571,7 @@ class TestWebAuthnConfig:
         assert s.effective_rp_id() == "example.com"
 
 
-# ---------------------------------------------------------------------------
-# Password auth disabled by default
-# ---------------------------------------------------------------------------
+# Password auth disabled by default.
 
 
 class TestPasswordAuthDisabled:
@@ -603,7 +580,6 @@ class TestPasswordAuthDisabled:
             "/auth/register",
             json={"email": "test@example.com", "password": "P@ss1"},
         )
-        # Should return 404 or 405 since password routes are not mounted
         assert r.status_code in (404, 405)
 
     def test_password_login_not_mounted_by_default(self, client: TestClient):
@@ -621,9 +597,7 @@ class TestPasswordAuthDisabled:
         assert r.status_code in (404, 405)
 
 
-# ---------------------------------------------------------------------------
-# Passkey name / rename tests (service layer)
-# ---------------------------------------------------------------------------
+# Passkey rename service.
 
 
 class TestPasskeyRename:
@@ -663,9 +637,7 @@ class TestPasskeyRename:
 
     async def test_rename_empty_stores_null(self, db_session: AsyncSession):
         user, creds = await self._create_user_with_passkeys(db_session)
-        # First set a name
         await rename_passkey(db_session, user, creds[0].id, "Name")
-        # Clear it
         cred = await rename_passkey(db_session, user, creds[0].id, "")
         assert cred.name is None
 
@@ -703,7 +675,7 @@ class TestPasskeyRename:
 
     async def test_name_field_in_model(self, db_session: AsyncSession):
         user, creds = await self._create_user_with_passkeys(db_session)
-        assert creds[0].name is None  # default
+        assert creds[0].name is None
 
     async def test_list_includes_name(self, db_session: AsyncSession):
         user, creds = await self._create_user_with_passkeys(db_session)
@@ -712,9 +684,7 @@ class TestPasskeyRename:
         assert listed[0].name == "My Key"
 
 
-# ---------------------------------------------------------------------------
-# Passkey rename route tests (via HTTP)
-# ---------------------------------------------------------------------------
+# Passkey rename routes.
 
 
 class TestPasskeyRenameRoute:
@@ -784,13 +754,11 @@ class TestPasskeyRenameRoute:
         user, creds, token = await self._setup_user_with_device_token(
             client, db_session, settings
         )
-        # Set name first
         client.patch(
             f"/auth/passkeys/{creds[0].id}",
             json={"name": "Temp"},
             headers={"Authorization": f"Bearer {token}"},
         )
-        # Clear it
         r = client.patch(
             f"/auth/passkeys/{creds[0].id}",
             json={"name": ""},
@@ -825,7 +793,6 @@ class TestPasskeyRenameRoute:
         user, creds, token = await self._setup_user_with_device_token(
             client, db_session, settings, n_creds=2
         )
-        # Revoke first
         client.post(
             f"/auth/passkeys/{creds[0].id}/revoke",
             headers={"Authorization": f"Bearer {token}"},
@@ -850,7 +817,6 @@ class TestPasskeyRenameRoute:
         user, creds, token = await self._setup_user_with_device_token(
             client, db_session, settings
         )
-        # Set a name
         client.patch(
             f"/auth/passkeys/{creds[0].id}",
             json={"name": "Work Key"},

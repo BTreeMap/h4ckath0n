@@ -34,7 +34,7 @@ def decode_device_token(
         public_key,
         algorithms=["ES256"],
         options={"verify_aud": False},
-        leeway=timedelta(seconds=30),  # allow some clock skew
+        leeway=timedelta(seconds=30),  # Allow clock skew.
     )
     return JWTClaims(**payload)
 

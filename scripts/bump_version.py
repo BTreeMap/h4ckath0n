@@ -129,8 +129,7 @@ def replace_uv_lock_editable_package_version(
 ) -> Change | None:
     before = read_text(path)
 
-    # Find the [[package]] block for name="h4ckath0n" with source editable="."
-    # and replace only its version line.
+    # Find the editable package block and replace its version line.
     pkg_re = re.compile(
         r"(\[\[package\]\]\s*\n"
         r'name\s*=\s*"h4ckath0n"\s*\n'
@@ -183,7 +182,7 @@ def update_package_lock_version(path: Path, old: str, new: str) -> Change | None
 
 def update_template_dependency_floor(path: Path, old: str, new: str) -> Change | None:
     before = read_text(path)
-    # Replace only the dependency string h4ckath0n>=X.Y.Z inside quotes.
+    # Replace the quoted dependency floor.
     after = re.sub(
         rf'("h4ckath0n>=){re.escape(old)}(")',
         rf"\g<1>{new}\2",

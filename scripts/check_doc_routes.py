@@ -18,7 +18,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 README = REPO_ROOT / "README.md"
 
-# FastAPI internal paths that we do not require in user docs.
+# FastAPI paths omitted from user docs.
 FRAMEWORK_PATHS = frozenset(
     {"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
 )
@@ -37,7 +37,7 @@ def get_app_routes() -> list[tuple[str, str]]:
 
     routes: list[tuple[str, str]] = []
     for route in app.routes:
-        # Only check API routes (not Mount, WebSocket, etc.).
+        # Skip non-HTTP routes.
         if not hasattr(route, "methods") or not hasattr(route, "path"):
             continue
         path: str = route.path  # type: ignore[union-attr]
@@ -62,8 +62,7 @@ def check_routes_in_readme(
     readme_text = README.read_text()
     missing: list[tuple[str, str]] = []
     for method, path in routes:
-        # Build a pattern like "GET /health" or "PATCH /auth/passkeys/\{key_id\}"
-        # that must appear as a recognisable method+path token in the README.
+        # Match exact method/path tokens in README.
         path_re = re.escape(path)
         combined = rf"`{method}\s+{path_re}`"
         if not re.search(combined, readme_text, re.IGNORECASE):

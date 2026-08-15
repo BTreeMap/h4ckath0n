@@ -37,10 +37,7 @@ def healthz() -> HealthzResponse:
     return HealthzResponse(status="ok")
 
 
-# ---------------------------------------------------------------------------
-# Demo endpoints – prove that user-defined routes appear in the OpenAPI spec
-# and can be consumed by the generated TypeScript client.
-# ---------------------------------------------------------------------------
+# Demo endpoints used by the generated TypeScript client.
 
 
 class PingResponse(BaseModel):
@@ -78,9 +75,7 @@ def demo_echo(body: EchoRequest) -> EchoResponse:
     return EchoResponse(message=body.message, reversed=body.message[::-1])
 
 
-# ---------------------------------------------------------------------------
-# Demo: Authenticated WebSocket  (/demo/ws)
-# ---------------------------------------------------------------------------
+# Authenticated WebSocket demo.
 
 
 @app.websocket("/demo/ws")
@@ -92,14 +87,13 @@ async def demo_websocket(websocket: WebSocket) -> None:
     try:
         ctx = await authenticate_websocket(websocket)
     except AuthError:
-        # Must accept before we can send a proper close frame with code 1008
+        # Accept before sending close frame 1008.
         await websocket.accept()
         await websocket.close(code=1008, reason="auth_failed")
         return
 
     await websocket.accept()
 
-    # Send welcome
     now = datetime.now(UTC).isoformat()
     await websocket.send_json(
         {
@@ -110,7 +104,6 @@ async def demo_websocket(websocket: WebSocket) -> None:
         }
     )
 
-    # Heartbeat task
     async def heartbeat() -> None:
         n = 0
         try:
@@ -154,9 +147,7 @@ async def demo_websocket(websocket: WebSocket) -> None:
             await hb_task
 
 
-# ---------------------------------------------------------------------------
-# Demo: Authenticated SSE  (GET /demo/sse)
-# ---------------------------------------------------------------------------
+# Authenticated SSE demo.
 
 
 class SSEChunk(BaseModel):

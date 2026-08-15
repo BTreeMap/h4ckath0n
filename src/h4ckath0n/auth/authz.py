@@ -11,14 +11,13 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Literal, NewType
 
-# A user's privilege tier.  Stored as a short string in the database.
+# Privilege tier stored as a short DB string.
 Role = Literal["user", "admin"]
 
 USER: Role = "user"
 ADMIN: Role = "admin"
 
-# A single authorization scope (e.g. ``"admin"``, ``"demo"``).  Scopes are
-# persisted as a comma-separated string for backwards compatibility.
+# Scopes stored comma-separated for compatibility.
 Scope = NewType("Scope", str)
 
 

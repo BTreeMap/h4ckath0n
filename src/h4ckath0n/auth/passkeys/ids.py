@@ -22,9 +22,7 @@ from typing import NewType, TypeGuard
 
 from h4ckath0n.rng import random_base32, random_bytes
 
-# Branded ID types.  Each is a distinct subtype of ``str`` so the type
-# checker can flag accidental mixing of, say, a user ID where a device ID
-# is expected.  Values are still plain strings at runtime.
+# Branded ``str`` types prevent mixing ID kinds; runtime values remain strings.
 UserId = NewType("UserId", str)
 KeyId = NewType("KeyId", str)
 DeviceId = NewType("DeviceId", str)
@@ -42,7 +40,7 @@ __all__ = [
     "is_user_id",
     "is_key_id",
     "is_device_id",
-    # Re-export primitives for callers that imported them from here historically.
+    # Preserve historical imports.
     "random_bytes",
     "random_base32",
 ]

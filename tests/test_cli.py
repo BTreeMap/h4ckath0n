@@ -17,9 +17,7 @@ from h4ckath0n.cli import (
 )
 from tests.conftest import run_cli as _run_cli
 
-# ---------------------------------------------------------------------------
-# Packaged migrations tests
-# ---------------------------------------------------------------------------
+# Packaged migrations.
 
 
 class TestPackagedMigrations:
@@ -40,7 +38,6 @@ class TestPackagedMigrations:
     def test_versions_contain_migration_files(self):
         migrations = importlib.resources.files("h4ckath0n.db.migrations")
         versions = migrations / "versions"
-        # Check that at least one migration .py file exists (excluding __init__.py)
         migration_files = [
             f.name
             for f in versions.iterdir()
@@ -55,9 +52,7 @@ class TestPackagedMigrations:
         assert hasattr(script_template, "is_file") and script_template.is_file()
 
 
-# ---------------------------------------------------------------------------
-# URL normalization
-# ---------------------------------------------------------------------------
+# URL normalization.
 
 
 class TestNormalizeDbUrl:
@@ -134,9 +129,7 @@ class TestAlembicUrlNormalization:
         assert make_url(captured["sqlalchemy.url"]) == make_url("sqlite:///./test.db")
 
 
-# ---------------------------------------------------------------------------
-# Scopes normalization
-# ---------------------------------------------------------------------------
+# Scope normalization.
 
 
 class TestNormalizeScopes:
@@ -156,9 +149,7 @@ class TestNormalizeScopes:
         assert _normalize_scopes("") == ""
 
 
-# ---------------------------------------------------------------------------
-# CLI integration (using subprocess to avoid sys.exit leaking)
-# ---------------------------------------------------------------------------
+# CLI integration.
 
 
 class TestCLIHelp:
@@ -187,7 +178,6 @@ class TestCLIDbInitRemoved:
         """Test that db init is removed and returns error."""
         db_url = f"sqlite:///{tmp_path}/init_removed.db"
         result = _run_cli("db", "init", "--db", db_url, "--yes")
-        # Should be an invalid choice exit code (usually 2 for argparse)
         assert result.returncode != 0
 
 
@@ -207,7 +197,6 @@ class TestCLIDbMigrate:
     def test_stamp_removed(self, tmp_path):
         db_url = f"sqlite:///{tmp_path}/stamp_test.db"
         result = _run_cli("db", "migrate", "stamp", "--to", "0001", "--db", db_url)
-        # Should be an invalid command or argument now
         assert result.returncode != 0
 
     def test_current(self, tmp_path):

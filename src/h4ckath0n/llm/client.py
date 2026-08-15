@@ -10,7 +10,7 @@ from openai import AsyncOpenAI, DefaultAioHttpClient, OpenAI
 
 from h4ckath0n.llm.types import ChatResponse
 
-# Default concurrency limit for outbound LLM calls.
+# Default outbound LLM concurrency.
 _DEFAULT_CONCURRENCY = 10
 
 

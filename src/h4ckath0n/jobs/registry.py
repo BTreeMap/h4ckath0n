@@ -8,7 +8,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Type for job handlers - receives payload dict, returns result dict
+# Job handler type: payload in, result out.
 JobHandler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
 
 _registry: dict[str, JobHandler] = {}

@@ -45,7 +45,7 @@ def upgrade() -> None:
         sa.Column("sign_count", sa.Integer, nullable=False, server_default="0"),
         sa.Column("aaguid", sa.String(36), nullable=True),
         sa.Column("transports", sa.Text, nullable=True),
-        sa.Column("nickname", sa.String(255), nullable=True),  # Original name
+        sa.Column("nickname", sa.String(255), nullable=True),  # Legacy name
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

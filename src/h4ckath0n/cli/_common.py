@@ -21,9 +21,7 @@ from h4ckath0n.db.migrations.runtime import (
     normalize_db_url_for_sync,
 )
 
-# ---------------------------------------------------------------------------
 # Exit codes
-# ---------------------------------------------------------------------------
 EXIT_OK = 0
 EXIT_NOT_FOUND = 1
 EXIT_BAD_ARGS = 2
@@ -32,11 +30,7 @@ EXIT_MIGRATIONS_MISSING = 4
 EXIT_PROD_INIT = 5
 
 
-# ---------------------------------------------------------------------------
 # Output helpers
-# ---------------------------------------------------------------------------
-
-
 def _iso(dt: datetime | None) -> str | None:
     if dt is None:
         return None
@@ -66,11 +60,7 @@ def _require_yes(args: argparse.Namespace) -> bool:
     return True
 
 
-# ---------------------------------------------------------------------------
 # Model serializers (no secrets)
-# ---------------------------------------------------------------------------
-
-
 def _user_dict(user: Any) -> dict[str, Any]:
     """Serialize a User model to a safe dict (no secrets)."""
     return {
@@ -110,11 +100,7 @@ def _passkey_dict(cred: Any) -> dict[str, Any]:
     }
 
 
-# ---------------------------------------------------------------------------
 # Database helpers
-# ---------------------------------------------------------------------------
-
-
 def _normalize_db_url_for_sync(url: str) -> str:
     """Backwards-compatible wrapper for tests and callers."""
     return normalize_db_url_for_sync(url)

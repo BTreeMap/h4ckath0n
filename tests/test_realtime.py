@@ -106,7 +106,7 @@ async def app(settings):
 
 @pytest.fixture()
 async def db_session(app):
-    # Need to trigger lifespan first via TestClient context
+    # Start lifespan before using app state.
     async with app.state.async_session_factory() as session:
         yield session
 
@@ -129,9 +129,7 @@ async def _seed_user_and_device(db_session: AsyncSession) -> tuple[str, str, byt
     return uid, did, private_pem
 
 
-# ---------------------------------------------------------------------------
-# verify_device_jwt
-# ---------------------------------------------------------------------------
+# verify_device_jwt.
 
 
 class TestVerifyDeviceJwt:
@@ -193,9 +191,7 @@ class TestVerifyDeviceJwt:
             await verify_device_jwt(token, expected_aud=AUD_SSE, db=db_session)
 
 
-# ---------------------------------------------------------------------------
-# HTTP endpoint with aud enforcement
-# ---------------------------------------------------------------------------
+# HTTP audience enforcement.
 
 
 class TestHttpAudEnforcement:
@@ -226,9 +222,7 @@ class TestHttpAudEnforcement:
             assert r.status_code == 401
 
 
-# ---------------------------------------------------------------------------
-# Stable device identity
-# ---------------------------------------------------------------------------
+# Stable device identity.
 
 
 class TestStableDeviceIdentity:
@@ -272,9 +266,7 @@ class TestStableDeviceIdentity:
         assert await register_device(db_session, uid, None) == ""
 
 
-# ---------------------------------------------------------------------------
-# Revoked device
-# ---------------------------------------------------------------------------
+# Revoked device.
 
 
 class TestRevokedDevice:

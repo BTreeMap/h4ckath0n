@@ -49,11 +49,6 @@ __all__ = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Challenge helpers
-# ---------------------------------------------------------------------------
-
-
 def _new_flow_id() -> str:
     # 32 bytes → 256-bit unguessable URL-safe ID stored in the DB per flow.
     return _rng_urlsafe(32)
@@ -68,7 +63,7 @@ async def _get_valid_flow(
     db: AsyncSession, flow_id: str, kind: ChallengeKind
 ) -> WebAuthnChallenge:
     """Fetch and validate an unconsumed, non-expired flow."""
-    # ⚡ Bolt: Use db.get() for primary key lookup
+    # Use db.get() for primary key lookup.
     if (flow := await db.get(WebAuthnChallenge, flow_id)) is None:
         raise ValueError("Unknown flow")
     if flow.kind != kind:
@@ -86,11 +81,6 @@ async def _get_valid_flow(
 async def _consume_flow(db: AsyncSession, flow: WebAuthnChallenge) -> None:
     flow.consumed_at = datetime.now(UTC)
     await db.flush()
-
-
-# ---------------------------------------------------------------------------
-# Registration (unauthenticated - creates a new account)
-# ---------------------------------------------------------------------------
 
 
 async def start_registration(
@@ -165,15 +155,10 @@ async def finish_registration(
     db.add(cred)
     await db.commit()
 
-    # ⚡ Bolt: Use db.get() for primary key lookup
+    # Use db.get() for primary key lookup.
     if (user := await db.get(User, flow.user_id)) is None:
         raise ValueError("User not found")
     return user
-
-
-# ---------------------------------------------------------------------------
-# Authentication (unauthenticated - username-less)
-# ---------------------------------------------------------------------------
 
 
 async def start_authentication(
@@ -241,15 +226,10 @@ async def finish_authentication(
     stored.last_used_at = datetime.now(UTC)
     await db.commit()
 
-    # ⚡ Bolt: Use db.get() for primary key lookup
+    # Use db.get() for primary key lookup.
     if (user := await db.get(User, stored.user_id)) is None:
         raise ValueError("User not found")
     return user
-
-
-# ---------------------------------------------------------------------------
-# Add credential (authenticated)
-# ---------------------------------------------------------------------------
 
 
 async def start_add_credential(
@@ -261,7 +241,7 @@ async def start_add_credential(
     rp_id = settings.effective_rp_id()
     origin = settings.effective_origin()
 
-    # Build excludeCredentials from user's existing active credentials
+    # Exclude the user's active credentials.
     result = await db.execute(
         select(WebAuthnCredential).filter(
             WebAuthnCredential.user_id == user.id,
@@ -341,11 +321,6 @@ async def finish_add_credential(
     return cred
 
 
-# ---------------------------------------------------------------------------
-# List & Revoke
-# ---------------------------------------------------------------------------
-
-
 async def list_passkeys(db: AsyncSession, user: User) -> list[WebAuthnCredential]:
     """List all credentials (active and revoked) for a user."""
     result = await db.execute(
@@ -394,7 +369,7 @@ async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
       That acts as a mutex for passkey mutations per user.
     """
     try:
-        # Per-user mutex. In SQLite, FOR UPDATE is ignored (acceptable for dev/tests).
+        # Lock the user row as a per-user mutation mutex.
         await db.execute(select(User.id).filter(User.id == user.id).with_for_update())
 
         if (cred := await db.get(WebAuthnCredential, key_id)) is None:
@@ -404,7 +379,7 @@ async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
         if cred.revoked_at is not None:
             raise PasskeyAlreadyRevokedError
 
-        # Count active passkeys without FOR UPDATE (mutex is the User row lock above).
+        # Count active passkeys; the user-row lock serializes mutations.
         active_count = await db.scalar(
             select(func.count())
             .select_from(WebAuthnCredential)
@@ -419,14 +394,9 @@ async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
         cred.revoked_at = datetime.now(UTC)
         await db.commit()
     except Exception:
-        # Ensure any open transaction is rolled back so row locks are released promptly.
+        # Roll back so row locks are released promptly.
         await db.rollback()
         raise
-
-
-# ---------------------------------------------------------------------------
-# Cleanup
-# ---------------------------------------------------------------------------
 
 
 async def cleanup_expired_challenges(db: AsyncSession) -> int:

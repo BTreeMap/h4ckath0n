@@ -11,10 +11,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from h4ckath0n.auth.passkeys.ids import random_base32
 from h4ckath0n.db.base import Base
 
-# A background job moves monotonically through these lifecycle states.
+# Job status moves forward through lifecycle states.
 JobStatus = Literal["queued", "running", "succeeded", "failed"]
 
-# Branded job identifier (32 chars, starts with ``j``).
+# Branded job ID: 32 chars, starts with ``j``.
 JobId = NewType("JobId", str)
 
 

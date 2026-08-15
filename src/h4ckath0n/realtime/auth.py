@@ -21,14 +21,9 @@ from starlette.requests import Request
 from h4ckath0n.auth.jwt import decode_device_token, get_unverified_kid
 from h4ckath0n.auth.models import Device, User
 
-# ── Audience constants ────────────────────────────────────────────────────
-
 AUD_HTTP = "h4ckath0n:http"
 AUD_WS = "h4ckath0n:ws"
 AUD_SSE = "h4ckath0n:sse"
-
-
-# ── AuthContext (returned on success) ─────────────────────────────────────
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,9 +32,6 @@ class AuthContext:
 
     user_id: str
     device_id: str
-
-
-# ── Core verifier ─────────────────────────────────────────────────────────
 
 
 class AuthError(Exception):
@@ -103,21 +95,17 @@ async def verify_device_jwt(
     except jwt.InvalidTokenError:
         raise AuthError("Invalid token") from None
 
-    # ── aud enforcement ───────────────────────────────────────────────
+    # Enforce audience binding.
     if not claims.aud:
         raise AuthError("Missing aud claim")
     if claims.aud != expected_aud:
         raise AuthError(f"Invalid aud: expected {expected_aud}")
 
-    # ── user lookup ───────────────────────────────────────────────────
     user = await db.get(User, claims.sub)
     if user is None:
         raise AuthError("User not found")
 
     return AuthContext(user_id=user.id, device_id=device.id)
-
-
-# ── Transport helpers ─────────────────────────────────────────────────────
 
 
 async def authenticate_http_request(request: Request) -> AuthContext:

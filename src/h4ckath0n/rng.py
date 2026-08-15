@@ -55,10 +55,6 @@ from typing import TypeVar
 
 from cryptography.hazmat.primitives import hashes
 
-# ---------------------------------------------------------------------------
-# Engine internals
-# ---------------------------------------------------------------------------
-
 # Domain separation tag — never reuse this string for another purpose.
 _DOMAIN = b"h4ckath0n:idgen:v1\x00"
 
@@ -69,8 +65,7 @@ _U64_MASK = (1 << 64) - 1
 
 
 def _u64le(x: int) -> bytes:
-    # threading.get_ident() and os.getpid() are non-negative in practice.
-    # Mask defensively to avoid OverflowError for unusually large platform values.
+    # Mask platform values to avoid OverflowError.
     return (x & _U64_MASK).to_bytes(8, "little", signed=False)
 
 
@@ -81,11 +76,11 @@ class _ShakeXOFReader:
         alg = hashes.SHAKE128(digest_size=sys.maxsize)
         xof = hashes.XOFHash(alg)
 
-        # Bind stream to: domain || master_key || tid || os.urandom(16)
+        # Bind stream to domain, master key, thread ID, and fresh OS randomness.
         xof.update(_DOMAIN)
         xof.update(_MASTER_KEY)
         xof.update(_u64le(tid))
-        xof.update(os.urandom(16))  # Extra per-reader OS randomness.
+        xof.update(os.urandom(16))  # Per-reader OS randomness.
 
         self._xof = xof
 
@@ -96,7 +91,7 @@ class _ShakeXOFReader:
 
 
 class _TLS(threading.local):
-    # Typed thread-local slots for mypy (avoids Any from getattr on threading.local).
+    # Typed slots avoid Any from getattr.
     reader: _ShakeXOFReader | None
     pid: int | None
 
@@ -109,8 +104,7 @@ _tls = _TLS()
 
 
 def _clear_tls_after_fork_child() -> None:
-    # After fork the child inherits the parent's XOF state.  Clearing forces a
-    # rebuild and ensures the child's stream diverges immediately.
+    # Clear inherited XOF state so the child rebuilds a divergent stream.
     with contextlib.suppress(Exception):
         _tls.reader = None
         _tls.pid = None
@@ -153,10 +147,6 @@ def _thread_reader() -> _ShakeXOFReader:
         _tls.pid = os.getpid()
     return reader
 
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
 
 T = TypeVar("T")
 

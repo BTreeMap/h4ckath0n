@@ -73,8 +73,7 @@ async def register_user(
     return user
 
 
-# A valid Argon2id hash verified when no password hash is available. This keeps
-# unknown-user login work comparable to verification of a registered user.
+# Dummy Argon2id hash keeps unknown-user verification timing comparable.
 _DUMMY_PASSWORD_HASH = (
     "$argon2id$v=19$m=65536,t=3,p=4$sBe/4XHTiis/Rnh3OmC6MQ"
     "$Ey/bmXGmJQaFatFlEr3d1x8tJEnD2/aghBD9j4nrNmQ"
@@ -126,7 +125,7 @@ async def register_device(
         return ""
     fp = _jwk_fingerprint(public_key_jwk)
 
-    # ⚡ Bolt: Fetch only the ID to avoid instantiating the full Device ORM object.
+    # Fetch only ID; avoid instantiating the Device ORM object.
     if existing_id := await db.scalar(
         select(Device.id).filter(Device.fingerprint == fp)
     ):
@@ -150,12 +149,12 @@ async def create_password_reset_token(
     expire_minutes: int = 30,
 ) -> str | None:
     """Create a password reset token. Returns raw token or None if email unknown."""
-    # ⚡ Bolt: Fetch only the ID to avoid instantiating the full User ORM object.
+    # Fetch only ID; avoid instantiating the User ORM object.
     if (
         user_id := await db.scalar(select(User.id).filter(User.email == email))
     ) is None:
         return None
-    # 32 bytes → 256-bit unguessable token; hashed before storage.
+    # 32-byte unguessable token; hash before storage.
     raw = _rng_urlsafe(32)
     prt = PasswordResetToken(
         user_id=user_id,
@@ -184,7 +183,7 @@ async def confirm_password_reset(
     if prt.expires_at.replace(tzinfo=UTC) < datetime.now(UTC):
         raise ValueError("Reset token expired")
     prt.used = True
-    # ⚡ Bolt: Use db.get() for primary key lookup
+    # Use db.get() for primary key lookup.
     if (user := await db.get(User, prt.user_id)) is None:
         raise ValueError("User not found")
     user.password_hash = hash_password(new_password)

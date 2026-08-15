@@ -13,8 +13,6 @@ from h4ckath0n.auth.schemas import (
     normalize_display_name,
 )
 
-# -- Registration --
-
 
 class PasskeyRegisterStartRequest(BaseModel):
     display_name: str = Field(
@@ -45,9 +43,6 @@ class PasskeyRegisterFinishRequest(DeviceBindingMixin):
     )
 
 
-# -- Authentication --
-
-
 class PasskeyLoginStartResponse(BaseModel):
     flow_id: str = Field(..., description="Server-generated flow ID for login.")
     options: dict[str, Any] = Field(
@@ -64,9 +59,6 @@ class PasskeyLoginFinishRequest(DeviceBindingMixin):
     )
 
 
-# -- Add credential (authenticated) --
-
-
 class PasskeyAddStartResponse(BaseModel):
     flow_id: str = Field(..., description="Server-generated flow ID for add passkey.")
     options: dict[str, Any] = Field(
@@ -81,9 +73,6 @@ class PasskeyAddFinishRequest(DeviceBindingMixin):
         ...,
         description="Browser PublicKeyCredential response as JSON.",
     )
-
-
-# -- List / revoke --
 
 
 class PasskeyInfo(BaseModel):

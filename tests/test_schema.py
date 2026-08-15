@@ -8,13 +8,11 @@ from tests.conftest import run_cli
 class TestSchemaPrefix:
     def test_tables_have_prefix(self, tmp_path):
         db_url = f"sqlite:///{tmp_path}/prefix_test.db"
-        # Run migration to create tables
         result = run_cli(
             "db", "migrate", "upgrade", "--to", "head", "--db", db_url, "--yes"
         )
         assert result.returncode == 0
 
-        # Check tables using sqlite3
         import sqlite3
 
         conn = sqlite3.connect(f"{tmp_path}/prefix_test.db")

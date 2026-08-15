@@ -58,7 +58,6 @@ def _create_device_keypair() -> tuple[bytes, dict]:
         Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
     )
     public_key = private_key.public_key()
-    # Export as JWK via PyJWT helper
     jwk_dict = json.loads(ECAlgorithm(ECAlgorithm.SHA256).to_jwk(public_key))
     return private_pem, jwk_dict
 
@@ -120,9 +119,7 @@ def _register_user_with_device(
     return body["user_id"], body["device_id"], private_pem
 
 
-# ---------------------------------------------------------------------------
-# Password hashing
-# ---------------------------------------------------------------------------
+# Password hashing.
 
 
 class TestPasswordHashing:
@@ -132,9 +129,7 @@ class TestPasswordHashing:
         assert not verify_password("wrong", h)
 
 
-# ---------------------------------------------------------------------------
-# Display-name persistence (password registration)
-# ---------------------------------------------------------------------------
+# Display-name persistence.
 
 
 class TestDisplayNamePassword:
@@ -263,9 +258,7 @@ class TestDisplayNamePassword:
         assert r.status_code == 422
 
 
-# ---------------------------------------------------------------------------
-# Signup / Login happy path (password, device-binding)
-# ---------------------------------------------------------------------------
+# Password signup and login with device binding.
 
 
 class TestSignupLogin:
@@ -287,7 +280,6 @@ class TestSignupLogin:
         assert "device_id" in body
         assert body["role"] == "user"
         assert body["display_name"] == "Alice"
-        # No access/refresh tokens
         assert "access_token" not in body
         assert "refresh_token" not in body
 
@@ -381,9 +373,7 @@ class TestSignupLogin:
         assert hashes == [_DUMMY_PASSWORD_HASH]
 
 
-# ---------------------------------------------------------------------------
-# Device-signed JWT protects endpoint
-# ---------------------------------------------------------------------------
+# Device-signed JWT protection.
 
 
 class TestProtectedEndpoint:
@@ -413,9 +403,7 @@ class TestProtectedEndpoint:
         assert r.json()["email"] == "eve@example.com"
 
 
-# ---------------------------------------------------------------------------
-# Admin role gate
-# ---------------------------------------------------------------------------
+# Admin role gate.
 
 
 class TestAdminGate:
@@ -445,7 +433,7 @@ class TestAdminGate:
         user_id, device_id, private_pem = _register_user_with_device(
             client, db_session, "grace@example.com", "strongP@ss1"
         )
-        # Promote to admin directly in DB
+        # Set role directly in the DB.
         result = await db_session.execute(
             select(User).filter(User.email == "grace@example.com")
         )
@@ -458,9 +446,7 @@ class TestAdminGate:
         assert r.status_code == 200
 
 
-# ---------------------------------------------------------------------------
-# Scope gate (from DB, not JWT)
-# ---------------------------------------------------------------------------
+# Scope gate from DB, not JWT.
 
 
 class TestScopeGate:
@@ -504,9 +490,7 @@ class TestScopeGate:
         assert r.status_code == 200
 
 
-# ---------------------------------------------------------------------------
-# No refresh/logout routes
-# ---------------------------------------------------------------------------
+# No refresh or logout routes.
 
 
 class TestNoRefreshRoutes:
@@ -519,14 +503,12 @@ class TestNoRefreshRoutes:
         assert r.status_code in (404, 405)
 
 
-# ---------------------------------------------------------------------------
-# Password reset – time-limited & single-use (now binds device)
-# ---------------------------------------------------------------------------
+# Password reset: time-limited, single-use, device-bound.
 
 
 class TestPasswordReset:
     def test_request_always_200(self, client: TestClient):
-        # Even for unknown email – prevents enumeration.
+        # Return 200 for unknown email to prevent enumeration.
         r = client.post(
             "/auth/password-reset/request",
             json={"email": "nobody@example.com"},
@@ -544,7 +526,6 @@ class TestPasswordReset:
                 "device_public_key_jwk": public_jwk,
             },
         )
-        # Request reset
         client.post(
             "/auth/password-reset/request",
             json={"email": "luna@example.com"},
@@ -555,7 +536,6 @@ class TestPasswordReset:
         assert raw is not None
 
         new_pem, new_jwk = _create_device_keypair()
-        # Confirm reset – also binds a new device
         r = client.post(
             "/auth/password-reset/confirm",
             json={
@@ -569,14 +549,12 @@ class TestPasswordReset:
         assert "user_id" in body
         assert "device_id" in body
 
-        # Old password should no longer work
         r2 = client.post(
             "/auth/login",
             json={"email": "luna@example.com", "password": "oldP@ss1"},
         )
         assert r2.status_code == 401
 
-        # New password should work
         r3 = client.post(
             "/auth/login",
             json={"email": "luna@example.com", "password": "newP@ss1"},
@@ -599,14 +577,12 @@ class TestPasswordReset:
         raw = await create_password_reset_token(db_session, "mike@example.com")
         assert raw is not None
 
-        # Use once
         r = client.post(
             "/auth/password-reset/confirm",
             json={"token": raw, "new_password": "newP@ss1"},
         )
         assert r.status_code == 200
 
-        # Second use should fail
         r2 = client.post(
             "/auth/password-reset/confirm",
             json={"token": raw, "new_password": "anotherP@ss"},
@@ -632,7 +608,6 @@ class TestPasswordReset:
             db_session, "nancy@example.com", expire_minutes=30
         )
         assert raw is not None
-        # Manually expire the token
         result = await db_session.execute(
             select(PasswordResetToken).filter(
                 PasswordResetToken.token_hash == _hash_token(raw)
@@ -649,9 +624,7 @@ class TestPasswordReset:
         assert r.status_code == 400
 
 
-# ---------------------------------------------------------------------------
-# Bootstrap admin
-# ---------------------------------------------------------------------------
+# Bootstrap admin.
 
 
 class TestBootstrapAdmin:
@@ -675,7 +648,6 @@ class TestBootstrapAdmin:
                 },
             )
             assert reg.status_code == 201
-            # Verify role in DB
             async with app.state.async_session_factory() as session:
                 result = await session.execute(
                     select(User).filter(User.email == "first@example.com")
@@ -725,9 +697,7 @@ class TestBootstrapAdmin:
                 assert boss.role == "admin"
 
 
-# ---------------------------------------------------------------------------
-# Observability – trace id header & redaction
-# ---------------------------------------------------------------------------
+# Observability: trace ID and redaction.
 
 
 class TestObservability:
@@ -767,15 +737,12 @@ class TestObservability:
         assert "[REDACTED]" in cleaned
 
 
-# ---------------------------------------------------------------------------
-# LLM module – graceful error when not configured
-# ---------------------------------------------------------------------------
+# LLM without configuration.
 
 
 class TestLLMClient:
     def test_no_api_key_raises(self):
         with patch.dict("os.environ", {}, clear=True):
-            # Ensure keys are cleared
             import os
 
             os.environ.pop("OPENAI_API_KEY", None)
@@ -786,9 +753,7 @@ class TestLLMClient:
                 llm()
 
 
-# ---------------------------------------------------------------------------
-# Device-signed JWT verification
-# ---------------------------------------------------------------------------
+# Device-signed JWT verification.
 
 
 class TestDeviceJWTVerification:

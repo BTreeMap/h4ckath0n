@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Sequence
 
-# Header names that must never appear in traces.
+# Headers excluded from traces.
 _SENSITIVE_HEADERS = frozenset(
     {
         "authorization",
@@ -15,7 +15,7 @@ _SENSITIVE_HEADERS = frozenset(
     }
 )
 
-# Patterns matched in values.
+# Patterns redacted in values.
 _SECRET_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+"),  # JWT-like
     re.compile(r"sk-[A-Za-z0-9]{20,}"),  # OpenAI-style API key

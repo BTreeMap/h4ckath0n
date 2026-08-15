@@ -35,7 +35,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     if settings is None:
         settings = Settings()
 
-    # --- database (async) ---
     async_engine = create_async_engine_from_settings(settings)
 
     # Import models so they register with Base.metadata before create_all.
@@ -89,16 +88,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Store on app.state for dependency access.
     app.state.settings = settings
     app.state.async_engine = async_engine
     app.state.async_session_factory = async_session_factory
 
-    # Single shared LLM client (reuses HTTP pool + concurrency limiter).
-    # Built lazily on first use so a missing API key only fails LLM routes.
+    # Lazy LLM client; missing key only fails LLM routes.
     app.state.llm_client = None
 
-    # --- routers ---
     _register_routers(app, settings)
     _register_default_routes(app)
 

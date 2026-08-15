@@ -38,7 +38,7 @@ class CSPMiddleware(BaseHTTPMiddleware):
                 "form-action 'self'"
             )
         else:
-            # Development: allow Vite dev server
+            # Allow Vite dev server in development.
             csp = (
                 "default-src 'self' http://localhost:*; "
                 "script-src 'self' http://localhost:*; "

@@ -63,7 +63,7 @@ def _cmd_seed_demo(args: argparse.Namespace) -> int:
                 email="user@demo.local",
             )
 
-            # Set passwords if password auth enabled
+            # Set passwords when enabled.
             if settings.password_auth_enabled:
                 try:
                     from h4ckath0n.auth.passwords import hash_password

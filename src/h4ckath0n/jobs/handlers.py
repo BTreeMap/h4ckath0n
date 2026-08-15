@@ -49,7 +49,7 @@ async def extract_text(payload: dict[str, Any]) -> dict[str, Any]:
         return {"error": "File not found", "text": ""}
     try:
         with open(file_path, encoding="utf-8", errors="replace") as f:
-            text = f.read(50_000)  # limit extraction to 50KB
+            text = f.read(50_000)  # Cap extraction at 50 KB.
         return {"text": text, "length": len(text)}
     except Exception as exc:
         return {"error": str(exc), "text": ""}

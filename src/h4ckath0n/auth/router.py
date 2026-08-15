@@ -35,11 +35,6 @@ async def _db_dep(request: Request) -> AsyncGenerator[AsyncSession, None]:
         yield db
 
 
-# ---------------------------------------------------------------------------
-# Password-based routes (optional extra)
-# ---------------------------------------------------------------------------
-
-
 def _password_router() -> APIRouter:
     """Build the password auth sub-router. Only called when password extra is enabled."""
     pw = APIRouter(tags=["password-auth"])

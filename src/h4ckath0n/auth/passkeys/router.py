@@ -32,19 +32,9 @@ from h4ckath0n.auth.service import register_device
 router = APIRouter(prefix="/auth/passkey", tags=["passkey"])
 
 
-# ---------------------------------------------------------------------------
-# DB dependency (async)
-# ---------------------------------------------------------------------------
-
-
 async def _db_dep(request: Request) -> AsyncGenerator[AsyncSession, None]:
     async with request.app.state.async_session_factory() as db:
         yield db
-
-
-# ---------------------------------------------------------------------------
-# Registration  (unauthenticated)
-# ---------------------------------------------------------------------------
 
 
 @router.post(
@@ -115,11 +105,6 @@ async def register_finish(
     )
 
 
-# ---------------------------------------------------------------------------
-# Authentication  (unauthenticated, username-less)
-# ---------------------------------------------------------------------------
-
-
 @router.post(
     "/login/start",
     response_model=schemas.PasskeyLoginStartResponse,
@@ -174,11 +159,6 @@ async def login_finish(
         role=user.role,
         display_name=user.display_name,
     )
-
-
-# ---------------------------------------------------------------------------
-# Add credential  (authenticated)
-# ---------------------------------------------------------------------------
 
 
 @router.post(
@@ -247,10 +227,6 @@ async def add_finish(
         display_name=user.display_name,
     )
 
-
-# ---------------------------------------------------------------------------
-# List / Revoke  (authenticated, mounted at /auth/passkeys)
-# ---------------------------------------------------------------------------
 
 passkeys_router = APIRouter(prefix="/auth/passkeys", tags=["passkey"])
 

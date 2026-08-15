@@ -102,7 +102,7 @@ async def get_job(
     user: User = require_user(),
     db: AsyncSession = Depends(_db_dep),
 ) -> JobResponse:
-    # ⚡ Bolt: Use db.get() for primary key lookup
+    # Use db.get() for primary key lookup.
     job = await db.get(Job, job_id)
     if job is None:
         raise HTTPException(

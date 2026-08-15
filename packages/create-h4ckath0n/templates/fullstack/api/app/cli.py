@@ -41,7 +41,6 @@ def _cmd_dev() -> None:
 
     processes = []
     try:
-        # Start API server
         api_proc = subprocess.Popen(
             [
                 sys.executable,
@@ -56,7 +55,6 @@ def _cmd_dev() -> None:
         )
         processes.append(api_proc)
 
-        # Start web dev server
         npm_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
         frontend_proc = subprocess.Popen(
             [npm_cmd, "run", "dev"],
@@ -64,7 +62,6 @@ def _cmd_dev() -> None:
         )
         processes.append(frontend_proc)
 
-        # Wait for any process to exit
         for proc in processes:
             proc.wait()
     except KeyboardInterrupt:
@@ -80,19 +77,18 @@ def _cmd_dev() -> None:
 
 def _find_project_root() -> str:
     """Find the project root by looking for api/ and web/ directories."""
-    # Start from the current working directory
+    # Check the current directory first.
     cwd = os.getcwd()
     if os.path.isdir(os.path.join(cwd, "api")) and os.path.isdir(
         os.path.join(cwd, "web")
     ):
         return cwd
-    # Try parent of api/
+    # Then check its parent.
     parent = os.path.dirname(cwd)
     if os.path.isdir(os.path.join(parent, "api")) and os.path.isdir(
         os.path.join(parent, "web")
     ):
         return parent
-    # Default to cwd
     return cwd
 
 

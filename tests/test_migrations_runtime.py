@@ -69,7 +69,7 @@ class TestMigrationStatusDetection:
 
             Base.metadata.create_all(engine)
             status = get_schema_status(db_url)
-            # Legacy/corrupt state (tables exist, no version table) now returns fresh
+            # Legacy state without a version table is fresh.
             assert status.state == "fresh"
             assert status.warning is None
         finally:
@@ -85,7 +85,6 @@ class TestAutoUpgradeStartup:
             with patch("h4ckath0n.app.get_schema_status") as mock_status:
                 mock_status.return_value.warning = None
                 with patch("h4ckath0n.app.Base.metadata.create_all"):
-                    # Trigger lifespan startup/shutdown.
                     from fastapi.testclient import TestClient
 
                     with TestClient(app):

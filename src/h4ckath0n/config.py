@@ -23,42 +23,33 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # --- environment ---
     env: str = "development"
 
-    # --- database ---
     database_url: str = "sqlite:///./h4ckath0n.db"
     auto_upgrade: bool = False
 
-    # --- WebAuthn / Passkeys ---
     rp_id: str = ""
     origin: str = ""
     webauthn_ttl_seconds: int = 300
     user_verification: UserVerification = "preferred"
     attestation: AttestationConveyance = "none"
 
-    # --- password auth (optional extra) ---
     password_auth_enabled: bool = False
     password_reset_expire_minutes: int = 30
 
-    # --- admin bootstrap ---
     bootstrap_admin_emails: list[str] = []
     first_user_is_admin: bool = False
 
-    # --- LLM ---
     openai_api_key: str = ""
 
-    # --- Redis ---
     redis_url: str = ""
     jobs_inline_in_dev: bool = True
     jobs_default_queue: str = "default"
 
-    # --- Storage ---
     storage_backend: StorageBackend = "local"
     storage_dir: str = "./.h4ckath0n_storage"
     max_upload_bytes: int = 50 * 1024 * 1024  # 50 MB
 
-    # --- Email ---
     app_base_url: str = "http://localhost:5173"
     email_backend: EmailBackend = "file"  # "file" or "smtp"
     email_from: str = "noreply@localhost"
@@ -70,7 +61,6 @@ class Settings(BaseSettings):
     smtp_starttls: bool = True
     smtp_ssl: bool = False
 
-    # --- Demo ---
     demo_mode: bool = False
 
     def effective_rp_id(self) -> str:

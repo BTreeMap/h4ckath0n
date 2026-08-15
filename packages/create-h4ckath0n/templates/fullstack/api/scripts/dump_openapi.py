@@ -28,10 +28,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Ensure password auth routes are included in the generated schema.
+    # Include password auth routes in the generated schema.
     os.environ.setdefault("H4CKATH0N_PASSWORD_AUTH_ENABLED", "true")
 
-    # Import the app to extract its OpenAPI schema
     from app.main import app  # noqa: E402
 
     schema = app.openapi()

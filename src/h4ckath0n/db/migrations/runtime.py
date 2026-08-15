@@ -14,7 +14,7 @@ from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from sqlalchemy.engine import Engine, create_engine, make_url
 
-# Must match env.py
+# Keep in sync with env.py.
 VERSION_TABLE = "h4ckath0n_alembic_version"
 
 
@@ -57,7 +57,7 @@ def normalize_db_url_for_sync(url: str) -> str:
     normalized = parsed.set(drivername=normalized_driver, query=query)
     return normalized.render_as_string(
         hide_password=False
-    )  # Alembic needs the password for stamp/upgrades when no env var is used
+    )  # Migration tools need password when no env var is set.
 
 
 def create_sync_engine(url: str) -> Engine:
@@ -97,7 +97,7 @@ def get_schema_status(db_url: str) -> SchemaStatus:
     engine = create_sync_engine(sync_url)
     try:
         with engine.connect() as conn:
-            # Check for version table
+            # Read migration version.
             migration_ctx = MigrationContext.configure(
                 conn, opts={"version_table": VERSION_TABLE}
             )
@@ -115,9 +115,7 @@ def get_schema_status(db_url: str) -> SchemaStatus:
         )
 
     if not current_revisions:
-        # We assume fresh if no version table exists.
-        # If tables exist but no version table, Alembic will fail on upgrade anyway,
-        # which is the desired "breaking change" behavior (no implicit stamping).
+        # No version table means fresh; unversioned tables fail on upgrade.
         return SchemaStatus(
             state="fresh",
             current_revisions=current_revisions,
@@ -140,11 +138,9 @@ def get_schema_status(db_url: str) -> SchemaStatus:
 def run_upgrade_to_head_sync(db_url: str) -> SchemaStatus:
     """Upgrade schema to head using packaged migrations."""
     sync_url = normalize_db_url_for_sync(db_url)
-    # We no longer check for stamp_required or try to fix legacy DBs.
-
     with packaged_migrations_dir() as migrations_dir:
         cfg = _alembic_config(sync_url, migrations_dir)
-        # Always run upgrade. If tables exist and conflict, Alembic raises error.
+        # Existing conflicting tables make Alembic raise an error.
         alembic_command.upgrade(cfg, "head")
 
     return get_schema_status(sync_url)

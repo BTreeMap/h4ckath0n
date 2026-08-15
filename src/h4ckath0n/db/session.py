@@ -35,5 +35,5 @@ def get_async_db_dependency(
     return _get_async_db
 
 
-# Convenience alias – populated at app startup by create_app.
+# Populated at app startup.
 get_db = get_db_dependency

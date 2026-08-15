@@ -59,7 +59,7 @@ __all__ = [
     "_normalize_scopes",
 ]
 
-# Backwards-compatible alias (the parser builder was previously private).
+# Preserve historical parser alias.
 _build_parser = build_parser
 
 

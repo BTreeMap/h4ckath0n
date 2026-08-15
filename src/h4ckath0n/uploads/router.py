@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 uploads_router = APIRouter(prefix="/uploads", tags=["uploads"])
 
-# Content types eligible for text extraction
+# Content types eligible for extraction.
 _TEXT_TYPES = {
     "text/plain",
     "text/markdown",
@@ -84,7 +84,7 @@ async def upload_file(
     await db.commit()
     await db.refresh(upload)
 
-    # Auto-enqueue text extraction for text-like files
+    # Queue extraction for text-like files.
     if content_type in _TEXT_TYPES:
         try:
             import h4ckath0n.jobs.handlers  # noqa: F401 – ensure handlers registered
@@ -106,8 +106,7 @@ async def upload_file(
             await db.commit()
             await db.refresh(upload)
         except Exception:
-            # Text extraction is best-effort; the upload itself already
-            # succeeded. Log so failures are diagnosable rather than silent.
+            # Extraction failure must not fail the upload; log it.
             logger.exception(
                 "Failed to enqueue text extraction for upload %s", upload.id
             )
@@ -144,7 +143,7 @@ async def get_upload(
     user: User = require_user(),
     db: AsyncSession = Depends(_db_dep),
 ) -> UploadResponse:
-    # ⚡ Bolt: Use db.get() for primary key lookup
+    # Use db.get() for primary key lookup.
     upload = await db.get(Upload, upload_id)
     if upload is None:
         raise HTTPException(
@@ -168,7 +167,7 @@ async def download_upload(
     user: User = require_user(),
     db: AsyncSession = Depends(_db_dep),
 ) -> FileResponse:
-    # ⚡ Bolt: Use db.get() for primary key lookup
+    # Use db.get() for primary key lookup.
     upload = await db.get(Upload, upload_id)
     if upload is None:
         raise HTTPException(

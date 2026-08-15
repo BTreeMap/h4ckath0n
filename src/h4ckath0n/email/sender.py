@@ -71,9 +71,8 @@ async def _send_file(
     """Write email to a file in the outbox directory."""
     os.makedirs(outbox_dir, exist_ok=True)
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
-    # Use an opaque random suffix – never include user-controlled values
-    # in the filename to avoid path-injection risks.
-    nonce = _rng_nonce()  # 8 bytes; collision-avoidance only, not a secret.
+    # Use random suffix; never include user-controlled values in filenames.
+    nonce = _rng_nonce()  # 8 bytes; collision avoidance, not secrecy.
     filename = f"{timestamp}_{nonce}.eml"
     filepath = os.path.join(outbox_dir, filename)
 
