@@ -117,6 +117,7 @@ from h4ckath0n.auth import require_user
 
 app = create_app()
 
+
 @app.get("/me")
 def me(user=require_user()):
     return {"id": user.id, "role": user.role}
@@ -127,6 +128,7 @@ Admin only endpoint:
 ```python
 from h4ckath0n.auth import require_admin
 
+
 @app.get("/admin/dashboard")
 def admin_dashboard(user=require_admin()):
     return {"ok": True}
@@ -136,6 +138,7 @@ Scoped permissions:
 
 ```python
 from h4ckath0n.auth import require_scopes
+
 
 @app.post("/billing/refund")
 def refund(user=require_scopes("billing:refund")):

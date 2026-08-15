@@ -32,6 +32,7 @@ from h4ckath0n.auth import require_admin
 
 app = FastAPI()
 
+
 @app.get("/admin")
 def admin_only(user=require_admin()):
     return {"id": user.id, "role": user.role}
