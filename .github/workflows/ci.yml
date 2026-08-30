@@ -47,7 +47,7 @@ jobs:
         run: uv run --locked pytest -v
 
       - name: Check doc routes
-        run: uv run --locked scripts/check_doc_routes.py
+        run: uv run --locked scripts/generate_doc_routes.py
 
       - name: Check documented environments
         run: uv run --locked scripts/check_doc_env.py
