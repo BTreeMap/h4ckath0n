@@ -13,7 +13,6 @@ import {
 import { Alert } from "../components/Alert";
 import { publicFetch } from "../auth/api";
 import type { components } from "../api/openapi";
-import { Loader2 } from "lucide-react";
 
 type PasswordResetRequestBody =
   components["schemas"]["PasswordResetRequestSchema"];
@@ -100,12 +99,10 @@ export function ForgotPassword() {
               <Button
                 type="submit"
                 disabled={isLoading || !email.trim()}
+                isLoading={isLoading}
                 className="w-full"
                 data-testid="forgot-submit"
               >
-                {isLoading && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
                 Send Reset Link
               </Button>
             </form>
