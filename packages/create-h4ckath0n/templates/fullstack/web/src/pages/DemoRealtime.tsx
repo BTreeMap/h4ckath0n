@@ -134,6 +134,7 @@ function WebSocketPanel() {
             type="text"
             value={wsInput}
             onChange={(e) => setWsInput(e.target.value)}
+            aria-label="WebSocket message"
             onKeyDown={(e) => {
               if (e.key === "Enter") send();
             }}
