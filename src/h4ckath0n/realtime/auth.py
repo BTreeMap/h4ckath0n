@@ -101,6 +101,11 @@ async def verify_device_jwt(
     if claims.aud != expected_aud:
         raise AuthError(f"Invalid aud: expected {expected_aud}")
 
+    # The token signature proves possession of the device key, but we must
+    # also verify the device actually belongs to the claimed subject.
+    if claims.sub != device.user_id:
+        raise AuthError("Subject mismatch")
+
     user = await db.get(User, claims.sub)
     if user is None:
         raise AuthError("User not found")
