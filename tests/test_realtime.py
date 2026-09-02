@@ -176,6 +176,16 @@ class TestVerifyDeviceJwt:
         with pytest.raises(AuthError, match="Unknown device"):
             await verify_device_jwt(token, expected_aud=AUD_HTTP, db=db_session)
 
+    async def test_device_not_bound_to_user_rejected(self, db_session: AsyncSession):
+        from h4ckath0n.auth.passkeys.ids import new_user_id
+        attacker_uid, attacker_did, attacker_pem = await _seed_user_and_device(db_session)
+        victim_uid = new_user_id()
+        db_session.add(User(id=victim_uid, role="user"))
+        await db_session.commit()
+        token = _make_token(victim_uid, attacker_did, attacker_pem, aud=AUD_HTTP)
+        with pytest.raises(AuthError, match="Device not bound to user"):
+            await verify_device_jwt(token, expected_aud=AUD_HTTP, db=db_session)
+
     async def test_http_aud_rejected_for_ws(self, db_session: AsyncSession):
         """HTTP token must not work for WebSocket."""
         uid, did, pem = await _seed_user_and_device(db_session)
