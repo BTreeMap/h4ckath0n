@@ -178,7 +178,10 @@ class TestVerifyDeviceJwt:
 
     async def test_device_not_bound_to_user_rejected(self, db_session: AsyncSession):
         from h4ckath0n.auth.passkeys.ids import new_user_id
-        attacker_uid, attacker_did, attacker_pem = await _seed_user_and_device(db_session)
+
+        attacker_uid, attacker_did, attacker_pem = await _seed_user_and_device(
+            db_session
+        )
         victim_uid = new_user_id()
         db_session.add(User(id=victim_uid, role="user"))
         await db_session.commit()
