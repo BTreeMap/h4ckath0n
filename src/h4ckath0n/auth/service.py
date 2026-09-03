@@ -11,7 +11,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from h4ckath0n.auth.models import Device, PasswordResetToken, User
@@ -40,11 +40,11 @@ async def _is_bootstrap_admin(email: str, settings: Settings, db: AsyncSession) 
     """Decide whether a newly-registered user should be admin."""
     if email in settings.bootstrap_admin_emails:
         return True
-    if settings.first_user_is_admin:
-        # Optimization: Use limit(1) instead of count() to quickly check if any user exists.
-        if (await db.scalar(select(User.id).limit(1))) is None:
-            return True
-    return False
+    # Optimization: Use limit(1) instead of count() to quickly check if any user exists.
+    return bool(
+        settings.first_user_is_admin
+        and (await db.scalar(select(User.id).limit(1))) is None
+    )
 
 
 async def register_user(
@@ -56,7 +56,7 @@ async def register_user(
     display_name: str | None = None,
 ) -> User:
     hash_password, _verify = _require_password_extra()
-    # Optimization: Use db.scalar with User.id for existence check to avoid ExecutionResult allocation and ORM parsing.
+    # Optimization: Use db.scalar for existence check to avoid ORM parsing.
     if await db.scalar(select(User.id).filter(User.email == email)):
         raise ValueError("Email already registered")
     role = "admin" if await _is_bootstrap_admin(email, settings, db) else "user"
