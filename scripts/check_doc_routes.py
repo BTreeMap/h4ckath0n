@@ -40,7 +40,7 @@ def get_app_routes() -> list[tuple[str, str]]:
     for path, methods in paths.items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in methods.keys():
+        for method in methods:
             routes.append((method.upper(), path))
     return sorted(routes)
 
