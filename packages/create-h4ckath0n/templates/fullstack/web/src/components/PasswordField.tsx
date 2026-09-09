@@ -68,7 +68,16 @@ const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
 
     return (
       <div className="space-y-2">
-        {label && <Label htmlFor={inputId}>{label}</Label>}
+        {label && (
+          <Label htmlFor={inputId}>
+            {label}
+            {props.required && (
+              <span className="text-danger ml-1" aria-hidden="true">
+                *
+              </span>
+            )}
+          </Label>
+        )}
         <div className="relative">
           <input
             id={inputId}
