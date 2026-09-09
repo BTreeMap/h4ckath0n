@@ -30,6 +30,7 @@ dependencies = [
     "cryptography>=46.0.5",
     "asyncpg>=0.31.0",
     "aiosqlite>=0.22.1",
+    "playwright>=1.62.0",
 ]
 
 [project.optional-dependencies]
