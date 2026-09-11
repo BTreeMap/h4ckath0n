@@ -28,3 +28,6 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+## 2024-10-25 - SQLAlchemy Scalar vs Execute Overhead
+**Learning:** In SQLAlchemy async operations, using `(await db.execute(select(...))).scalars().first()` causes unnecessary intermediate `ExecutionResult` allocations and parsing overhead. When checking for existence, returning the full object is even worse.
+**Action:** Always prefer `await db.scalar(select(...))` or `session.scalar(select(...))` over `execute().scalars().first()`. For existence checks, use `scalar()` combined with `.limit(1)` and select only the ID column (e.g. `select(User.id)`) to avoid aggregate operations and full table scans.
