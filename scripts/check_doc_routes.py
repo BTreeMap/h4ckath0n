@@ -36,17 +36,14 @@ def get_app_routes() -> list[tuple[str, str]]:
     app = create_app(settings)
 
     routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Skip non-HTTP routes.
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+    openapi = app.openapi()
+    for path, methods in openapi.get("paths", {}).items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
+        for method in methods:
+            if method.upper() == "HEAD":
                 continue
-            routes.append((method, path))
+            routes.append((method.upper(), path))
     return sorted(routes)
 
 
@@ -60,6 +57,17 @@ def check_routes_in_readme(
     ``/auth/passkeys/{key_id}/revoke`` are not false positives.
     """
     readme_text = README.read_text()
+
+    if "<!-- BEGIN ROUTES -->" in readme_text and "<!-- END ROUTES -->" in readme_text:
+        routes_md = "\n".join(f"- `{method} {path}`" for method, path in routes)
+        readme_text = re.sub(
+            r"<!-- BEGIN ROUTES -->.*?<!-- END ROUTES -->",
+            f"<!-- BEGIN ROUTES -->\n{routes_md}\n<!-- END ROUTES -->",
+            readme_text,
+            flags=re.DOTALL,
+        )
+        README.write_text(readme_text)
+
     missing: list[tuple[str, str]] = []
     for method, path in routes:
         # Match exact method/path tokens in README.
