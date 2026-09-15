@@ -9,3 +9,7 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+
+## 2024-09-09 - FastAPI Nested Routes Obfuscation
+**Learning:** FastAPI 0.115+ obfuscates nested endpoints inside `_IncludedRouter` when iterating `app.routes` directly, causing documentation drift checks to silently skip most routes and provide a false sense of security.
+**Action:** Always use `app.openapi().get('paths', {})` for route enumeration to reliably retrieve all endpoints for documentation validation.
