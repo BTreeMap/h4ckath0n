@@ -54,7 +54,9 @@ def generate_routes_markdown() -> str:
     # Identify any tags not in TAG_ORDER
     unknown_tags = set(routes_by_tag.keys()) - set(TAG_ORDER)
     if unknown_tags:
-        raise ValueError(f"Unknown tags found in OpenAPI schema: {unknown_tags}. Please add them to TAG_ORDER.")
+        raise ValueError(
+            f"Unknown tags found in OpenAPI schema: {unknown_tags}. Please add them to TAG_ORDER."
+        )
 
     lines = []
     for tag in TAG_ORDER:
