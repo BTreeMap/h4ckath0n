@@ -96,6 +96,7 @@ export function ForgotPassword() {
                 autoComplete="email"
                 autoCapitalize="none"
                 autoFocus
+                required
               />
               <Button
                 type="submit"
