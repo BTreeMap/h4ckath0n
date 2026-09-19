@@ -52,15 +52,16 @@ def _cmd_passkeys_revoke(args: argparse.Namespace) -> int:
             _err("passkey already revoked")
             return EXIT_BAD_ARGS
 
+        # ⚡ Bolt: Use scalar() directly to avoid execution result parsing overhead
         active_count = (
-            session.execute(
+            session.scalar(
                 select(func.count())
                 .select_from(WebAuthnCredential)
                 .where(
                     WebAuthnCredential.user_id == cred.user_id,
                     WebAuthnCredential.revoked_at.is_(None),
                 )
-            ).scalar()
+            )
             or 0
         )
 
