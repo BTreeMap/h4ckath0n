@@ -27,14 +27,11 @@ import type { components } from "../api/openapi";
 // Types derived from the generated OpenAPI schema
 // ---------------------------------------------------------------------------
 
-/** Backend auth response shape (passkey finish / add finish). */
-type PasskeyFinishResponse = components["schemas"]["PasskeyFinishResponse"];
-
-/** Backend auth response shape (password register / login / reset). */
+/** Backend auth response shape (password register / login / reset, passkey finish / add finish). */
 type DeviceBindingResponse = components["schemas"]["DeviceBindingResponse"];
 
 /** Union of all auth response shapes the frontend needs to handle. */
-type AuthResponse = PasskeyFinishResponse | DeviceBindingResponse;
+type AuthResponse = DeviceBindingResponse;
 
 /** Passkey register start response. */
 type PasskeyRegisterStartResponse =
@@ -206,7 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )) as PublicKeyCredential | null;
     if (!credential) throw new Error("Login cancelled");
 
-    const finishRes = await publicFetch<PasskeyFinishResponse>(
+      const finishRes = await publicFetch<DeviceBindingResponse>(
       "/auth/passkey/login/finish",
       {
         method: "POST",
@@ -274,7 +271,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )) as PublicKeyCredential | null;
     if (!credential) throw new Error("Credential creation cancelled");
 
-    const finishRes = await publicFetch<PasskeyFinishResponse>(
+      const finishRes = await publicFetch<DeviceBindingResponse>(
       "/auth/passkey/register/finish",
       {
         method: "POST",
