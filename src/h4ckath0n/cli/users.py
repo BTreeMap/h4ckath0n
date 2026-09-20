@@ -50,27 +50,26 @@ def _cmd_users_show(args: argparse.Namespace) -> int:
             return err
         assert user is not None
 
-        devices_total = session.execute(
-            select(func.count()).select_from(Device).where(Device.user_id == user.id)
-        ).scalar()
-        devices_active = session.execute(
-            select(func.count())
-            .select_from(Device)
-            .where(Device.user_id == user.id, Device.revoked_at.is_(None))
-        ).scalar()
-        passkeys_total = session.execute(
-            select(func.count())
-            .select_from(WebAuthnCredential)
-            .where(WebAuthnCredential.user_id == user.id)
-        ).scalar()
-        passkeys_active = session.execute(
-            select(func.count())
-            .select_from(WebAuthnCredential)
-            .where(
+        # ⚡ Bolt: Use count on ID columns instead of full rows to minimize parsing
+        devices_total = session.scalar(
+            select(func.count(Device.id)).where(Device.user_id == user.id)
+        )
+        devices_active = session.scalar(
+            select(func.count(Device.id)).where(
+                Device.user_id == user.id, Device.revoked_at.is_(None)
+            )
+        )
+        passkeys_total = session.scalar(
+            select(func.count(WebAuthnCredential.id)).where(
+                WebAuthnCredential.user_id == user.id
+            )
+        )
+        passkeys_active = session.scalar(
+            select(func.count(WebAuthnCredential.id)).where(
                 WebAuthnCredential.user_id == user.id,
                 WebAuthnCredential.revoked_at.is_(None),
             )
-        ).scalar()
+        )
 
         data = _user_dict(user)
         data["devices_total"] = devices_total or 0

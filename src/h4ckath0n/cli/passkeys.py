@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from h4ckath0n.auth.models import WebAuthnCredential
 from h4ckath0n.cli._common import (
@@ -52,19 +52,17 @@ def _cmd_passkeys_revoke(args: argparse.Namespace) -> int:
             _err("passkey already revoked")
             return EXIT_BAD_ARGS
 
-        active_count = (
-            session.execute(
-                select(func.count())
-                .select_from(WebAuthnCredential)
-                .where(
-                    WebAuthnCredential.user_id == cred.user_id,
-                    WebAuthnCredential.revoked_at.is_(None),
-                )
-            ).scalar()
-            or 0
+        # ⚡ Bolt: Avoid func.count() by fetching up to 2 active keys
+        active_keys = session.scalars(
+            select(WebAuthnCredential.id)
+            .where(
+                WebAuthnCredential.user_id == cred.user_id,
+                WebAuthnCredential.revoked_at.is_(None),
+            )
+            .limit(2)
         )
 
-        if active_count <= 1:
+        if len(active_keys.all()) <= 1:
             _err("refusing to revoke the last active passkey")
             return EXIT_LAST_PASSKEY
 
