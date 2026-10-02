@@ -95,6 +95,9 @@ async def verify_device_jwt(
     except jwt.InvalidTokenError:
         raise AuthError("Invalid token") from None
 
+    if claims.sub != device.user_id:
+        raise AuthError("User ID mismatch")
+
     # Enforce audience binding.
     if not claims.aud:
         raise AuthError("Missing aud claim")
