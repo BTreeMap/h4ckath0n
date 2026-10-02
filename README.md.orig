@@ -199,17 +199,6 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 In development, missing `RP_ID` and `ORIGIN` fall back to localhost defaults with
 warnings. In production, missing values raise a runtime error when passkey flows start.
 
-## Operator CLI
-
-The `h4ckath0n` CLI provides administrative operations. Run `h4ckath0n <command> --help` for usage.
-
-- **Database:** `h4ckath0n db ping`, `h4ckath0n db migrate current`, `h4ckath0n db migrate downgrade`, `h4ckath0n db migrate heads`, `h4ckath0n db migrate upgrade`
-- **Users:** `h4ckath0n users disable`, `h4ckath0n users enable`, `h4ckath0n users list`, `h4ckath0n users scopes add`, `h4ckath0n users scopes remove`, `h4ckath0n users scopes set`, `h4ckath0n users set-role`, `h4ckath0n users show`
-- **Devices:** `h4ckath0n devices list`, `h4ckath0n devices revoke`
-- **Passkeys:** `h4ckath0n passkeys list`, `h4ckath0n passkeys revoke`
-- **Jobs:** `h4ckath0n jobs worker`
-- **Seed:** `h4ckath0n seed demo`
-
 ## Postgres readiness and migrations
 
 Set a Postgres database URL to run against Postgres:

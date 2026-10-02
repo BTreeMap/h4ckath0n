@@ -52,6 +52,9 @@ jobs:
       - name: Check documented environments
         run: uv run --locked scripts/check_doc_env.py
 
+      - name: Check documented CLI commands
+        run: uv run --locked scripts/check_doc_cli.py
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
