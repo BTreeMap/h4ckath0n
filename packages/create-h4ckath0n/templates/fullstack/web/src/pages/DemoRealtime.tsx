@@ -130,20 +130,25 @@ function WebSocketPanel() {
         </div>
 
         <div className="flex gap-2">
-          <input
-            type="text"
-            value={wsInput}
-            onChange={(e) => setWsInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") send();
-            }}
-            placeholder="Type a message…"
-            className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-border bg-surface text-text"
-            data-testid="ws-input"
-          />
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={wsInput}
+              onChange={(e) => setWsInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && connected && wsInput.trim()) send();
+              }}
+              placeholder="Type a message…"
+              className="w-full px-3 py-1.5 text-sm rounded-lg border border-border bg-surface text-text pr-14"
+              data-testid="ws-input"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden sm:block pointer-events-none">
+              <kbd className="px-1.5 py-0.5 text-[10px] font-sans font-medium bg-surface-alt border border-border rounded text-text-muted">Enter</kbd>
+            </div>
+          </div>
           <button
             onClick={send}
-            disabled={!connected}
+            disabled={!connected || !wsInput.trim()}
             className="px-3 py-1.5 text-sm bg-primary text-white rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50"
             data-testid="ws-send"
           >
