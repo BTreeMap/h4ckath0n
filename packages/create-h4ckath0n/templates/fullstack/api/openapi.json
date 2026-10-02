@@ -445,7 +445,7 @@
                 "type": "null"
               }
             ],
-            "description": "Optional display name for the user, not set by default.",
+            "description": "Human-facing display name for the user.",
             "title": "Display Name"
           },
           "role": {

@@ -786,7 +786,7 @@ export interface components {
             device_id: string;
             /**
              * Display Name
-             * @description Optional display name for the user, not set by default.
+             * @description Human-facing display name for the user.
              */
             display_name?: string | null;
             /**

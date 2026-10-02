@@ -5,26 +5,20 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from h4ckath0n.auth.schemas import (
-    DISPLAY_NAME_MAX_LENGTH,
     DeviceBindingMixin,
-    normalize_display_name,
+    DeviceBindingResponse,
+    DisplayNameField,
 )
 
 
 class PasskeyRegisterStartRequest(BaseModel):
-    display_name: str = Field(
+    display_name: DisplayNameField = Field(
         ...,
         description="Human-facing display name for the new account.",
-        max_length=DISPLAY_NAME_MAX_LENGTH,
     )
-
-    @field_validator("display_name")
-    @classmethod
-    def _clean_display_name(cls, v: str) -> str:
-        return normalize_display_name(v)
 
 
 class PasskeyRegisterStartResponse(BaseModel):
@@ -117,14 +111,5 @@ class PasskeyRevokeError(BaseModel):
     message: str = Field(..., description="Human-readable error message.")
 
 
-class PasskeyFinishResponse(BaseModel):
-    user_id: str = Field(..., description="User ID that starts with the u prefix.")
-    device_id: str = Field(
-        ...,
-        description="Device ID that starts with the d prefix, empty when no device key is bound.",
-    )
-    role: str = Field(..., description="Server-side role for the user.")
-    display_name: str | None = Field(
-        None,
-        description="Optional display name for the user, not set by default.",
-    )
+class PasskeyFinishResponse(DeviceBindingResponse):
+    pass
