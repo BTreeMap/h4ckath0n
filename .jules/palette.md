@@ -1,0 +1,3 @@
+## 2025-03-09 - Button component isLoading ARIA attributes
+ **Learning:** Standard pages like Login and Register in this codebase often manage their own `Loader2` rendering and `disabled` states for standard buttons, instead of passing the `isLoading` prop directly to the `Button` primitive. Adding `aria-busy` directly to the `Button` primitive based on its `isLoading` prop is a good foundational fix, but requires ensuring pages actually utilize that prop to see the full benefit.
+ **Action:** When enhancing primitive components, verify how consumer pages utilize them to ensure the enhancement is broadly effective, and update consumer code if needed.
