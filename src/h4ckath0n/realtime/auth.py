@@ -101,6 +101,9 @@ async def verify_device_jwt(
     if claims.aud != expected_aud:
         raise AuthError(f"Invalid aud: expected {expected_aud}")
 
+    if claims.sub != device.user_id:
+        raise AuthError("JWT sub claim does not match device user_id")
+
     user = await db.get(User, claims.sub)
     if user is None:
         raise AuthError("User not found")
