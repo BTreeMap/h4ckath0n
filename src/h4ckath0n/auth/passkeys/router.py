@@ -66,7 +66,7 @@ async def register_start(
 
 @router.post(
     "/register/finish",
-    response_model=schemas.PasskeyFinishResponse,
+    response_model=auth_schemas.DeviceBindingResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Finish passkey registration",
     description=(
@@ -84,7 +84,7 @@ async def register_finish(
     body: schemas.PasskeyRegisterFinishRequest,
     request: Request,
     db: AsyncSession = Depends(_db_dep),
-) -> schemas.PasskeyFinishResponse:
+) -> auth_schemas.DeviceBindingResponse:
     settings = request.app.state.settings
     try:
         user = await finish_registration(db, body.flow_id, body.credential, settings)
@@ -97,7 +97,7 @@ async def register_finish(
         db, user.id, body.device_public_key_jwk, body.device_label
     )
 
-    return schemas.PasskeyFinishResponse(
+    return auth_schemas.DeviceBindingResponse(
         user_id=user.id,
         device_id=device_id,
         role=user.role,
@@ -123,7 +123,7 @@ async def login_start(
 
 @router.post(
     "/login/finish",
-    response_model=schemas.PasskeyFinishResponse,
+    response_model=auth_schemas.DeviceBindingResponse,
     summary="Finish passkey login",
     description=(
         "Finish passkey login by verifying the WebAuthn assertion for the flow and "
@@ -140,7 +140,7 @@ async def login_finish(
     body: schemas.PasskeyLoginFinishRequest,
     request: Request,
     db: AsyncSession = Depends(_db_dep),
-) -> schemas.PasskeyFinishResponse:
+) -> auth_schemas.DeviceBindingResponse:
     settings = request.app.state.settings
     try:
         user = await finish_authentication(db, body.flow_id, body.credential, settings)
@@ -153,7 +153,7 @@ async def login_finish(
         db, user.id, body.device_public_key_jwk, body.device_label
     )
 
-    return schemas.PasskeyFinishResponse(
+    return auth_schemas.DeviceBindingResponse(
         user_id=user.id,
         device_id=device_id,
         role=user.role,
@@ -187,7 +187,7 @@ async def add_start(
 
 @router.post(
     "/add/finish",
-    response_model=schemas.PasskeyFinishResponse,
+    response_model=auth_schemas.DeviceBindingResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Finish adding a passkey",
     description="Verify the WebAuthn attestation and attach the new passkey to the user.",
@@ -207,7 +207,7 @@ async def add_finish(
     request: Request,
     user: User = Depends(_get_current_user),
     db: AsyncSession = Depends(_db_dep),
-) -> schemas.PasskeyFinishResponse:
+) -> auth_schemas.DeviceBindingResponse:
     settings = request.app.state.settings
     try:
         await finish_add_credential(db, body.flow_id, body.credential, user, settings)
@@ -220,7 +220,7 @@ async def add_finish(
         db, user.id, body.device_public_key_jwk, body.device_label
     )
 
-    return schemas.PasskeyFinishResponse(
+    return auth_schemas.DeviceBindingResponse(
         user_id=user.id,
         device_id=device_id,
         role=user.role,

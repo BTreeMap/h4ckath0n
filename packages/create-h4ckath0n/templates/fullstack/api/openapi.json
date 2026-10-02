@@ -429,44 +429,6 @@
         "title": "PasskeyAddStartResponse",
         "type": "object"
       },
-      "PasskeyFinishResponse": {
-        "properties": {
-          "device_id": {
-            "description": "Device ID that starts with the d prefix, empty when no device key is bound.",
-            "title": "Device Id",
-            "type": "string"
-          },
-          "display_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Optional display name for the user, not set by default.",
-            "title": "Display Name"
-          },
-          "role": {
-            "description": "Server-side role for the user.",
-            "title": "Role",
-            "type": "string"
-          },
-          "user_id": {
-            "description": "User ID that starts with the u prefix.",
-            "title": "User Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "user_id",
-          "device_id",
-          "role"
-        ],
-        "title": "PasskeyFinishResponse",
-        "type": "object"
-      },
       "PasskeyInfo": {
         "properties": {
           "created_at": {
@@ -1149,7 +1111,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PasskeyFinishResponse"
+                  "$ref": "#/components/schemas/DeviceBindingResponse"
                 }
               }
             },
@@ -1253,7 +1215,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PasskeyFinishResponse"
+                  "$ref": "#/components/schemas/DeviceBindingResponse"
                 }
               }
             },
@@ -1327,7 +1289,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PasskeyFinishResponse"
+                  "$ref": "#/components/schemas/DeviceBindingResponse"
                 }
               }
             },
