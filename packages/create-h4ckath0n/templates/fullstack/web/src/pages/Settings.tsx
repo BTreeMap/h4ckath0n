@@ -332,13 +332,10 @@ export function Settings() {
           <Button
             onClick={handleAddPasskey}
             disabled={addLoading}
+            isLoading={addLoading}
             data-testid="add-passkey-btn"
           >
-            {addLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="mr-2 h-4 w-4" />
-            )}
+            {!addLoading && <Plus className="mr-2 h-4 w-4" />}
             Add Passkey
           </Button>
         </CardHeader>
