@@ -102,6 +102,7 @@ export function Login() {
             <Input
               id="email"
               label="Email"
+              required
               type="email"
               placeholder="m@example.com"
               value={email}
@@ -119,6 +120,9 @@ export function Login() {
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   Password
+                  <span className="text-danger ml-1" aria-hidden="true">
+                    *
+                  </span>
                 </label>
                 <Link
                   to="/forgot-password"
@@ -129,6 +133,7 @@ export function Login() {
               </div>
               <PasswordField
                 id="password"
+                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
