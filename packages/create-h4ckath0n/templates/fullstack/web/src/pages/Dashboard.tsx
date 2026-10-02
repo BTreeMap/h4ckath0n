@@ -295,15 +295,30 @@ export function Dashboard() {
             <textarea
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!aiStreaming && aiPrompt.trim()) {
+                    void handleAiStream();
+                  }
+                }
+              }}
+              disabled={aiStreaming}
               placeholder="Type a prompt…"
-              className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full h-24 p-3 rounded-xl border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            <Button
-              onClick={handleAiStream}
-              disabled={aiStreaming || !aiPrompt.trim()}
-            >
-              {aiStreaming ? "Streaming…" : "Send"}
-            </Button>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-text-muted hidden sm:inline-block">
+                Press <kbd className="px-1.5 py-0.5 rounded-md bg-surface-alt border border-border font-sans font-medium text-text">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 rounded-md bg-surface-alt border border-border font-sans font-medium text-text">Shift + Enter</kbd> for new line
+              </span>
+              <div className="sm:hidden text-xs text-text-muted"></div>
+              <Button
+                onClick={handleAiStream}
+                disabled={aiStreaming || !aiPrompt.trim()}
+              >
+                {aiStreaming ? "Streaming…" : "Send"}
+              </Button>
+            </div>
             {aiResponse && (
               <div className="p-3 rounded bg-surface-alt text-sm whitespace-pre-wrap font-mono">
                 {aiResponse}
