@@ -28,3 +28,11 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-17 - Avoid COUNT() for Threshold and Existence Checks
+
+**Learning:** Using `select(func.count())` for pure existence checks or evaluating small thresholds (like $>1$) is a significant performance anti-pattern. Eagerly evaluating `func.count()` forces the database engine to perform a full-table or index scan aggregate operation, which degrades linearly with table size. Even if indexed, the overhead of aggregate logic dominates simple lookups.
+
+**Action:**
+1. For pure existence checks (e.g. `count == 0`), use `db.scalar(select(Model.id).limit(1))` and check `is None`.
+2. To evaluate if a count exceeds a small threshold $N$, fetch up to $N+1$ IDs using `limit(N+1)` and check the length of the result (e.g., `len(active_ids) <= 1`). This allows the database to short-circuit via index lookup without aggregation overhead.
