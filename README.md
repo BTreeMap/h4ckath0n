@@ -61,28 +61,71 @@ uv run uvicorn your_module:app --reload
 - Protected routes require an `Authorization: Bearer <device_jwt>` header that the web
   template can mint after login.
 
-## Built-in routes
+## API Routes
 
-- `GET /` — welcome message confirming the app is reachable.
-- `GET /health` — returns `{"status": "healthy"}` for load balancer and deployment checks.
+<!-- BEGIN GENERATED ROUTES -->
+
+### Base
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Welcome |
+| `GET` | `/health` | Health |
+
+### Passkeys
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/auth/passkey/add/finish` | Finish adding a passkey |
+| `POST` | `/auth/passkey/add/start` | Start adding a passkey |
+| `POST` | `/auth/passkey/login/finish` | Finish passkey login |
+| `POST` | `/auth/passkey/login/start` | Start passkey login |
+| `POST` | `/auth/passkey/register/finish` | Finish passkey registration |
+| `POST` | `/auth/passkey/register/start` | Start passkey registration |
+| `GET` | `/auth/passkeys` | List passkeys |
+| `PATCH` | `/auth/passkeys/{key_id}` | Rename a passkey |
+| `POST` | `/auth/passkeys/{key_id}/revoke` | Revoke a passkey |
+
+### Password Auth
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/auth/login` | Login with password |
+| `POST` | `/auth/password-reset/confirm` | Confirm password reset |
+| `POST` | `/auth/password-reset/request` | Request a password reset |
+| `POST` | `/auth/register` | Register with password |
 
 ### Session
-- `GET /auth/session` — returns the current user session details.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/auth/session` | Current session |
 
 ### Background Jobs
-- `GET /jobs` — list jobs.
-- `POST /jobs` — enqueue a background job.
-- `GET /jobs/{job_id}` — get the status and result of a job.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/jobs` | List jobs |
+| `POST` | `/jobs` | Enqueue a job |
+| `GET` | `/jobs/{job_id}` | Get job |
 
 ### Uploads
-- `GET /uploads` — list uploaded files.
-- `POST /uploads` — upload a new file.
-- `GET /uploads/{upload_id}` — get metadata for a specific upload.
-- `GET /uploads/{upload_id}/download` — download the uploaded file.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/uploads` | List uploads |
+| `POST` | `/uploads` | Upload a file |
+| `GET` | `/uploads/{upload_id}` | Get upload metadata |
+| `GET` | `/uploads/{upload_id}/download` | Download a file |
 
 ### LLM Chat
-- `POST /llm/chat` — send a message to the language model.
-- `POST /llm/chat/stream` — stream responses from the language model.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/llm/chat` | Chat completion |
+| `POST` | `/llm/chat/stream` | Streaming chat completion |
+
+<!-- END GENERATED ROUTES -->
 
 ## Auth model
 
@@ -90,10 +133,7 @@ uv run uvicorn your_module:app --reload
 
 The default authentication path uses passkeys (WebAuthn). The core flows are:
 
-1. `POST /auth/passkey/register/start` and `POST /auth/passkey/register/finish`
-2. `POST /auth/passkey/login/start` and `POST /auth/passkey/login/finish`
-3. `POST /auth/passkey/add/start` and `POST /auth/passkey/add/finish` for adding devices
-4. `GET /auth/passkeys`, `POST /auth/passkeys/{key_id}/revoke`, and `PATCH /auth/passkeys/{key_id}` for management
+*(API routes for passkeys are documented above)*
 
 ### Device signed JWTs
 
@@ -150,10 +190,7 @@ def refund(user=require_scopes("billing:refund")):
 Password routes mount only when the password extra is installed and
 `H4CKATH0N_PASSWORD_AUTH_ENABLED=true`.
 
-- `POST /auth/register`
-- `POST /auth/login`
-- `POST /auth/password-reset/request`
-- `POST /auth/password-reset/confirm`
+*(API routes for passwords are documented above)*
 
 Password auth is only an identity bootstrap. It binds a device key but does not return
 access tokens, refresh tokens, or cookies.
