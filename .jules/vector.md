@@ -1,0 +1,3 @@
+## 2023-10-27 - Centralize Pydantic Validation with Annotated Types
+**Learning:** In Pydantic V2 schemas, repeating `@field_validator` methods for common fields (like `display_name`) across multiple models creates unnecessary duplication of both the validation logic and the Field constraints (e.g. `max_length`).
+**Action:** When refactoring repeated field validation or normalization in Pydantic, define a single reusable type using `typing.Annotated` combined with `pydantic.Field` (for OpenAPI metadata) and `pydantic.AfterValidator` (for custom logic). Then apply this type directly in the models (e.g. `display_name: DisplayName = Field(...)`) to centralize the rules safely without breaking behavior or documentation.
