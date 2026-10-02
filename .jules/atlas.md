@@ -1,11 +1,3 @@
-# Atlas Journal: Critical Learnings
-
-## 2026-02-28 - API route substring matching is unreliable for drift checks
-
-**Learning:** Checking whether a path string appears *anywhere* in a README causes false negatives
-when one route's path is a substring of another (e.g. `/auth/passkeys/{key_id}` inside
-`/auth/passkeys/{key_id}/revoke`). The drift check must match `METHOD /path` as a combined token,
-ideally inside backtick delimiters, to avoid this trap.
-
-**Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
-that mirror the actual markdown formatting.
+## 2023-10-27 - FastAPI app.routes vs app.openapi() drift
+**Learning:** In modern FastAPI apps with nested routers, iterating over `app.routes` inside verification scripts causes them to silently miss endpoints wrapped in `_IncludedRouter` objects. This allows undocumented API routes to pass drift-prevention CI checks because the script simply doesn't see them.
+**Action:** When writing scripts to check route documentation parity in FastAPI, always query the fully resolved OpenAPI schema (`app.openapi().get("paths", {})`) rather than `app.routes` to guarantee a complete and accurate list of public endpoints.
