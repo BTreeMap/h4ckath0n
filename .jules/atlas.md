@@ -9,3 +9,6 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+## 2024-09-18 - Route Extraction Drift
+**Learning:** In recent FastAPI versions, iterating through `app.routes` directly obfuscates endpoints nested within `_IncludedRouter`. This caused the documentation drift check to miss over a dozen routes and falsely report success.
+**Action:** Always use `app.openapi().get('paths', {})` to reliably retrieve all registered endpoints and their metadata for drift-prevention checks.
