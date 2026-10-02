@@ -9,3 +9,6 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+## 2024-09-14 - Replace hand-written API routes with generated tables
+**Learning:** Hand-written API route documentation (e.g. lists of passkey or password routes) frequently drifts from the live FastAPI app.
+**Action:** Use an explicit HTML comment marker (`<!-- BEGIN ROUTES -->`) in README.md and replace hand-written text with programmatic generation directly from `app.openapi().get('paths', {})`.
