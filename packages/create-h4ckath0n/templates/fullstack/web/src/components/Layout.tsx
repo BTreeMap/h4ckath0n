@@ -253,7 +253,7 @@ export function Layout() {
                   <div className="border-t border-border my-2" />
                   <button
                     onClick={() => void logout()}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-danger hover:bg-danger/10 transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-danger hover:bg-danger/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
                     data-testid="nav-logout-mobile"
                   >
                     <LogOut className="w-4 h-4" />
