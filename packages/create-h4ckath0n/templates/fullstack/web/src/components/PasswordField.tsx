@@ -10,7 +10,7 @@ export interface PasswordFieldProps
 }
 
 const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
-  ({ className, label, error, id, ...props }, forwardedRef) => {
+  ({ className, label, error, id, required, ...props }, forwardedRef) => {
     const [visible, setVisible] = useState(false);
     const internalRef = useRef<HTMLInputElement | null>(null);
     const generatedId = useId();
@@ -68,11 +68,21 @@ const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
 
     return (
       <div className="space-y-2">
-        {label && <Label htmlFor={inputId}>{label}</Label>}
+        {label && (
+          <Label htmlFor={inputId}>
+            {label}
+            {required && (
+              <span className="text-red-500 ml-1" aria-hidden="true">
+                *
+              </span>
+            )}
+          </Label>
+        )}
         <div className="relative">
           <input
             id={inputId}
             ref={setRefs}
+            required={required}
             type={visible ? "text" : "password"}
             spellCheck={false}
             aria-invalid={error ? true : undefined}
