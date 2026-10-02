@@ -1,0 +1,3 @@
+## 2024-04-09 - Enter-to-submit and Disabled State in AI Chat Textareas
+**Learning:** When implementing "Enter-to-submit" shortcuts in textareas used for AI chat, users often submit prompts while an async stream is still active, causing prompt mangling or overlapping streams. Additionally, when placing an absolute-positioned `<kbd>` hint, typing long prompts can overlap the hint text.
+**Action:** Explicitly add the `disabled` attribute to the `textarea` during the async stream. Always add adequate bottom padding (e.g., `pb-8`) to the textarea to ensure typed text does not obscure the inline keyboard hint.
