@@ -50,27 +50,28 @@ def _cmd_users_show(args: argparse.Namespace) -> int:
             return err
         assert user is not None
 
-        devices_total = session.execute(
+        # ⚡ Bolt: Use scalar() directly to avoid execution result parsing overhead
+        devices_total = session.scalar(
             select(func.count()).select_from(Device).where(Device.user_id == user.id)
-        ).scalar()
-        devices_active = session.execute(
+        )
+        devices_active = session.scalar(
             select(func.count())
             .select_from(Device)
             .where(Device.user_id == user.id, Device.revoked_at.is_(None))
-        ).scalar()
-        passkeys_total = session.execute(
+        )
+        passkeys_total = session.scalar(
             select(func.count())
             .select_from(WebAuthnCredential)
             .where(WebAuthnCredential.user_id == user.id)
-        ).scalar()
-        passkeys_active = session.execute(
+        )
+        passkeys_active = session.scalar(
             select(func.count())
             .select_from(WebAuthnCredential)
             .where(
                 WebAuthnCredential.user_id == user.id,
                 WebAuthnCredential.revoked_at.is_(None),
             )
-        ).scalar()
+        )
 
         data = _user_dict(user)
         data["devices_total"] = devices_total or 0
