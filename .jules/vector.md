@@ -1,0 +1,3 @@
+## 2025-02-18 - Centralizing Pydantic normalization with Annotated
+**Learning:** Pydantic v2 allows for reusable validation and normalization by combining typing.Annotated, pydantic.Field (for max_length), and pydantic.AfterValidator. Crucially, when using this reusable type (e.g. DisplayName), any additional Field metadata attached at the model attribute level (like description) is merged successfully without overwriting the inner constraints, eliminating the need to repeat @field_validator across multiple models.
+**Action:** When finding duplicated validation logic across Pydantic schemas (like display_name validation), replace the @field_validator methods with a central Annotated type alias using AfterValidator to improve semantic precision and reduce duplication.
