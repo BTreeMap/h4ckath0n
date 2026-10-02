@@ -15,7 +15,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div className="space-y-2">
-        {label && <Label htmlFor={inputId}>{label}</Label>}
+        {label && (
+          <Label htmlFor={inputId}>
+            {label}
+            {props.required && (
+              <span aria-hidden="true" className="ml-1 text-danger">
+                *
+              </span>
+            )}
+          </Label>
+        )}
         <input
           id={inputId}
           type={type}
