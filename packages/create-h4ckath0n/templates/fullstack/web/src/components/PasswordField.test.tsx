@@ -62,8 +62,8 @@ describe("PasswordField", () => {
   });
 
   it("renders a label when provided", () => {
-    render(<PasswordField label="Secret" data-testid="pw" />);
-    expect(screen.getByLabelText("Secret")).toBeInTheDocument();
+    render(<PasswordField label="Secret" data-testid="pw" required />);
+    expect(screen.getByLabelText(/Secret/i)).toBeInTheDocument();
   });
 
   it("sets spellCheck to false", () => {
