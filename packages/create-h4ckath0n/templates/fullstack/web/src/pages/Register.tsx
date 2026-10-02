@@ -143,6 +143,7 @@ export function Register() {
               disabled={isLoading}
               data-testid="register-password-input"
               autoComplete="new-password"
+              required
             />
             <Button
               type="submit"
