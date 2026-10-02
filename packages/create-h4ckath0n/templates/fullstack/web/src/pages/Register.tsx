@@ -98,14 +98,15 @@ export function Register() {
             <Button
               onClick={handlePasskeyRegister}
               disabled={isLoading || !displayName.trim()}
+              aria-busy={passkeyLoading}
               className="w-full h-12 text-base font-semibold"
               size="lg"
               data-testid="register-submit"
             >
               {passkeyLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
-                <Fingerprint className="mr-2 h-5 w-5" />
+                <Fingerprint className="mr-2 h-5 w-5" aria-hidden="true" />
               )}
               Register with Passkey
             </Button>
@@ -153,11 +154,12 @@ export function Register() {
                 !email.trim() ||
                 !password
               }
+              aria-busy={passwordLoading}
               className="w-full"
               data-testid="register-password-btn"
             >
               {passwordLoading && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               )}
               Sign Up
             </Button>

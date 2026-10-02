@@ -75,14 +75,15 @@ export function Login() {
           <Button
             onClick={handlePasskeyLogin}
             disabled={isLoading}
+            aria-busy={passkeyLoading}
             className="w-full h-12 text-base font-semibold"
             size="lg"
             data-testid="login-submit"
           >
             {passkeyLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Fingerprint className="mr-2 h-5 w-5" />
+              <Fingerprint className="mr-2 h-5 w-5" aria-hidden="true" />
             )}
             Sign in with Passkey
           </Button>
@@ -140,11 +141,12 @@ export function Login() {
               type="submit"
               variant="secondary"
               disabled={isLoading || !email.trim() || !password}
+              aria-busy={passwordLoading}
               className="w-full"
               data-testid="login-password-btn"
             >
               {passwordLoading && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               )}
               Sign In
             </Button>
