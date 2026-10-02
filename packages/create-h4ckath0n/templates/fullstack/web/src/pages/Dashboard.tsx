@@ -201,6 +201,7 @@ export function Dashboard() {
                 <input
                   ref={fileInputRef}
                   type="file"
+                  aria-label="File upload"
                   className="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white"
                 />
                 <Button onClick={handleUpload} disabled={uploading}>
@@ -295,6 +296,7 @@ export function Dashboard() {
             <textarea
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
+              aria-label="AI Chat Prompt"
               placeholder="Type a prompt…"
               className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
             />
