@@ -201,7 +201,7 @@ async def finish_authentication(
     flow = await _get_valid_flow(db, flow_id, "authenticate")
 
     raw_id = credential_json.get("rawId") or credential_json.get("id", "")
-    # ⚡ Bolt: Replace execute().scalars().first() with scalar() to avoid allocating ExecutionResult objects
+    # ⚡ Bolt: Use scalar() over execute().scalars().first() to avoid result allocation
     stored = await db.scalar(
         select(WebAuthnCredential).filter(
             WebAuthnCredential.credential_id == raw_id,

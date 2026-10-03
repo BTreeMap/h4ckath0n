@@ -57,7 +57,7 @@ async def register_user(
     display_name: str | None = None,
 ) -> User:
     hash_password, _verify = _require_password_extra()
-    # ⚡ Bolt: Replace execute().scalars().first() with scalar() fetching only the ID to avoid ORM hydration overhead
+    # ⚡ Bolt: Use scalar(User.id) over execute().scalars().first() to avoid ORM hydration
     if await db.scalar(select(User.id).filter(User.email == email)):
         raise ValueError("Email already registered")
     role = "admin" if await _is_bootstrap_admin(email, settings, db) else "user"
@@ -82,7 +82,7 @@ _DUMMY_PASSWORD_HASH = (
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     _hash, verify_password = _require_password_extra()
-    # ⚡ Bolt: Replace execute().scalars().first() with scalar() to avoid allocating ExecutionResult objects
+    # ⚡ Bolt: Use scalar() over execute().scalars().first() to avoid result allocation
     user = await db.scalar(select(User).filter(User.email == email))
     if user is None or not user.password_hash:
         verify_password(password, _DUMMY_PASSWORD_HASH)
@@ -172,7 +172,7 @@ async def confirm_password_reset(
     """Confirm a password reset and return the user."""
     hash_password, _verify = _require_password_extra()
     hashed = _hash_token(raw_token)
-    # ⚡ Bolt: Replace execute().scalars().first() with scalar() to avoid allocating ExecutionResult objects
+    # ⚡ Bolt: Use scalar() over execute().scalars().first() to avoid result allocation
     prt = await db.scalar(
         select(PasswordResetToken).filter(
             PasswordResetToken.token_hash == hashed,
