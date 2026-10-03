@@ -154,7 +154,8 @@ def _resolve_user(session: Session, args: argparse.Namespace) -> User | None:
         return session.get(User, user_id)
 
     stmt = select(User).where(User.email == email)
-    return session.execute(stmt).scalars().first()
+    # ⚡ Bolt: Replace execute().scalars().first() with scalar() to avoid allocating ExecutionResult objects
+    return session.scalar(stmt)
 
 
 def _user_or_exit(
