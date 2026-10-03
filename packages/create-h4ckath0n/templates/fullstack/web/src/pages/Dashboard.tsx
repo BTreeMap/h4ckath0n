@@ -201,10 +201,11 @@ export function Dashboard() {
                 <input
                   ref={fileInputRef}
                   type="file"
+                  aria-label="File to upload"
                   className="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white"
                 />
-                <Button onClick={handleUpload} disabled={uploading}>
-                  {uploading ? "Uploading…" : "Upload"}
+                <Button onClick={handleUpload} isLoading={uploading}>
+                  Upload
                 </Button>
               </div>
               {uploads.length > 0 && (
@@ -296,13 +297,15 @@ export function Dashboard() {
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
               placeholder="Type a prompt…"
+              aria-label="AI prompt"
               className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <Button
               onClick={handleAiStream}
-              disabled={aiStreaming || !aiPrompt.trim()}
+              disabled={!aiPrompt.trim()}
+              isLoading={aiStreaming}
             >
-              {aiStreaming ? "Streaming…" : "Send"}
+              Send
             </Button>
             {aiResponse && (
               <div className="p-3 rounded bg-surface-alt text-sm whitespace-pre-wrap font-mono">
