@@ -1,0 +1,3 @@
+## 2024-10-06 - Centralize Pydantic Validation with Annotated
+**Learning:** In Pydantic v2, defining repetitive `@field_validator` methods across multiple models creates scattered mutation and duplication. However, `typing.Annotated` combined with `pydantic.AfterValidator` (or `BeforeValidator`) merges additional `Field` metadata seamlessly without overwriting inner constraints, allowing for centralized, composable normalization rules that act as a single source of truth.
+**Action:** Prefer `Annotated[T, Field(...), AfterValidator(...)]` to define reusable, normalized field types instead of scattering ad-hoc `@field_validator` methods.
