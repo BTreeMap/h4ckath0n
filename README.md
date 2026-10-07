@@ -162,6 +162,7 @@ access tokens, refresh tokens, or cookies.
 
 All settings use the `H4CKATH0N_` prefix unless noted.
 
+<!-- START_ENV_DOCS -->
 | Variable | Default | Description |
 |---|---|---|
 | `H4CKATH0N_ENV` | `development` | `development` or `production` |
@@ -195,6 +196,7 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 | `H4CKATH0N_SMTP_STARTTLS` | `true` | Enable SMTP STARTTLS |
 | `H4CKATH0N_SMTP_SSL` | `false` | Enable SMTP-over-SSL |
 | `H4CKATH0N_DEMO_MODE` | `false` | Enable demo mode |
+<!-- END_ENV_DOCS -->
 
 In development, missing `RP_ID` and `ORIGIN` fall back to localhost defaults with
 warnings. In production, missing values raise a runtime error when passkey flows start.
