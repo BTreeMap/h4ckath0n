@@ -346,13 +346,7 @@ async def rename_passkey(
     if cred.revoked_at is not None:
         raise PasskeyRevokedError
 
-    clean: str | None = name.strip() if name else None
-    if clean == "":
-        clean = None
-    if clean is not None and len(clean) > 64:
-        raise ValueError("Name must be 64 characters or fewer")
-
-    cred.name = clean
+    cred.name = name
     await db.commit()
     await db.refresh(cred)
     return cred

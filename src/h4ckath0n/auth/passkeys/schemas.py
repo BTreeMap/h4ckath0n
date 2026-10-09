@@ -3,28 +3,36 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AfterValidator, BaseModel, Field
 
 from h4ckath0n.auth.schemas import (
-    DISPLAY_NAME_MAX_LENGTH,
     DeviceBindingMixin,
-    normalize_display_name,
+    DisplayName,
 )
 
 
+def _normalize_passkey_name(value: str | None) -> str | None:
+    """Trim passkey name; treat empty string as None."""
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned if cleaned else None
+
+
+PasskeyName = Annotated[
+    str | None,
+    Field(max_length=64),
+    AfterValidator(_normalize_passkey_name),
+]
+
+
 class PasskeyRegisterStartRequest(BaseModel):
-    display_name: str = Field(
+    display_name: DisplayName = Field(
         ...,
         description="Human-facing display name for the new account.",
-        max_length=DISPLAY_NAME_MAX_LENGTH,
     )
-
-    @field_validator("display_name")
-    @classmethod
-    def _clean_display_name(cls, v: str) -> str:
-        return normalize_display_name(v)
 
 
 class PasskeyRegisterStartResponse(BaseModel):
@@ -100,10 +108,9 @@ class PasskeyRevokeResponse(BaseModel):
 
 
 class PasskeyRenameRequest(BaseModel):
-    name: str | None = Field(
+    name: PasskeyName = Field(
         None,
         description="New passkey name. Null or empty to clear.",
-        max_length=64,
     )
 
 
