@@ -107,6 +107,7 @@ export function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
+              required
               data-testid="login-email-input"
               autoComplete="email"
               autoCapitalize="none"
@@ -132,6 +133,7 @@ export function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
+                required
                 data-testid="login-password-input"
                 autoComplete="current-password"
               />

@@ -1,0 +1,3 @@
+## 2024-10-09 - Handling Required Indicators on Complex ReactNode Labels
+ **Learning:** When a reusable `Label` component accepts a `ReactNode` (like a block-level flex container with child elements) instead of a simple string, appending an inline required indicator (e.g., `*`) directly after the node can cause layout breakage, pushing the asterisk out of the intended visual flow (e.g. wrapping to a new line or floating awkwardly).
+ **Action:** When designing or updating form field wrappers that accept complex labels, ensure the `required` indicator is rendered alongside the label text *within* the provided layout block, or restructure the label rendering logic to ensure inline elements are correctly grouped (e.g. enforcing inline wrappers for the text portion).

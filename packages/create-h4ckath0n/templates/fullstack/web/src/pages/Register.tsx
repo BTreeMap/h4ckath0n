@@ -89,6 +89,7 @@ export function Register() {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               disabled={isLoading}
+              required
               data-testid="register-display-name"
               autoComplete="name"
               maxLength={DISPLAY_NAME_MAX_LENGTH}
@@ -131,6 +132,7 @@ export function Register() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
+              required
               data-testid="register-email-input"
               autoComplete="email"
               autoCapitalize="none"
@@ -141,6 +143,7 @@ export function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
+              required
               data-testid="register-password-input"
               autoComplete="new-password"
             />
