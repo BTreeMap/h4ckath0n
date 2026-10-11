@@ -100,6 +100,7 @@ export function Login() {
 
           <form onSubmit={handlePasswordLogin} className="space-y-4">
             <Input
+              required
               id="email"
               label="Email"
               type="email"
@@ -128,6 +129,7 @@ export function Login() {
                 </Link>
               </div>
               <PasswordField
+              required
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

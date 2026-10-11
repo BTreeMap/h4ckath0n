@@ -82,6 +82,7 @@ export function Register() {
 
           <div className="space-y-4">
             <Input
+              required
               id="displayName"
               label="Display Name"
               type="text"
@@ -124,6 +125,7 @@ export function Register() {
 
           <form onSubmit={handlePasswordRegister} className="space-y-4">
             <Input
+              required
               id="email"
               label="Email"
               type="email"
@@ -136,6 +138,7 @@ export function Register() {
               autoCapitalize="none"
             />
             <PasswordField
+              required
               id="password"
               label="Password"
               value={password}
