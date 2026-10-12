@@ -25,7 +25,7 @@ FRAMEWORK_PATHS = frozenset(
 
 
 def get_app_routes() -> list[tuple[str, str]]:
-    """Return (method, path) pairs from the live FastAPI app."""
+    """Return (method, path) pairs from the live FastAPI app using OpenAPI schema."""
     from h4ckath0n.app import create_app  # noqa: E402
     from h4ckath0n.config import Settings  # noqa: E402
 
@@ -36,17 +36,32 @@ def get_app_routes() -> list[tuple[str, str]]:
     app = create_app(settings)
 
     routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Skip non-HTTP routes.
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+    openapi_schema = app.openapi()
+    paths = openapi_schema.get("paths", {})
+
+    valid_methods = {
+        "get",
+        "post",
+        "put",
+        "delete",
+        "options",
+        "head",
+        "patch",
+        "trace",
+    }
+
+    for path, path_item in paths.items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
+
+        for method in path_item:
+            method_lower = method.lower()
+            if method_lower not in valid_methods:
                 continue
-            routes.append((method, path))
+            if method_lower == "head":
+                continue
+            routes.append((method.upper(), path))
+
     return sorted(routes)
 
 
