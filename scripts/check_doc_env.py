@@ -16,9 +16,14 @@ def get_settings_environment_names() -> frozenset[str]:
     """Return the environment variable name for each Settings field."""
     from h4ckath0n.config import Settings
 
-    return frozenset(
-        f"H4CKATH0N_{field_name.upper()}" for field_name in Settings.model_fields
-    )
+    names = set()
+    for field_name in Settings.model_fields:
+        if field_name == "openai_api_key":
+            names.add("OPENAI_API_KEY")
+            names.add("H4CKATH0N_OPENAI_API_KEY")
+        else:
+            names.add(f"H4CKATH0N_{field_name.upper()}")
+    return frozenset(names)
 
 
 def get_documented_environment_names(readme_text: str) -> frozenset[str]:
