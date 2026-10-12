@@ -84,7 +84,7 @@ export function ForgotPassword() {
               className="space-y-4"
               data-testid="forgot-form"
             >
-              <Input
+              <Input required
                 id="email"
                 label="Email"
                 type="email"
