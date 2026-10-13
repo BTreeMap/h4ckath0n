@@ -162,13 +162,14 @@ access tokens, refresh tokens, or cookies.
 
 All settings use the `H4CKATH0N_` prefix unless noted.
 
+<!-- START_ENV -->
 | Variable | Default | Description |
 |---|---|---|
 | `H4CKATH0N_ENV` | `development` | `development` or `production` |
 | `H4CKATH0N_DATABASE_URL` | `sqlite:///./h4ckath0n.db` | SQLAlchemy connection string |
 | `H4CKATH0N_AUTO_UPGRADE` | `false` | Auto-run packaged DB migrations to head on startup |
-| `H4CKATH0N_RP_ID` | `localhost` in development | WebAuthn relying party ID, required in production |
-| `H4CKATH0N_ORIGIN` | `http://localhost:8000` in development | WebAuthn origin, required in production |
+| `H4CKATH0N_RP_ID` | empty | WebAuthn relying party ID, required in production |
+| `H4CKATH0N_ORIGIN` | empty | WebAuthn origin, required in production |
 | `H4CKATH0N_WEBAUTHN_TTL_SECONDS` | `300` | WebAuthn challenge TTL in seconds |
 | `H4CKATH0N_USER_VERIFICATION` | `preferred` | WebAuthn user verification requirement |
 | `H4CKATH0N_ATTESTATION` | `none` | WebAuthn attestation preference |
@@ -195,6 +196,7 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 | `H4CKATH0N_SMTP_STARTTLS` | `true` | Enable SMTP STARTTLS |
 | `H4CKATH0N_SMTP_SSL` | `false` | Enable SMTP-over-SSL |
 | `H4CKATH0N_DEMO_MODE` | `false` | Enable demo mode |
+<!-- END_ENV -->
 
 In development, missing `RP_ID` and `ORIGIN` fall back to localhost defaults with
 warnings. In production, missing values raise a runtime error when passkey flows start.
