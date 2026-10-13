@@ -92,7 +92,7 @@ export function Register() {
               data-testid="register-display-name"
               autoComplete="name"
               maxLength={DISPLAY_NAME_MAX_LENGTH}
-              autoFocus
+              autoFocus required
             />
 
             <Button
@@ -133,7 +133,7 @@ export function Register() {
               disabled={isLoading}
               data-testid="register-email-input"
               autoComplete="email"
-              autoCapitalize="none"
+              autoCapitalize="none" required
             />
             <PasswordField
               id="password"
@@ -142,7 +142,7 @@ export function Register() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               data-testid="register-password-input"
-              autoComplete="new-password"
+              autoComplete="new-password" required
             />
             <Button
               type="submit"
