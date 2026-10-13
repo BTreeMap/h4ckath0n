@@ -11,7 +11,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from h4ckath0n.auth.models import Device, PasswordResetToken, User
@@ -40,12 +40,8 @@ async def _is_bootstrap_admin(email: str, settings: Settings, db: AsyncSession) 
     """Decide whether a newly-registered user should be admin."""
     if email in settings.bootstrap_admin_emails:
         return True
-    if settings.first_user_is_admin:
-        result = await db.execute(select(func.count()).select_from(User))
-        count = result.scalar()
-        if count == 0:
-            return True
-    return False
+    # ⚡ Bolt: Use scalar with limit(1) instead of count() to prevent full table scan
+    return bool(settings.first_user_is_admin and await db.scalar(select(User.id).limit(1)) is None)
 
 
 async def register_user(
