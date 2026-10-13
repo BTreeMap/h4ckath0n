@@ -41,7 +41,10 @@ async def _is_bootstrap_admin(email: str, settings: Settings, db: AsyncSession) 
     if email in settings.bootstrap_admin_emails:
         return True
     # ⚡ Bolt: Use scalar with limit(1) instead of count() to prevent full table scan
-    return bool(settings.first_user_is_admin and await db.scalar(select(User.id).limit(1)) is None)
+    return bool(
+        settings.first_user_is_admin
+        and await db.scalar(select(User.id).limit(1)) is None
+    )
 
 
 async def register_user(
