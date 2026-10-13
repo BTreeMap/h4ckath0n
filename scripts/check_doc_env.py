@@ -105,9 +105,8 @@ def main() -> int:
         print("🔧 Fixed README.md and .env.example")
         return 0
     else:
-        print(
-            "❌ Documentation is out of date. Run `uv run scripts/check_doc_env.py --fix` to update."
-        )
+        print("❌ Documentation is out of date.")
+        print("Run `uv run scripts/check_doc_env.py --fix` to update.")
         return 1
 
 

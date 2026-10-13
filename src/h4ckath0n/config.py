@@ -5,7 +5,7 @@ from __future__ import annotations
 import warnings
 from typing import Literal
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 UserVerification = Literal["required", "preferred", "discouraged"]
@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(
         default="",
         alias="OPENAI_API_KEY",
-        validation_alias="OPENAI_API_KEY",
+        validation_alias=AliasChoices("OPENAI_API_KEY", "H4CKATH0N_OPENAI_API_KEY"),
         description="OpenAI API key for the LLM wrapper",
     )
 
