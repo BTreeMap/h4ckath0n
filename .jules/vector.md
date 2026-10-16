@@ -1,0 +1,3 @@
+## 2024-10-24 - Centralized Pydantic Validation with Annotated and AfterValidator
+**Learning:** This codebase uses Pydantic V2 and has duplicated string normalization logic (`normalize_display_name`) applied across multiple models via `@field_validator` methods.
+**Action:** Used `typing.Annotated` combined with `pydantic.functional_validators.AfterValidator` to encapsulate the maximum length constraint and validation function into a single composable `DisplayName` type. This aligns with the codebase's functional-programming preference for pure transformations and reduces scattered, mutation-style validator class methods.
