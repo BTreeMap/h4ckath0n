@@ -36,7 +36,16 @@ def get_app_routes() -> list[tuple[str, str]]:
     app = create_app(settings)
 
     routes: list[tuple[str, str]] = []
-    valid_methods = {"get", "post", "put", "delete", "options", "head", "patch", "trace"}
+    valid_methods = {
+        "get",
+        "post",
+        "put",
+        "delete",
+        "options",
+        "head",
+        "patch",
+        "trace",
+    }
     paths = app.openapi().get("paths", {})
 
     for path, path_item in paths.items():
