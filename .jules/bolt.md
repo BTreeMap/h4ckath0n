@@ -28,3 +28,9 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-22 - Avoid func.count() and ORM Hydration for Existence Checks
+
+**Learning:** When checking if any records exist (like "is this the first user?") or checking if a specific record exists (like "is this email already registered?"), using `select(func.count())` performs a full-table aggregate scan, and using `select(Model).filter(...)` forces SQLAlchemy to fetch and hydrate the full ORM object. Both are unnecessarily expensive for simple existence checks.
+
+**Action:** For general existence checks, use `await db.scalar(select(Model.id).limit(1))` instead of `func.count()`. For specific uniqueness checks, use `await db.scalar(select(Model.id).filter(...))` instead of fetching the full object. Both bypass ORM overhead and avoid aggregate scans.
