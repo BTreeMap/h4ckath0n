@@ -31,7 +31,7 @@ vi.mock("react-router", () => ({
 describe("Login page", () => {
   it("renders Email label instead of Username", () => {
     render(<Login />);
-    expect(screen.getByLabelText("Email")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Email/)).toBeInTheDocument();
     expect(screen.queryByLabelText("Username")).not.toBeInTheDocument();
   });
 

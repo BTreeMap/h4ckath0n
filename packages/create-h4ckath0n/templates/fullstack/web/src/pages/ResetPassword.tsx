@@ -124,6 +124,7 @@ export function ResetPassword() {
               <PasswordField
                 id="new-password"
                 label="New Password"
+                required
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 disabled={isLoading}
