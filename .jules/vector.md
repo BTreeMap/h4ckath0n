@@ -1,0 +1,3 @@
+## $(date +%Y-%m-%d) - Pydantic Field Merging with Annotated Types
+**Learning:** In Pydantic v2, when extracting a reusable type utilizing `Annotated` with base `Field` constraints (like `max_length`) and an `AfterValidator`, you can still override or append field-specific metadata directly on the attribute (e.g., `attr: MyType = Field(..., description="...")`). Pydantic gracefully merges the `Field` definitions without conflicting.
+**Action:** When centralizing duplicated validation/normalization logic into an `Annotated` type, leave endpoint-specific `description`s on the model attributes rather than attempting to enforce a generic description in the base type.
