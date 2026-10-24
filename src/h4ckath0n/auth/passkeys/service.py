@@ -22,6 +22,7 @@ from h4ckath0n.auth.passkeys.errors import (
     PasskeyRevokedError,
 )
 from h4ckath0n.auth.passkeys.ids import new_key_id
+from h4ckath0n.auth.passkeys.schemas import normalize_passkey_name
 from h4ckath0n.auth.passkeys.webauthn import (
     base64url_to_bytes,
     bytes_to_base64url,
@@ -346,13 +347,7 @@ async def rename_passkey(
     if cred.revoked_at is not None:
         raise PasskeyRevokedError
 
-    clean: str | None = name.strip() if name else None
-    if clean == "":
-        clean = None
-    if clean is not None and len(clean) > 64:
-        raise ValueError("Name must be 64 characters or fewer")
-
-    cred.name = clean
+    cred.name = normalize_passkey_name(name)
     await db.commit()
     await db.refresh(cred)
     return cred
