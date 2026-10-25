@@ -93,6 +93,7 @@ export function ForgotPassword() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
                 data-testid="forgot-email-input"
+                required
                 autoComplete="email"
                 autoCapitalize="none"
                 autoFocus

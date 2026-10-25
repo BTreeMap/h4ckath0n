@@ -88,6 +88,7 @@ export function Register() {
               placeholder="Jane Doe"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
+              required
               disabled={isLoading}
               data-testid="register-display-name"
               autoComplete="name"
@@ -134,12 +135,14 @@ export function Register() {
               data-testid="register-email-input"
               autoComplete="email"
               autoCapitalize="none"
+              required
             />
             <PasswordField
               id="password"
               label="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
               disabled={isLoading}
               data-testid="register-password-input"
               autoComplete="new-password"
