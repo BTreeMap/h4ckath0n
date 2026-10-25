@@ -1,0 +1,3 @@
+## 2024-03-24 - Centralize Pydantic Validation with Annotated
+**Learning:** In Pydantic v2, `@field_validator` methods duplicated across models can be successfully extracted into reusable `typing.Annotated` types combined with `pydantic.functional_validators.AfterValidator`. Field constraints like `max_length` in the `Annotated` definition combine seamlessly with explicit metadata (like `description`) provided at the attribute declaration.
+**Action:** Default to using `Annotated[..., AfterValidator(...)]` when the same parsing or validation logic is needed across multiple request schemas to guarantee a single source of truth.
