@@ -103,6 +103,7 @@ export function Login() {
               id="email"
               label="Email"
               type="email"
+              required
               placeholder="m@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -119,6 +120,7 @@ export function Login() {
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   Password
+                  <span className="text-danger ml-1">*</span>
                 </label>
                 <Link
                   to="/forgot-password"
@@ -134,6 +136,7 @@ export function Login() {
                 disabled={isLoading}
                 data-testid="login-password-input"
                 autoComplete="current-password"
+                required
               />
             </div>
             <Button

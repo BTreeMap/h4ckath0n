@@ -129,6 +129,7 @@ export function ResetPassword() {
                 disabled={isLoading}
                 data-testid="reset-password-input"
                 autoComplete="new-password"
+                required
                 autoFocus
               />
               <Button

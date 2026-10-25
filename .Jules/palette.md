@@ -1,0 +1,3 @@
+## 2023-10-25 - Required Field Indicators in Forms
+**Learning:** Adding visual 'required' indicators (like an asterisk) directly into React `Label` components breaks standard `@testing-library/react` tests that use exact string matching with `getByLabelText("Field Name")`. Modifying native HTML form validation attributes on auth-related components also requires executing the end-to-end test suite (`npm run test:e2e`).
+**Action:** Always update associated `getByLabelText` tests to use regular expressions (e.g., `getByLabelText(/Field Name/)`) when adding visual text markers to labels, and ensure E2E tests are run when modifying `required` attributes on auth components.
