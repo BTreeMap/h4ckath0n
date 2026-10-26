@@ -24,8 +24,8 @@ FRAMEWORK_PATHS = frozenset(
 )
 
 
-def get_app_routes() -> list[tuple[str, str]]:
-    """Return (method, path) pairs from the live FastAPI app."""
+def get_app_routes() -> list[tuple[str, str, str]]:
+    """Return (method, path, summary) tuples from the live FastAPI app."""
     from h4ckath0n.app import create_app  # noqa: E402
     from h4ckath0n.config import Settings  # noqa: E402
 
@@ -35,36 +35,65 @@ def get_app_routes() -> list[tuple[str, str]]:
     )
     app = create_app(settings)
 
-    routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Skip non-HTTP routes.
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+    routes: list[tuple[str, str, str]] = []
+    paths = app.openapi().get("paths", {})
+    for path, methods in paths.items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
+        for method, op in methods.items():
+            if method.upper() == "HEAD":
                 continue
-            routes.append((method, path))
-    return sorted(routes)
+            summary = op.get("summary", "")
+            routes.append((method.upper(), path, summary))
+    return sorted(routes, key=lambda x: (x[1], x[0]))
+
+
+def update_routes_in_readme(
+    routes: list[tuple[str, str, str]],
+) -> None:
+    """Update README.md with the generated markdown table of routes."""
+    readme_text = README.read_text()
+
+    table_lines = [
+        "<!-- route-table-start -->",
+        "| Method | Path | Description |",
+        "|---|---|---|",
+    ]
+    for method, path, summary in routes:
+        table_lines.append(f"| `{method}` | `{path}` | {summary} |")
+    table_lines.append("<!-- route-table-end -->")
+
+    table_text = "\n".join(table_lines)
+
+    pattern = re.compile(
+        r"<!-- route-table-start -->.*?<!-- route-table-end -->",
+        re.DOTALL,
+    )
+
+    if pattern.search(readme_text):
+        new_text = pattern.sub(table_text, readme_text)
+    else:
+        new_text = readme_text + "\n\n" + table_text
+
+    if new_text != readme_text:
+        README.write_text(new_text)
 
 
 def check_routes_in_readme(
-    routes: list[tuple[str, str]],
+    routes: list[tuple[str, str, str]],
 ) -> list[tuple[str, str]]:
     """Return routes that are not mentioned anywhere in README.md.
 
-    We look for ``METHOD /path`` (e.g. ``GET /health``) so that sub-path
+    We look for the markdown table row format so that sub-path
     matches like ``/auth/passkeys/{key_id}`` inside
     ``/auth/passkeys/{key_id}/revoke`` are not false positives.
     """
     readme_text = README.read_text()
     missing: list[tuple[str, str]] = []
-    for method, path in routes:
-        # Match exact method/path tokens in README.
+    for method, path, _ in routes:
+        # Match exact markdown table column tokens in README.
         path_re = re.escape(path)
-        combined = rf"`{method}\s+{path_re}`"
+        combined = rf"\|\s*`{method}`\s*\|\s*`{path_re}`\s*\|"
         if not re.search(combined, readme_text, re.IGNORECASE):
             missing.append((method, path))
     return missing
@@ -72,6 +101,12 @@ def check_routes_in_readme(
 
 def main() -> int:
     routes = get_app_routes()
+
+    if "--update" in sys.argv:
+        update_routes_in_readme(routes)
+        print(f"✅ Updated README.md with {len(routes)} API routes.")
+        return 0
+
     missing = check_routes_in_readme(routes)
 
     if missing:
@@ -79,8 +114,8 @@ def main() -> int:
         for method, path in missing:
             print(f"  {method:6s} {path}")
         print(
-            "\nAdd these routes to README.md or, if intentionally undocumented, "
-            "add them to FRAMEWORK_PATHS in this script."
+            "\nAdd these routes to README.md or run this script with --update "
+            "to automatically populate the routes table."
         )
         return 1
 
