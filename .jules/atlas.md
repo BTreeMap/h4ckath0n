@@ -9,3 +9,8 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+
+## 2026-03-01 - Avoid False Positives in Table Column Matches
+
+**Learning:** When asserting presence of markdown table routes using a regular expression like `\|\s*\`GET\`\s*\|\s*\`/path\`\s*\|`, the regex correctly matches only exactly bounded cells, effectively solving the issue where substring matching triggers false positives.
+**Action:** Always combine the `METHOD` and `path` into a strict pattern that mirrors its structural context (like a table row or code block) rather than relying on loose string matching in documentation.
