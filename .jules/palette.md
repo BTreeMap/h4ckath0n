@@ -1,0 +1,5 @@
+## 2024-10-26 - Password Visibility Toggle Focus Polish
+
+**Learning:** When using custom icon-only toggle buttons in input overlays (like the show/hide password button in `PasswordField.tsx`), they often lack visual focus states by default because they are absolutely positioned over the input and rely on the input's own focus ring for field-level focus. However, the button *itself* must have a clear `focus-visible` state so keyboard users know when they've tabbed *onto* the toggle button (separate from the input). Furthermore, this focus ring must visually contrast with both the normal input border and any potential error state rings.
+
+**Action:** Ensure all interactive elements within compound input components (like floating buttons or icons) have explicit `focus-visible` styles that are clearly distinguishable. Use conditional styling to ensure the focus ring color remains visible and appropriate even when the parent component is in an error state (e.g., using `ring-danger` instead of `ring-primary` when an error is present).
