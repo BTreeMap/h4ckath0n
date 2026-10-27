@@ -1,0 +1,3 @@
+## 2025-01-20 - Centralized Pydantic Normalized Fields
+**Learning:** In Pydantic v2, combining `Field` constraints like `max_length` with `@field_validator` evaluates the length against the *raw* un-stripped string. Using `Annotated[str, BeforeValidator(normalize), Field(max_length=...)]` fixes the order of evaluation so max_length applies to the trimmed string, and also provides a reusable type alias across schemas. Field descriptions can still be overridden at the attribute level.
+**Action:** Replace duplicated `@field_validator` blocks with centralized `Annotated` aliases using `BeforeValidator` to remove mutation/validation spread and ensure robust constraint evaluation order.
