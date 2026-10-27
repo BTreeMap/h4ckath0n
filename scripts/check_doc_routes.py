@@ -25,7 +25,7 @@ FRAMEWORK_PATHS = frozenset(
 
 
 def get_app_routes() -> list[tuple[str, str]]:
-    """Return (method, path) pairs from the live FastAPI app."""
+    """Return (method, path) pairs from the live FastAPI app's OpenAPI schema."""
     from h4ckath0n.app import create_app  # noqa: E402
     from h4ckath0n.config import Settings  # noqa: E402
 
@@ -36,17 +36,12 @@ def get_app_routes() -> list[tuple[str, str]]:
     app = create_app(settings)
 
     routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Skip non-HTTP routes.
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+    paths = app.openapi().get("paths", {})
+    for path, path_item in paths.items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
-                continue
-            routes.append((method, path))
+        for method in path_item:
+            routes.append((method.upper(), path))
     return sorted(routes)
 
 
@@ -55,17 +50,25 @@ def check_routes_in_readme(
 ) -> list[tuple[str, str]]:
     """Return routes that are not mentioned anywhere in README.md.
 
-    We look for ``METHOD /path`` (e.g. ``GET /health``) so that sub-path
-    matches like ``/auth/passkeys/{key_id}`` inside
-    ``/auth/passkeys/{key_id}/revoke`` are not false positives.
+    We look for ``| `METHOD` | `/path` |`` in the generated route table.
     """
     readme_text = README.read_text()
+
+    # Try to extract the table first
+    table_match = re.search(
+        r"<!-- route-table-start -->(.*?)<!-- route-table-end -->",
+        readme_text,
+        re.DOTALL,
+    )
+
+    search_text = table_match.group(1) if table_match else readme_text
+
     missing: list[tuple[str, str]] = []
     for method, path in routes:
-        # Match exact method/path tokens in README.
         path_re = re.escape(path)
-        combined = rf"`{method}\s+{path_re}`"
-        if not re.search(combined, readme_text, re.IGNORECASE):
+        # Match exactly the table format to avoid substring matches
+        combined = rf"`{method}`\s*\|\s*`{path_re}`"
+        if not re.search(combined, search_text, re.IGNORECASE):
             missing.append((method, path))
     return missing
 
