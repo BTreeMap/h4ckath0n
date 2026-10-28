@@ -1,0 +1,3 @@
+## 2023-10-28 - Pydantic Field Validation Order with Custom Validators
+**Learning:** When combining `Field(max_length=...)` with custom validators like `@field_validator` in Pydantic 2, the constraints in `Field` evaluate *before* the custom validator. This causes padded strings that exceed `max_length` to be rejected before trimming, leading to latent bugs and poor edge-case handling.
+**Action:** Use `Annotated` with `BeforeValidator(normalize_fn)` for shared validation logic like trimming, which forces the custom normalisation to run before `Field` constraints. This ensures single-source-of-truth semantic types (like `DisplayName`) that apply correctly across the API.
