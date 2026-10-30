@@ -201,13 +201,14 @@ async def finish_authentication(
     flow = await _get_valid_flow(db, flow_id, "authenticate")
 
     raw_id = credential_json.get("rawId") or credential_json.get("id", "")
-    result = await db.execute(
+    # Optimization: use db.scalar to avoid Result object and iterator overhead
+    stored = await db.scalar(
         select(WebAuthnCredential).filter(
             WebAuthnCredential.credential_id == raw_id,
             WebAuthnCredential.revoked_at.is_(None),
         )
     )
-    if (stored := result.scalars().first()) is None:
+    if stored is None:
         raise ValueError("Unknown or revoked credential")
 
     challenge_bytes = base64url_to_bytes(flow.challenge)
@@ -370,7 +371,8 @@ async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
     """
     try:
         # Lock the user row as a per-user mutation mutex.
-        await db.execute(select(User.id).filter(User.id == user.id).with_for_update())
+        # Optimization: use db.scalar to avoid Result object allocation overhead
+        await db.scalar(select(User.id).filter(User.id == user.id).with_for_update())
 
         if (cred := await db.get(WebAuthnCredential, key_id)) is None:
             raise PasskeyNotFoundError
