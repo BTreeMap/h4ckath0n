@@ -1,0 +1,3 @@
+## 2024-10-30 - Using session.scalar() for aggregations and single lookups
+**Learning:** For non-PK lookups, aggregations (like `func.count()`), or existence checks, `session.scalar(select(...))` (or `await db.scalar(...)`) should be used instead of `session.execute(select(...)).scalars().first()` or `session.execute(select(...)).scalar()` to avoid the overhead of the `Result` object and iterator. This constraint applies universally across the codebase.
+**Action:** Replace `session.execute(...).scalar()` with `session.scalar(...)` and `session.execute(...).scalars().first()` with `session.scalar(...)` in all CLI scripts.
