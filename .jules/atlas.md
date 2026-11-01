@@ -1,11 +1,3 @@
-# Atlas Journal: Critical Learnings
-
-## 2026-02-28 - API route substring matching is unreliable for drift checks
-
-**Learning:** Checking whether a path string appears *anywhere* in a README causes false negatives
-when one route's path is a substring of another (e.g. `/auth/passkeys/{key_id}` inside
-`/auth/passkeys/{key_id}/revoke`). The drift check must match `METHOD /path` as a combined token,
-ideally inside backtick delimiters, to avoid this trap.
-
-**Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
-that mirror the actual markdown formatting.
+## 2024-11-01 - Replace hand-written API routes with generated tables
+**Learning:** Hardcoding API routes in README.md leads to documentation drift, especially since some routes like password auth are dynamically included/excluded based on configuration. Additionally, iterating `app.routes` does not expose nested routes, but querying `app.openapi().get('paths', {})` accurately enumerates all live, fully-evaluated API endpoints and automatically excludes framework-provided paths.
+**Action:** Use an automated docs-check script to generate and verify API route tables in README.md based on the OpenAPI schema. Delimit generated markdown with HTML comments and use exact regex column matching (`rf"`{method}` \| `{path_re}`"`) for verification.
