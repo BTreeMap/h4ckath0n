@@ -9,3 +9,6 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+## 2026-03-01 - Enumerating fully evaluated API endpoints via OpenAPI schema
+**Learning:** Iterating `app.routes` in a FastAPI application only yields top-level routes and instances of `_IncludedRouter` or `Mount`; it does not flatten or expose nested routes. Checking the markdown drift check on this incomplete set hides routes missing from docs.
+**Action:** To reliably enumerate all fully evaluated API endpoints (e.g., for drift checks), query the OpenAPI schema (`app.openapi().get('paths', {})`) instead of iterating over `app.routes`.
