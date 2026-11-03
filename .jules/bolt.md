@@ -28,3 +28,7 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## 2026-03-24 - Avoid ORM overhead in single-record and count fetches
+**Learning:** Using `db.execute(select(...)).scalars().first()` or `db.execute(select(...)).scalar()` for retrieving a single record (like checking existence) or an aggregated value (like `func.count()`) involves unnecessary creation of a `Result` object and its iterator. Furthermore, fetching the entire `User` object for an existence check parses and hydrates full ORM properties when only the `id` was required.
+**Action:** Always use `db.scalar(select(...))` for single records or scalar aggregates to skip iterator overhead. When checking existence without needing data, query for `select(Model.id)` to avoid pulling full rows and bypass ORM parsing/hydration.
