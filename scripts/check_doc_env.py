@@ -3,40 +3,81 @@
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 README = REPO_ROOT / "README.md"
-_DOCUMENTED_ENVIRONMENT = re.compile(r"^\|\s*`([A-Z][A-Z0-9_]*)`\s*\|", re.MULTILINE)
 
 
-def get_settings_environment_names() -> frozenset[str]:
-    """Return the environment variable name for each Settings field."""
+def generate_expected_table() -> str:
     from h4ckath0n.config import Settings
 
-    return frozenset(
-        f"H4CKATH0N_{field_name.upper()}" for field_name in Settings.model_fields
-    )
+    lines = []
+    lines.append("| Variable | Default | Description |")
+    lines.append("|---|---|---|")
 
+    for name, field in Settings.model_fields.items():
+        env_names = []
+        if field.validation_alias:
+            if isinstance(field.validation_alias, str):
+                env_names = [field.validation_alias]
+            else:
+                env_names = [choice for choice in field.validation_alias.choices]
+        else:
+            env_names = [f"H4CKATH0N_{name.upper()}"]
 
-def get_documented_environment_names(readme_text: str) -> frozenset[str]:
-    """Return environment variable names from the first column of README tables."""
-    return frozenset(_DOCUMENTED_ENVIRONMENT.findall(readme_text))
+        default_str = str(field.default)
+        if isinstance(field.default, bool):
+            default_str = str(field.default).lower()
+        elif default_str == "":
+            default_str = "empty"
+        elif isinstance(field.default, list) or (
+            hasattr(field, "default_factory") and field.default_factory is list
+        ):
+            default_str = "[]"
+
+        if default_str not in ["empty", "[]"]:
+            default_str = f"`{default_str}`"
+
+        if name == "rp_id":
+            default_str = "`localhost` in development"
+        elif name == "origin":
+            default_str = "`http://localhost:8000` in development"
+
+        for env_name in env_names:
+            desc = field.description or ""
+            lines.append(f"| `{env_name}` | {default_str} | {desc} |")
+
+    return "\n".join(lines)
 
 
 def main() -> int:
-    documented = get_documented_environment_names(README.read_text())
-    missing = sorted(get_settings_environment_names().difference(documented))
-    if missing:
-        print("The following environment variables are not documented in README.md:\n")
-        for environment_name in missing:
-            print(f"  {environment_name}")
+    readme_text = README.read_text()
+    expected_table = generate_expected_table()
+
+    start_marker = "<!-- START_ENV_VARS -->"
+    end_marker = "<!-- END_ENV_VARS -->"
+
+    if start_marker not in readme_text or end_marker not in readme_text:
+        print(
+            "Error: Missing <!-- START_ENV_VARS --> or <!-- END_ENV_VARS --> in README.md"
+        )
         return 1
 
-    environment_count = len(get_settings_environment_names())
-    print(f"All {environment_count} Settings environment variables are documented.")
+    start_idx = readme_text.find(start_marker) + len(start_marker)
+    end_idx = readme_text.find(end_marker)
+
+    actual_table = readme_text[start_idx:end_idx].strip()
+
+    if actual_table != expected_table:
+        print(
+            "Error: README.md environment variables table is out of sync with Settings."
+        )
+        print("Run scripts/generate_env_docs.py to update it.")
+        return 1
+
+    print("All Settings environment variables are documented and synchronized.")
     return 0
 
 
