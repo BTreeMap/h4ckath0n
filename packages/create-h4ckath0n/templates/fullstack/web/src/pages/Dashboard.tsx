@@ -203,8 +203,8 @@ export function Dashboard() {
                   type="file"
                   className="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-primary file:text-white"
                 />
-                <Button onClick={handleUpload} disabled={uploading}>
-                  {uploading ? "Uploading…" : "Upload"}
+                <Button onClick={handleUpload} isLoading={uploading}>
+                  Upload
                 </Button>
               </div>
               {uploads.length > 0 && (
@@ -300,9 +300,10 @@ export function Dashboard() {
             />
             <Button
               onClick={handleAiStream}
-              disabled={aiStreaming || !aiPrompt.trim()}
+              disabled={!aiPrompt.trim()}
+              isLoading={aiStreaming}
             >
-              {aiStreaming ? "Streaming…" : "Send"}
+              Send
             </Button>
             {aiResponse && (
               <div className="p-3 rounded bg-surface-alt text-sm whitespace-pre-wrap font-mono">
