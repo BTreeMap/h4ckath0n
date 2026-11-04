@@ -111,6 +111,7 @@ export function Login() {
               autoComplete="email"
               autoCapitalize="none"
               autoFocus
+              required
             />
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -134,6 +135,7 @@ export function Login() {
                 disabled={isLoading}
                 data-testid="login-password-input"
                 autoComplete="current-password"
+                required
               />
             </div>
             <Button
