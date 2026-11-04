@@ -36,17 +36,19 @@ def get_app_routes() -> list[tuple[str, str]]:
     app = create_app(settings)
 
     routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Skip non-HTTP routes.
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+
+    # In recent FastAPI versions (0.115+), endpoints nested within _IncludedRouter
+    # are obfuscated in app.routes. Always use app.openapi().get('paths', {}) to
+    # reliably retrieve all registered endpoints and their metadata.
+    paths = app.openapi().get("paths", {})
+    for path, path_item in paths.items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
+        for method in path_item:
+            if method.upper() == "HEAD":
                 continue
-            routes.append((method, path))
+            routes.append((method.upper(), path))
+
     return sorted(routes)
 
 
