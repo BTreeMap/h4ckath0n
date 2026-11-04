@@ -36,17 +36,14 @@ def get_app_routes() -> list[tuple[str, str]]:
     app = create_app(settings)
 
     routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Skip non-HTTP routes.
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+    paths = app.openapi().get("paths", {})
+    for path, path_item in paths.items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
+        for method in path_item:
+            if method.upper() == "HEAD":
                 continue
-            routes.append((method, path))
+            routes.append((method.upper(), path))
     return sorted(routes)
 
 
@@ -55,16 +52,16 @@ def check_routes_in_readme(
 ) -> list[tuple[str, str]]:
     """Return routes that are not mentioned anywhere in README.md.
 
-    We look for ``METHOD /path`` (e.g. ``GET /health``) so that sub-path
-    matches like ``/auth/passkeys/{key_id}`` inside
-    ``/auth/passkeys/{key_id}/revoke`` are not false positives.
+    We look for a table row like ``| `METHOD` | `/path` |`` to ensure
+    all routes are consolidated in the main API table and to avoid
+    substring false positives.
     """
     readme_text = README.read_text()
     missing: list[tuple[str, str]] = []
     for method, path in routes:
-        # Match exact method/path tokens in README.
+        # Match exact table row in README.
         path_re = re.escape(path)
-        combined = rf"`{method}\s+{path_re}`"
+        combined = rf"\|\s*`{method}`\s*\|\s*`{path_re}`\s*\|"
         if not re.search(combined, readme_text, re.IGNORECASE):
             missing.append((method, path))
     return missing
