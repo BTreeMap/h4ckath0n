@@ -332,20 +332,17 @@ export function Settings() {
           <Button
             onClick={handleAddPasskey}
             disabled={addLoading}
+            isLoading={addLoading}
             data-testid="add-passkey-btn"
           >
-            {addLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="mr-2 h-4 w-4" />
-            )}
+            {!addLoading && <Plus className="mr-2 h-4 w-4" />}
             Add Passkey
           </Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex justify-center py-8" aria-busy="true">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
             </div>
           ) : passkeys && passkeys.length > 0 ? (
             <div className="space-y-4">
