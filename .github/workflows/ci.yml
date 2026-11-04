@@ -50,7 +50,7 @@ jobs:
         run: uv run --locked scripts/check_doc_routes.py
 
       - name: Check documented environments
-        run: uv run --locked scripts/check_doc_env.py
+        run: uv run --locked scripts/check_doc_env.py --check
 
   frontend:
     runs-on: ubuntu-latest
