@@ -18,11 +18,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 README = REPO_ROOT / "README.md"
 
-# FastAPI paths omitted from user docs.
-FRAMEWORK_PATHS = frozenset(
-    {"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
-)
-
 
 def get_app_routes() -> list[tuple[str, str]]:
     """Return (method, path) pairs from the live FastAPI app."""
@@ -36,17 +31,10 @@ def get_app_routes() -> list[tuple[str, str]]:
     app = create_app(settings)
 
     routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Skip non-HTTP routes.
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
-        if path in FRAMEWORK_PATHS:
-            continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
-                continue
-            routes.append((method, path))
+    paths = app.openapi().get("paths", {})
+    for path, item in paths.items():
+        for method in item:
+            routes.append((method.upper(), path))
     return sorted(routes)
 
 
@@ -78,10 +66,7 @@ def main() -> int:
         print("❌ The following API routes are NOT documented in README.md:\n")
         for method, path in missing:
             print(f"  {method:6s} {path}")
-        print(
-            "\nAdd these routes to README.md or, if intentionally undocumented, "
-            "add them to FRAMEWORK_PATHS in this script."
-        )
+        print("\nAdd these routes to README.md.")
         return 1
 
     print(f"✅ All {len(routes)} API routes are documented in README.md.")
