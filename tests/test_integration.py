@@ -782,3 +782,19 @@ class TestDeviceJWTVerification:
         token = _make_device_token("u" + "a" * 31, "d" + "a" * 31, private_pem)
         r = client.get("/verify-kid", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 401
+
+    def test_subject_mismatch_rejected(self, client: TestClient, app, db_session):
+        from h4ckath0n.auth import require_user
+
+        @app.get("/verify-sub")
+        def verify_sub(user=require_user()):
+            return {"id": user.id}
+
+        user_id, device_id, private_pem = _register_user_with_device(
+            client, db_session, "attacker@example.com", "P@ss1"
+        )
+
+        # Attacker signs token with their device but for a different user
+        token = _make_device_token("u_admin_id_here", device_id, private_pem)
+        r = client.get("/verify-sub", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 401
