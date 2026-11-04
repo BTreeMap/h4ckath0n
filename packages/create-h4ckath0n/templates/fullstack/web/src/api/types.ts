@@ -22,10 +22,6 @@ export type PasskeyInfo = components["schemas"]["PasskeyInfo"];
 export type PasskeyRenameResponse =
   components["schemas"]["PasskeyRenameResponse"];
 
-/** Response body for POST /auth/passkey/register/finish (and login/finish) */
-export type PasskeyFinishResponse =
-  components["schemas"]["PasskeyFinishResponse"];
-
 /** Response body for POST /auth/register and /auth/login */
 export type DeviceBindingResponse =
   components["schemas"]["DeviceBindingResponse"];

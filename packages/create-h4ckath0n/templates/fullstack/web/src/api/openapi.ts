@@ -777,29 +777,6 @@ export interface components {
                 [key: string]: unknown;
             };
         };
-        /** PasskeyFinishResponse */
-        PasskeyFinishResponse: {
-            /**
-             * Device Id
-             * @description Device ID that starts with the d prefix, empty when no device key is bound.
-             */
-            device_id: string;
-            /**
-             * Display Name
-             * @description Optional display name for the user, not set by default.
-             */
-            display_name?: string | null;
-            /**
-             * Role
-             * @description Server-side role for the user.
-             */
-            role: string;
-            /**
-             * User Id
-             * @description User ID that starts with the u prefix.
-             */
-            user_id: string;
-        };
         /** PasskeyInfo */
         PasskeyInfo: {
             /**
@@ -1198,7 +1175,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PasskeyFinishResponse"];
+                    "application/json": components["schemas"]["DeviceBindingResponse"];
                 };
             };
             /** @description Invalid or expired flow, or WebAuthn verification error. */
@@ -1278,7 +1255,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PasskeyFinishResponse"];
+                    "application/json": components["schemas"]["DeviceBindingResponse"];
                 };
             };
             /** @description Invalid credentials, revoked passkey, or expired flow. */
@@ -1340,7 +1317,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PasskeyFinishResponse"];
+                    "application/json": components["schemas"]["DeviceBindingResponse"];
                 };
             };
             /** @description Invalid or expired flow, or invalid WebAuthn payload. */
