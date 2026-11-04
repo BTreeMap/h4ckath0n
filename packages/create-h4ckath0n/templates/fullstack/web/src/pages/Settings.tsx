@@ -291,6 +291,7 @@ export function Settings() {
                 key={option}
                 className={cn(
                   "cursor-pointer rounded-xl border-2 p-4 hover:bg-surface-alt transition-all",
+                  "has-focus-visible:ring-2 has-focus-visible:ring-primary has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-surface",
                   themePreference === option
                     ? "border-primary bg-primary/5"
                     : "border-border",
