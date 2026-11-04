@@ -1,0 +1,3 @@
+## 2025-02-23 - ID Validation Refactor
+**Learning:** This repository extensively uses base32 prefixed string IDs with `TypeGuard` validation. Extracting the repeated length/prefix/character set checks into a single pure boolean helper `_is_valid_id` avoids boilerplate.
+**Action:** When validating predefined character sets in hot loops (like ID checking), `frozenset("chars")` combined with `set(substring).issubset(_ALLOWED_CHARS)` provides a highly performant and functionally pure alternative to generator comprehensions (`all(c in _ALLOWED_CHARS for c in substring)`). Always check if string validations can be centralized.
