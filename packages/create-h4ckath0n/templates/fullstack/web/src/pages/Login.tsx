@@ -99,7 +99,7 @@ export function Login() {
           </div>
 
           <form onSubmit={handlePasswordLogin} className="space-y-4">
-            <Input
+            <Input required
               id="email"
               label="Email"
               type="email"
@@ -127,7 +127,7 @@ export function Login() {
                   Forgot password?
                 </Link>
               </div>
-              <PasswordField
+              <PasswordField required
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
