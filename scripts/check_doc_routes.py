@@ -11,7 +11,6 @@ README.md mentions each one. Routes provided by FastAPI itself (e.g. /openapi.js
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
@@ -34,57 +33,105 @@ def get_app_routes() -> list[tuple[str, str]]:
         password_auth_enabled=True,
     )
     app = create_app(settings)
+    openapi = app.openapi()
+    paths = openapi.get("paths", {})
 
     routes: list[tuple[str, str]] = []
-    for route in app.routes:
-        # Skip non-HTTP routes.
-        if not hasattr(route, "methods") or not hasattr(route, "path"):
-            continue
-        path: str = route.path  # type: ignore[union-attr]
+    for path, methods in paths.items():
         if path in FRAMEWORK_PATHS:
             continue
-        for method in sorted(route.methods):  # type: ignore[union-attr]
-            if method == "HEAD":
+        for method in sorted(methods.keys()):
+            if method.upper() == "HEAD":
                 continue
-            routes.append((method, path))
+            routes.append((method.upper(), path))
     return sorted(routes)
 
 
-def check_routes_in_readme(
-    routes: list[tuple[str, str]],
-) -> list[tuple[str, str]]:
-    """Return routes that are not mentioned anywhere in README.md.
+def get_app_routes_markdown() -> str:
+    """Generate the markdown text for the API routes from OpenAPI."""
+    from collections import defaultdict
 
-    We look for ``METHOD /path`` (e.g. ``GET /health``) so that sub-path
-    matches like ``/auth/passkeys/{key_id}`` inside
-    ``/auth/passkeys/{key_id}/revoke`` are not false positives.
-    """
-    readme_text = README.read_text()
-    missing: list[tuple[str, str]] = []
-    for method, path in routes:
-        # Match exact method/path tokens in README.
-        path_re = re.escape(path)
-        combined = rf"`{method}\s+{path_re}`"
-        if not re.search(combined, readme_text, re.IGNORECASE):
-            missing.append((method, path))
-    return missing
+    from h4ckath0n.app import create_app  # noqa: E402
+    from h4ckath0n.config import Settings  # noqa: E402
+
+    settings = Settings(
+        database_url="sqlite+aiosqlite://",
+        password_auth_enabled=True,
+    )
+    app = create_app(settings)
+    openapi = app.openapi()
+    paths = openapi.get("paths", {})
+
+    routes_by_tag: dict[str, list[str]] = defaultdict(list)
+    for path, methods in paths.items():
+        if path in FRAMEWORK_PATHS:
+            continue
+        for method, op in methods.items():
+            tags = op.get("tags", ["default"])
+            tag = tags[0] if tags else "default"
+            if tag == "default":
+                tag = "System"
+            elif tag == "password-auth":
+                tag = "Password Auth"
+            else:
+                tag = tag.title()
+
+            summary = op.get("summary", "")
+            method_upper = method.upper()
+            routes_by_tag[tag].append(f"- `{method_upper} {path}` — {summary}")
+
+    lines = []
+    tag_order = ["System", "Auth", "Passkey", "Password Auth", "Jobs", "Uploads", "Llm"]
+
+    for tag in tag_order:
+        if tag not in routes_by_tag:
+            continue
+        lines.append(f"### {tag}\n")
+        for route in routes_by_tag[tag]:
+            lines.append(f"{route}\n")
+        lines.append("\n")
+
+    for tag in sorted(routes_by_tag.keys()):
+        if tag in tag_order:
+            continue
+        lines.append(f"### {tag}\n")
+        for route in routes_by_tag[tag]:
+            lines.append(f"{route}\n")
+        lines.append("\n")
+
+    return "".join(lines).strip() + "\n"
 
 
 def main() -> int:
-    routes = get_app_routes()
-    missing = check_routes_in_readme(routes)
+    readme_text = README.read_text(encoding="utf-8")
 
-    if missing:
-        print("❌ The following API routes are NOT documented in README.md:\n")
-        for method, path in missing:
-            print(f"  {method:6s} {path}")
+    start_marker = "<!-- BEGIN ROUTES -->"
+    end_marker = "<!-- END ROUTES -->"
+
+    start_idx = readme_text.find(start_marker)
+    end_idx = readme_text.find(end_marker)
+
+    if start_idx == -1 or end_idx == -1:
+        print("❌ Error: README.md is missing route markers.", file=sys.stderr)
+        return 1
+
+    prefix = readme_text[: start_idx + len(start_marker)]
+    suffix = readme_text[end_idx:]
+
+    expected_content = "\n" + get_app_routes_markdown() + "\n"
+    expected_readme = prefix + expected_content + suffix
+
+    if readme_text != expected_readme:
         print(
-            "\nAdd these routes to README.md or, if intentionally undocumented, "
-            "add them to FRAMEWORK_PATHS in this script."
+            "❌ README.md API routes are out of date.\n\n"
+            "The Built-in routes section is generated dynamically to prevent drift.\n"
+            "Run 'uv run scripts/generate_doc_routes.py' to update README.md.",
+            file=sys.stderr,
         )
         return 1
 
-    print(f"✅ All {len(routes)} API routes are documented in README.md.")
+    routes = get_app_routes()
+    print(f"✅ All {len(routes)} API routes are correctly generated in README.md.")
     return 0
 
 
