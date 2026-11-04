@@ -1,0 +1,3 @@
+## 2024-03-24 - Visual indicator for required fields
+**Learning:** Reusable input components map the native `required` attribute to a visual red asterisk in the label. However, appending this element directly into the label causes React Testing Library's exact string matches for `getByLabelText` to fail (e.g. `getByLabelText("Email")` fails because it reads "Email*"), even if the asterisk is marked `aria-hidden="true"`.
+**Action:** When adding visual indicators within `<Label>` components, mark them `aria-hidden="true"` and update any affected tests to use regex matches instead of exact string matches (e.g. `getByLabelText(/Email/i)`).
