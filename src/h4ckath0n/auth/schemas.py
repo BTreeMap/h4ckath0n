@@ -28,7 +28,11 @@ class DeviceBindingMixin(BaseModel):
 
 class RegisterRequest(DeviceBindingMixin):
     email: EmailStr = Field(..., description="Account email for password-based signup.")
-    password: str = Field(..., description="Plaintext password, hashed server-side.")
+    password: str = Field(
+        ...,
+        description="Plaintext password, hashed server-side.",
+        max_length=1024,
+    )
     display_name: str = Field(
         ...,
         description="Human-facing display name for the account.",
@@ -43,7 +47,11 @@ class RegisterRequest(DeviceBindingMixin):
 
 class LoginRequest(DeviceBindingMixin):
     email: EmailStr = Field(..., description="Account email for password-based login.")
-    password: str = Field(..., description="Plaintext password to verify.")
+    password: str = Field(
+        ...,
+        description="Plaintext password to verify.",
+        max_length=1024,
+    )
 
 
 class DeviceBindingResponse(BaseModel):
@@ -65,7 +73,11 @@ class PasswordResetRequestSchema(BaseModel):
 
 class PasswordResetConfirmSchema(DeviceBindingMixin):
     token: str = Field(..., description="Password reset token issued by the server.")
-    new_password: str = Field(..., description="New password to set for the account.")
+    new_password: str = Field(
+        ...,
+        description="New password to set for the account.",
+        max_length=1024,
+    )
 
 
 class MessageResponse(BaseModel):
