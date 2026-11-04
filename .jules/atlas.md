@@ -1,11 +1,3 @@
-# Atlas Journal: Critical Learnings
-
-## 2026-02-28 - API route substring matching is unreliable for drift checks
-
-**Learning:** Checking whether a path string appears *anywhere* in a README causes false negatives
-when one route's path is a substring of another (e.g. `/auth/passkeys/{key_id}` inside
-`/auth/passkeys/{key_id}/revoke`). The drift check must match `METHOD /path` as a combined token,
-ideally inside backtick delimiters, to avoid this trap.
-
-**Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
-that mirror the actual markdown formatting.
+## 2024-10-07 - Generate Configuration Docs and `.env.example`
+**Learning:** Hard-coded configuration tables in `README.md` and missing `.env.example` files are significant sources of documentation drift, as it's too easy to add a `Settings` field in Python and forget to update markdown. Checking for drift isn't enough; the build should actively generate both `.env.example` and the `README.md` markdown table to guarantee parity. Pydantic's `Field(description="...")` allows the code to serve as the single source of truth.
+**Action:** Centralize environment variable descriptions directly in Pydantic `Field` models. Write scripts to extract these definitions (including defaults evaluated via `pydantic_core.PydanticUndefined` checks and `default_factory` evaluation) to auto-generate markdown tables delimited by `<!-- START_ENV_DOCS -->` markers and `.env.example` files, failing CI when they are out of sync.
