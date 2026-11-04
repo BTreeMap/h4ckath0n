@@ -74,7 +74,7 @@ async def upload_file(
 
     upload = Upload(
         owner_user_id=user.id,
-        original_filename=file.filename or "upload",
+        original_filename=(file.filename or "upload")[:512],
         content_type=content_type,
         byte_size=len(data),
         sha256=sha256,
@@ -191,8 +191,15 @@ async def download_upload(
             status_code=status.HTTP_404_NOT_FOUND, detail="File not found on disk"
         )
 
+    # Sanitize the filename for the Content-Disposition header to prevent path traversal
+    # on the client.
+    safe_filename = (
+        os.path.basename((upload.original_filename or "").replace("\\", "/"))
+        or "download"
+    )
+
     return FileResponse(
         path=file_path,
         media_type=upload.content_type,
-        filename=upload.original_filename,
+        filename=safe_filename,
     )
