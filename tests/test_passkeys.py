@@ -630,31 +630,37 @@ class TestPasskeyRename:
         cred = await rename_passkey(db_session, user, creds[0].id, "My Laptop")
         assert cred.name == "My Laptop"
 
-    async def test_rename_trims_whitespace(self, db_session: AsyncSession):
-        user, creds = await self._create_user_with_passkeys(db_session)
-        cred = await rename_passkey(db_session, user, creds[0].id, "  Padded  ")
-        assert cred.name == "Padded"
+    def test_schema_trims_whitespace(self):
+        from h4ckath0n.auth.passkeys.schemas import PasskeyRenameRequest
 
-    async def test_rename_empty_stores_null(self, db_session: AsyncSession):
-        user, creds = await self._create_user_with_passkeys(db_session)
-        await rename_passkey(db_session, user, creds[0].id, "Name")
-        cred = await rename_passkey(db_session, user, creds[0].id, "")
-        assert cred.name is None
+        req = PasskeyRenameRequest(name="  Padded  ")
+        assert req.name == "Padded"
 
-    async def test_rename_whitespace_only_stores_null(self, db_session: AsyncSession):
-        user, creds = await self._create_user_with_passkeys(db_session)
-        cred = await rename_passkey(db_session, user, creds[0].id, "   ")
-        assert cred.name is None
+    def test_schema_empty_stores_null(self):
+        from h4ckath0n.auth.passkeys.schemas import PasskeyRenameRequest
 
-    async def test_rename_none_stores_null(self, db_session: AsyncSession):
-        user, creds = await self._create_user_with_passkeys(db_session)
-        cred = await rename_passkey(db_session, user, creds[0].id, None)
-        assert cred.name is None
+        req = PasskeyRenameRequest(name="")
+        assert req.name is None
 
-    async def test_rename_too_long_rejected(self, db_session: AsyncSession):
-        user, creds = await self._create_user_with_passkeys(db_session)
-        with pytest.raises(ValueError, match="64 characters"):
-            await rename_passkey(db_session, user, creds[0].id, "x" * 65)
+    def test_schema_whitespace_only_stores_null(self):
+        from h4ckath0n.auth.passkeys.schemas import PasskeyRenameRequest
+
+        req = PasskeyRenameRequest(name="   ")
+        assert req.name is None
+
+    def test_schema_none_stores_null(self):
+        from h4ckath0n.auth.passkeys.schemas import PasskeyRenameRequest
+
+        req = PasskeyRenameRequest(name=None)
+        assert req.name is None
+
+    def test_schema_too_long_rejected(self):
+        from pydantic import ValidationError
+
+        from h4ckath0n.auth.passkeys.schemas import PasskeyRenameRequest
+
+        with pytest.raises(ValidationError):
+            PasskeyRenameRequest(name="x" * 65)
 
     async def test_rename_64_chars_accepted(self, db_session: AsyncSession):
         user, creds = await self._create_user_with_passkeys(db_session)
