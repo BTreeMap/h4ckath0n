@@ -87,6 +87,7 @@ export function ForgotPassword() {
               <Input
                 id="email"
                 label="Email"
+                required
                 type="email"
                 placeholder="m@example.com"
                 value={email}

@@ -84,6 +84,7 @@ export function Register() {
             <Input
               id="displayName"
               label="Display Name"
+              required
               type="text"
               placeholder="Jane Doe"
               value={displayName}
@@ -126,6 +127,7 @@ export function Register() {
             <Input
               id="email"
               label="Email"
+              required
               type="email"
               placeholder="m@example.com"
               value={email}
@@ -138,6 +140,7 @@ export function Register() {
             <PasswordField
               id="password"
               label="Password"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
