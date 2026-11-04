@@ -28,3 +28,7 @@
 **Learning:** When retrieving objects by primary key, using `db.execute(select(Model).filter(Model.id == pk)).scalars().first()` bypasses the SQLAlchemy identity map and always triggers a database query, in addition to carrying the overhead of parsing and hydration. Since this is often used in high-frequency hot paths (like device JWT authentication), it becomes a measurable performance bottleneck.
 
 **Action:** Always use `await db.get(Model, pk)` when looking up a single record by its primary key. This checks the current session's identity map first, avoiding a roundtrip to the database and bypassing parsing overhead if the object is already loaded.
+
+## $(date +%Y-%m-%d) - Optimize threshold checks with limit() instead of func.count()
+**Learning:** Checking existence (count == 0) or small thresholds (count <= 1) using `func.count()` causes slow full-table or full-index scans in SQLAlchemy/Postgres, especially on large tables like `User`.
+**Action:** Replace `select(func.count())` with `select(Model.id).limit(threshold + 1)` and evaluate the result length in memory to allow the DB to return early and avoid aggregate scanning.
