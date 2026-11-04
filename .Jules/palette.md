@@ -1,0 +1,3 @@
+## 2023-10-17 - Missing Required Indicators
+**Learning:** Reusable input and password components in this design system do not visually indicate required fields natively, which can confuse users when form validation fails. Modifying them to append an asterisk to the label ensures consistent UI behavior without breaking accessibility (by using `aria-hidden="true"`). However, updating visual label contents breaks rigid React Testing Library queries (e.g. `getByLabelText("Label")`), requiring them to use regex instead.
+**Action:** Always verify `vitest` queries and update exact strings to regex when visually appending elements to custom form labels in this app.
