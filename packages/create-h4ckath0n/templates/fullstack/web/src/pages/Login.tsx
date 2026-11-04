@@ -108,6 +108,7 @@ export function Login() {
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
               data-testid="login-email-input"
+              required
               autoComplete="email"
               autoCapitalize="none"
               autoFocus
@@ -133,6 +134,7 @@ export function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
                 data-testid="login-password-input"
+              required
                 autoComplete="current-password"
               />
             </div>
