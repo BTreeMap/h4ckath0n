@@ -68,7 +68,16 @@ const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
 
     return (
       <div className="space-y-2">
-        {label && <Label htmlFor={inputId}>{label}</Label>}
+        {label && (
+          <Label htmlFor={inputId}>
+            {label}
+            {props.required && (
+              <span className="text-danger ml-1" aria-hidden="true">
+                *
+              </span>
+            )}
+          </Label>
+        )}
         <div className="relative">
           <input
             id={inputId}
@@ -88,10 +97,11 @@ const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             type="button"
             aria-label={visible ? "Hide password" : "Show password"}
             aria-pressed={visible}
+            title={visible ? "Hide password" : "Show password"}
             onClick={handleToggle}
             onPointerDown={handlePointerDown}
             onMouseDown={handlePointerDown}
-            className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-text-muted hover:text-text transition-colors disabled:pointer-events-none disabled:opacity-50"
+            className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-text-muted hover:text-text transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
             disabled={props.disabled}
           >
             <Icon className="h-4 w-4" aria-hidden="true" />
