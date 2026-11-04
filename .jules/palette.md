@@ -1,0 +1,3 @@
+## 2024-09-16 - Add Required Visual Indicator to Reusable Input Labels
+**Learning:** When appending a visual asterisk indicator to labels for required inputs, native screen readers will read it out which can be redundant and annoying, especially since the native required attribute already announces it. Applying aria-hidden="true" to the visual asterisk is critical to prevent redundant or confusing screen reader announcements. React Testing Library also expects regex matchers to find text with appended hidden content.
+**Action:** Always apply aria-hidden="true" to visual required indicators appended inside labels to prevent screen readers from reading them redundantly. Always verify regex matchers in React Testing Library if exact match fails due to the appended text.
