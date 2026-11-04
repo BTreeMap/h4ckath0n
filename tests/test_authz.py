@@ -8,8 +8,10 @@ from h4ckath0n.auth.authz import (
     ADMIN,
     USER,
     Scope,
+    add_scopes,
     missing_scopes,
     parse_scopes,
+    remove_scopes,
     serialize_scopes,
 )
 from h4ckath0n.auth.passkeys.errors import (
@@ -45,6 +47,19 @@ class TestScopes:
 
     def test_serialize_deduplicates(self):
         assert serialize_scopes([Scope("a"), Scope("a"), Scope("b")]) == "a,b"
+
+    def test_add_scopes_combines_and_deduplicates(self):
+        assert add_scopes("admin,demo", "reports,demo") == [
+            Scope("admin"),
+            Scope("demo"),
+            Scope("reports"),
+        ]
+
+    def test_remove_scopes_removes_specified_scopes(self):
+        assert remove_scopes("admin,demo,reports", "demo") == [
+            Scope("admin"),
+            Scope("reports"),
+        ]
 
     def test_missing_scopes_returns_difference(self):
         granted = parse_scopes("admin,demo")
