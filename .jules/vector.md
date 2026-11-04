@@ -1,0 +1,3 @@
+## 2024-05-15 - Extract Scope Operations
+**Learning:** The `h4ckath0n` codebase has an `authz.py` module containing pure scope parsing logic, but CLI commands in `src/h4ckath0n/cli/users.py` (and potentially other places) still manually manipulate scope lists via `parse_scopes` and `serialize_scopes`. We can extract pure helper functions `add_scopes` and `remove_scopes` to centralize this manipulation, improving composability and testability in line with FP principles, and eliminating the repeated transformation boilerplate.
+**Action:** Extract `add_scopes` and `remove_scopes` in `h4ckath0n.auth.authz`.
