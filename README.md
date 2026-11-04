@@ -174,10 +174,10 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 | `H4CKATH0N_ATTESTATION` | `none` | WebAuthn attestation preference |
 | `H4CKATH0N_PASSWORD_AUTH_ENABLED` | `false` | Enable password routes when the extra is installed |
 | `H4CKATH0N_PASSWORD_RESET_EXPIRE_MINUTES` | `30` | Password reset token expiry in minutes |
-| `H4CKATH0N_BOOTSTRAP_ADMIN_EMAILS` | `[]` | JSON list of emails that become admin on password signup |
+| `H4CKATH0N_BOOTSTRAP_ADMIN_EMAILS` | `PydanticUndefined` | JSON list of emails that become admin on password signup |
 | `H4CKATH0N_FIRST_USER_IS_ADMIN` | `false` | First password signup becomes admin |
 | `OPENAI_API_KEY` | empty | OpenAI API key for the LLM wrapper |
-| `H4CKATH0N_OPENAI_API_KEY` | empty | Alternate OpenAI API key for the LLM wrapper |
+| `H4CKATH0N_OPENAI_API_KEY` | empty | Alternate OpenAI API key for the LLM wrapper (can also use OPENAI_API_KEY) |
 | `H4CKATH0N_REDIS_URL` | empty | Redis connection string |
 | `H4CKATH0N_JOBS_INLINE_IN_DEV` | `true` | Run background jobs inline in development mode |
 | `H4CKATH0N_JOBS_DEFAULT_QUEUE` | `default` | Default Redis queue for background jobs |
