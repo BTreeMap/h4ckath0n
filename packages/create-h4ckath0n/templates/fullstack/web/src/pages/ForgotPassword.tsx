@@ -85,6 +85,7 @@ export function ForgotPassword() {
               data-testid="forgot-form"
             >
               <Input
+              required
                 id="email"
                 label="Email"
                 type="email"

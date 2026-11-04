@@ -122,6 +122,7 @@ export function ResetPassword() {
               data-testid="reset-form"
             >
               <PasswordField
+                required
                 id="new-password"
                 label="New Password"
                 value={newPassword}
