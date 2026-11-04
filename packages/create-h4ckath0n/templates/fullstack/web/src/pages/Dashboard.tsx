@@ -292,12 +292,24 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <textarea
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="Type a prompt…"
-              className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <div className="relative">
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    if (!aiStreaming && aiPrompt.trim()) handleAiStream();
+                  }
+                }}
+                placeholder="Type a prompt…"
+                aria-label="AI prompt"
+                className="w-full h-24 p-3 rounded border border-border bg-surface text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <div className="absolute bottom-3 right-3 pointer-events-none text-xs text-text-muted">
+                <kbd className="font-sans bg-surface-alt px-1.5 py-0.5 rounded border border-border shadow-sm">⌘ Enter</kbd>
+              </div>
+            </div>
             <Button
               onClick={handleAiStream}
               disabled={aiStreaming || !aiPrompt.trim()}
@@ -305,7 +317,10 @@ export function Dashboard() {
               {aiStreaming ? "Streaming…" : "Send"}
             </Button>
             {aiResponse && (
-              <div className="p-3 rounded bg-surface-alt text-sm whitespace-pre-wrap font-mono">
+              <div
+                className="p-3 rounded bg-surface-alt text-sm whitespace-pre-wrap font-mono"
+                aria-live="polite"
+              >
                 {aiResponse}
               </div>
             )}
