@@ -6,7 +6,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from h4ckath0n.auth.models import (
@@ -201,13 +201,14 @@ async def finish_authentication(
     flow = await _get_valid_flow(db, flow_id, "authenticate")
 
     raw_id = credential_json.get("rawId") or credential_json.get("id", "")
-    result = await db.execute(
+    # ⚡ Bolt: use db.scalar to avoid intermediate ExecutionResult allocation
+    stored = await db.scalar(
         select(WebAuthnCredential).filter(
             WebAuthnCredential.credential_id == raw_id,
             WebAuthnCredential.revoked_at.is_(None),
         )
     )
-    if (stored := result.scalars().first()) is None:
+    if stored is None:
         raise ValueError("Unknown or revoked credential")
 
     challenge_bytes = base64url_to_bytes(flow.challenge)
@@ -380,15 +381,18 @@ async def revoke_passkey(db: AsyncSession, user: User, key_id: str) -> None:
             raise PasskeyAlreadyRevokedError
 
         # Count active passkeys; the user-row lock serializes mutations.
-        active_count = await db.scalar(
-            select(func.count())
-            .select_from(WebAuthnCredential)
-            .filter(
-                WebAuthnCredential.user_id == user.id,
-                WebAuthnCredential.revoked_at.is_(None),
+        # ⚡ Bolt: evaluate length up to threshold+1 to avoid expensive aggregate count
+        active_ids = (
+            await db.scalars(
+                select(WebAuthnCredential.id)
+                .filter(
+                    WebAuthnCredential.user_id == user.id,
+                    WebAuthnCredential.revoked_at.is_(None),
+                )
+                .limit(2)
             )
-        )
-        if active_count is not None and int(active_count) <= 1:
+        ).all()
+        if len(active_ids) <= 1:
             raise LastPasskeyError
 
         cred.revoked_at = datetime.now(UTC)
