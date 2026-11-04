@@ -1,0 +1,3 @@
+## 2024-05-14 - Centralized display name validation using AfterValidator
+**Learning:** The codebase previously used a repeated `@field_validator("display_name")` in multiple schema classes (`RegisterRequest`, `PasskeyRegisterStartRequest`) to apply the `normalize_display_name` function. This violates the DRY principle and scatters validation logic.
+**Action:** Created a reusable `DisplayName` type alias using `typing.Annotated`, `Field(max_length=...)`, and Pydantic v2's `AfterValidator(normalize_display_name)`. Applied this type alias to all models needing display name validation to centralize semantics, as instructed by the "Style & Conventions / Pydantic" memory.
