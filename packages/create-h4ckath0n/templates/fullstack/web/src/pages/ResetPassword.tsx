@@ -127,6 +127,7 @@ export function ResetPassword() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 disabled={isLoading}
+                required
                 data-testid="reset-password-input"
                 autoComplete="new-password"
                 autoFocus
