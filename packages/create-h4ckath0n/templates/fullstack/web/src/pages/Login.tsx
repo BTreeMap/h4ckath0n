@@ -107,19 +107,14 @@ export function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
+              required
               data-testid="login-email-input"
               autoComplete="email"
               autoCapitalize="none"
               autoFocus
             />
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Password
-                </label>
+              <div className="flex items-center justify-end">
                 <Link
                   to="/forgot-password"
                   className="text-sm font-medium text-primary hover:underline"
@@ -129,9 +124,11 @@ export function Login() {
               </div>
               <PasswordField
                 id="password"
+                label="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
+                required
                 data-testid="login-password-input"
                 autoComplete="current-password"
               />
