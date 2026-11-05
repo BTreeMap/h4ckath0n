@@ -53,14 +53,15 @@ def _cmd_passkeys_revoke(args: argparse.Namespace) -> int:
             return EXIT_BAD_ARGS
 
         active_count = (
-            session.execute(
+            # Use session.scalar() for aggregations to avoid Result object overhead
+            session.scalar(
                 select(func.count())
                 .select_from(WebAuthnCredential)
                 .where(
                     WebAuthnCredential.user_id == cred.user_id,
                     WebAuthnCredential.revoked_at.is_(None),
                 )
-            ).scalar()
+            )
             or 0
         )
 
