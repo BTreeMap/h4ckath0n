@@ -38,7 +38,7 @@ def _cmd_users_list(args: argparse.Namespace) -> int:
         if not getattr(args, "include_disabled", False):
             stmt = stmt.where(User.disabled_at.is_(None))
         stmt = stmt.offset(args.offset).limit(args.limit)
-        users = session.execute(stmt).scalars().all()
+        users = session.scalars(stmt).all()
         _output([_user_dict(u) for u in users], fmt=args.format, pretty=args.pretty)
     return EXIT_OK
 
@@ -50,27 +50,27 @@ def _cmd_users_show(args: argparse.Namespace) -> int:
             return err
         assert user is not None
 
-        devices_total = session.execute(
+        devices_total = session.scalar(
             select(func.count()).select_from(Device).where(Device.user_id == user.id)
-        ).scalar()
-        devices_active = session.execute(
+        )
+        devices_active = session.scalar(
             select(func.count())
             .select_from(Device)
             .where(Device.user_id == user.id, Device.revoked_at.is_(None))
-        ).scalar()
-        passkeys_total = session.execute(
+        )
+        passkeys_total = session.scalar(
             select(func.count())
             .select_from(WebAuthnCredential)
             .where(WebAuthnCredential.user_id == user.id)
-        ).scalar()
-        passkeys_active = session.execute(
+        )
+        passkeys_active = session.scalar(
             select(func.count())
             .select_from(WebAuthnCredential)
             .where(
                 WebAuthnCredential.user_id == user.id,
                 WebAuthnCredential.revoked_at.is_(None),
             )
-        ).scalar()
+        )
 
         data = _user_dict(user)
         data["devices_total"] = devices_total or 0

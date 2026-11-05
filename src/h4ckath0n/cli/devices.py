@@ -33,7 +33,7 @@ def _cmd_devices_list(args: argparse.Namespace) -> int:
         stmt = select(Device).where(Device.user_id == user.id)
         if not getattr(args, "include_revoked", False):
             stmt = stmt.where(Device.revoked_at.is_(None))
-        devices = session.execute(stmt).scalars().all()
+        devices = session.scalars(stmt).all()
         _output([_device_dict(d) for d in devices], fmt=args.format, pretty=args.pretty)
     return EXIT_OK
 
