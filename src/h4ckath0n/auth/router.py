@@ -11,7 +11,6 @@ They do **not** return access/refresh tokens.
 from __future__ import annotations
 
 import logging
-from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,15 +23,11 @@ from h4ckath0n.auth.service import (
     register_device,
     register_user,
 )
+from h4ckath0n.db import get_async_session
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-async def _db_dep(request: Request) -> AsyncGenerator[AsyncSession, None]:
-    async with request.app.state.async_session_factory() as db:
-        yield db
 
 
 def _password_router() -> APIRouter:
@@ -57,7 +52,7 @@ def _password_router() -> APIRouter:
     async def register(
         body: schemas.RegisterRequest,
         request: Request,
-        db: AsyncSession = Depends(_db_dep),
+        db: AsyncSession = Depends(get_async_session),
     ) -> schemas.DeviceBindingResponse:
         settings = request.app.state.settings
         try:
@@ -93,7 +88,7 @@ def _password_router() -> APIRouter:
     async def login(
         body: schemas.LoginRequest,
         request: Request,
-        db: AsyncSession = Depends(_db_dep),
+        db: AsyncSession = Depends(get_async_session),
     ) -> schemas.DeviceBindingResponse:
         if (user := await authenticate_user(db, body.email, body.password)) is None:
             raise HTTPException(
@@ -121,7 +116,7 @@ def _password_router() -> APIRouter:
     async def password_reset_request(
         body: schemas.PasswordResetRequestSchema,
         request: Request,
-        db: AsyncSession = Depends(_db_dep),
+        db: AsyncSession = Depends(get_async_session),
     ) -> schemas.MessageResponse:
         settings = request.app.state.settings
         token = await create_password_reset_token(
@@ -173,7 +168,7 @@ def _password_router() -> APIRouter:
     )
     async def password_reset_confirm(
         body: schemas.PasswordResetConfirmSchema,
-        db: AsyncSession = Depends(_db_dep),
+        db: AsyncSession = Depends(get_async_session),
     ) -> schemas.DeviceBindingResponse:
         try:
             user = await confirm_password_reset(db, body.token, body.new_password)

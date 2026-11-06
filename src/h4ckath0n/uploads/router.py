@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse
@@ -13,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from h4ckath0n.auth.dependencies import require_user
 from h4ckath0n.auth.models import User
+from h4ckath0n.db import get_async_session
 from h4ckath0n.uploads.models import Upload
 from h4ckath0n.uploads.schemas import UploadResponse
 from h4ckath0n.uploads.storage import get_file_path, store_file
@@ -29,11 +29,6 @@ _TEXT_TYPES = {
     "application/json",
     "text/html",
 }
-
-
-async def _db_dep(request: Request) -> AsyncGenerator[AsyncSession, None]:
-    async with request.app.state.async_session_factory() as db:
-        yield db
 
 
 def _upload_to_response(u: Upload) -> UploadResponse:
@@ -59,7 +54,7 @@ async def upload_file(
     file: UploadFile,
     request: Request,
     user: User = require_user(),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> UploadResponse:
     settings = request.app.state.settings
     data = await file.read()
@@ -122,7 +117,7 @@ async def upload_file(
 )
 async def list_uploads(
     user: User = require_user(),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> list[UploadResponse]:
     result = await db.execute(
         select(Upload)
@@ -141,7 +136,7 @@ async def list_uploads(
 async def get_upload(
     upload_id: str,
     user: User = require_user(),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> UploadResponse:
     # Use db.get() for primary key lookup.
     upload = await db.get(Upload, upload_id)
@@ -165,7 +160,7 @@ async def download_upload(
     upload_id: str,
     request: Request,
     user: User = require_user(),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> FileResponse:
     # Use db.get() for primary key lookup.
     upload = await db.get(Upload, upload_id)

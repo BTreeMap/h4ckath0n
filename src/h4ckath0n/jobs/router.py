@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
-
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import h4ckath0n.jobs.handlers  # noqa: F401 – ensure built-in handlers are loaded
 from h4ckath0n.auth.dependencies import get_auth_context, require_user
 from h4ckath0n.auth.models import User
+from h4ckath0n.db import get_async_session
 from h4ckath0n.jobs.models import Job
 from h4ckath0n.jobs.queue import enqueue_job
 from h4ckath0n.jobs.registry import public_kinds
@@ -18,11 +17,6 @@ from h4ckath0n.jobs.schemas import EnqueueJobRequest, JobResponse
 from h4ckath0n.realtime.auth import AuthContext
 
 jobs_router = APIRouter(prefix="/jobs", tags=["jobs"])
-
-
-async def _db_dep(request: Request) -> AsyncGenerator[AsyncSession, None]:
-    async with request.app.state.async_session_factory() as db:
-        yield db
 
 
 def _job_to_response(job: Job) -> JobResponse:
@@ -52,7 +46,7 @@ async def create_job(
     request: Request,
     user: User = require_user(),
     ctx: AuthContext = Depends(get_auth_context),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> JobResponse:
     if body.kind not in public_kinds():
         raise HTTPException(
@@ -80,7 +74,7 @@ async def create_job(
 )
 async def list_jobs(
     user: User = require_user(),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> list[JobResponse]:
     result = await db.execute(
         select(Job)
@@ -100,7 +94,7 @@ async def list_jobs(
 async def get_job(
     job_id: str,
     user: User = require_user(),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> JobResponse:
     # Use db.get() for primary key lookup.
     job = await db.get(Job, job_id)
