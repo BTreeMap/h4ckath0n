@@ -201,13 +201,14 @@ async def finish_authentication(
     flow = await _get_valid_flow(db, flow_id, "authenticate")
 
     raw_id = credential_json.get("rawId") or credential_json.get("id", "")
-    result = await db.execute(
+    # Performance: Use db.scalar() to avoid Result object overhead
+    stored = await db.scalar(
         select(WebAuthnCredential).filter(
             WebAuthnCredential.credential_id == raw_id,
             WebAuthnCredential.revoked_at.is_(None),
         )
     )
-    if (stored := result.scalars().first()) is None:
+    if stored is None:
         raise ValueError("Unknown or revoked credential")
 
     challenge_bytes = base64url_to_bytes(flow.challenge)
@@ -242,13 +243,14 @@ async def start_add_credential(
     origin = settings.effective_origin()
 
     # Exclude the user's active credentials.
-    result = await db.execute(
+    # Performance: Use db.scalars() to avoid Result object overhead
+    result = await db.scalars(
         select(WebAuthnCredential).filter(
             WebAuthnCredential.user_id == user.id,
             WebAuthnCredential.revoked_at.is_(None),
         )
     )
-    existing = result.scalars().all()
+    existing = result.all()
     from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 
     exclude = [
