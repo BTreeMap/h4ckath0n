@@ -1,11 +1,10 @@
-# Atlas Journal: Critical Learnings
+## 2024-11-10 - Replace hand-written endpoint lists with generated tables from OpenAPI
+ **Learning:** Iterating `app.routes` in a FastAPI application only yields top-level routes and `_IncludedRouter` instances, failing to expose nested routes. To reliably enumerate all fully evaluated API endpoints, you must query the OpenAPI schema using `app.openapi().get('paths', {})`. Hand-written documentation of endpoints drifts easily, particularly when optional routes like password authentication are toggled via environment variables.
+ **Action:** Instead of manually listing endpoints in markdown, use an automated script to generate a markdown table delimited by HTML comments (e.g. `<!-- route-table-start -->`) by parsing the complete OpenAPI schema `app.openapi()`. Update `scripts/check_doc_routes.py` to use the schema approach to prevent false negatives from missing nested routes and to update the README directly with `--update`.
 
-## 2026-02-28 - API route substring matching is unreliable for drift checks
-
-**Learning:** Checking whether a path string appears *anywhere* in a README causes false negatives
-when one route's path is a substring of another (e.g. `/auth/passkeys/{key_id}` inside
-`/auth/passkeys/{key_id}/revoke`). The drift check must match `METHOD /path` as a combined token,
-ideally inside backtick delimiters, to avoid this trap.
-
-**Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
-that mirror the actual markdown formatting.
+## 2024-11-10 - Replace hand-written endpoint lists with generated tables from OpenAPI
+ **Learning:** Iterating `app.routes` in a FastAPI application only yields top-level routes and `_IncludedRouter` instances, failing to expose nested routes. To reliably enumerate all fully evaluated API endpoints, you must query the OpenAPI schema using `app.openapi().get('paths', {})`. Hand-written documentation of endpoints drifts easily, particularly when optional routes like password authentication are toggled via environment variables.
+ **Action:** Instead of manually listing endpoints in markdown, use an automated script to generate a markdown table delimited by HTML comments (e.g. `<!-- route-table-start -->`) by parsing the complete OpenAPI schema `app.openapi()`. Update `scripts/check_doc_routes.py` to use the schema approach to prevent false negatives from missing nested routes and to update the README directly with `--update`.
+## 2024-11-10 - Replace hand-written endpoint lists with generated tables from OpenAPI
+ **Learning:** Iterating `app.routes` in a FastAPI application only yields top-level routes and `_IncludedRouter` instances, failing to expose nested routes. To reliably enumerate all fully evaluated API endpoints, you must query the OpenAPI schema using `app.openapi().get('paths', {})`. Hand-written documentation of endpoints drifts easily, particularly when optional routes like password authentication are toggled via environment variables.
+ **Action:** Instead of manually listing endpoints in markdown, use an automated script to generate a markdown table delimited by HTML comments (e.g. `<!-- route-table-start -->`) by parsing the complete OpenAPI schema `app.openapi()`. Update `scripts/check_doc_routes.py` to use the schema approach to prevent false negatives from missing nested routes and to update the README directly with `--update`.
