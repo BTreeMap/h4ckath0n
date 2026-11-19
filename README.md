@@ -162,6 +162,7 @@ access tokens, refresh tokens, or cookies.
 
 All settings use the `H4CKATH0N_` prefix unless noted.
 
+<!-- env-docs:start -->
 | Variable | Default | Description |
 |---|---|---|
 | `H4CKATH0N_ENV` | `development` | `development` or `production` |
@@ -177,7 +178,7 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 | `H4CKATH0N_BOOTSTRAP_ADMIN_EMAILS` | `[]` | JSON list of emails that become admin on password signup |
 | `H4CKATH0N_FIRST_USER_IS_ADMIN` | `false` | First password signup becomes admin |
 | `OPENAI_API_KEY` | empty | OpenAI API key for the LLM wrapper |
-| `H4CKATH0N_OPENAI_API_KEY` | empty | Alternate OpenAI API key for the LLM wrapper |
+| `H4CKATH0N_OPENAI_API_KEY` | empty | OpenAI API key for the LLM wrapper |
 | `H4CKATH0N_REDIS_URL` | empty | Redis connection string |
 | `H4CKATH0N_JOBS_INLINE_IN_DEV` | `true` | Run background jobs inline in development mode |
 | `H4CKATH0N_JOBS_DEFAULT_QUEUE` | `default` | Default Redis queue for background jobs |
@@ -195,6 +196,7 @@ All settings use the `H4CKATH0N_` prefix unless noted.
 | `H4CKATH0N_SMTP_STARTTLS` | `true` | Enable SMTP STARTTLS |
 | `H4CKATH0N_SMTP_SSL` | `false` | Enable SMTP-over-SSL |
 | `H4CKATH0N_DEMO_MODE` | `false` | Enable demo mode |
+<!-- env-docs:end -->
 
 In development, missing `RP_ID` and `ORIGIN` fall back to localhost defaults with
 warnings. In production, missing values raise a runtime error when passkey flows start.

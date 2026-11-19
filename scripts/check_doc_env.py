@@ -3,40 +3,130 @@
 
 from __future__ import annotations
 
-import re
+import argparse
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 README = REPO_ROOT / "README.md"
-_DOCUMENTED_ENVIRONMENT = re.compile(r"^\|\s*`([A-Z][A-Z0-9_]*)`\s*\|", re.MULTILINE)
+ENV_EXAMPLE = (
+    REPO_ROOT
+    / "packages"
+    / "create-h4ckath0n"
+    / "templates"
+    / "fullstack"
+    / "web"
+    / ".env.example"
+)
+
+_ENV_DOCS_MARKER_START = "<!-- env-docs:start -->\n"
+_ENV_DOCS_MARKER_END = "<!-- env-docs:end -->\n"
 
 
-def get_settings_environment_names() -> frozenset[str]:
-    """Return the environment variable name for each Settings field."""
+def generate_docs() -> tuple[str, str]:
     from h4ckath0n.config import Settings
 
-    return frozenset(
-        f"H4CKATH0N_{field_name.upper()}" for field_name in Settings.model_fields
-    )
+    table_lines = [
+        "| Variable | Default | Description |",
+        "|---|---|---|",
+    ]
+    env_lines = []
 
+    for field_name, field_info in Settings.model_fields.items():
+        env_name = f"H4CKATH0N_{field_name.upper()}"
 
-def get_documented_environment_names(readme_text: str) -> frozenset[str]:
-    """Return environment variable names from the first column of README tables."""
-    return frozenset(_DOCUMENTED_ENVIRONMENT.findall(readme_text))
+        # Format default
+        default = field_info.default
+        if default is None or default == "":
+            default_str = "empty"
+        elif isinstance(default, bool):
+            default_str = "`true`" if default else "`false`"
+        elif isinstance(default, list):
+            default_str = "`[]`"
+        else:
+            default_str = f"`{default}`"
+
+        desc = field_info.description or ""
+
+        if env_name == "H4CKATH0N_RP_ID":
+            default_str = "`localhost` in development"
+        elif env_name == "H4CKATH0N_ORIGIN":
+            default_str = "`http://localhost:8000` in development"
+
+        table_lines.append(f"| `{env_name}` | {default_str} | {desc} |")
+
+        # Special case: add OPENAI_API_KEY manually like the current docs have
+        if env_name == "H4CKATH0N_OPENAI_API_KEY":
+            table_lines.insert(
+                -1, "| `OPENAI_API_KEY` | empty | OpenAI API key for the LLM wrapper |"
+            )
+
+        # Format .env.example
+        env_lines.append(f"# {desc}")
+
+        # Determine example value
+        example_val = default if default != "" else ""
+        if isinstance(default, bool):
+            example_val = "true" if default else "false"
+        elif isinstance(default, list):
+            example_val = "[]"
+        env_lines.append(f"{env_name}={example_val}")
+        env_lines.append("")
+
+    return "\n".join(table_lines) + "\n", "\n".join(env_lines).strip() + "\n"
 
 
 def main() -> int:
-    documented = get_documented_environment_names(README.read_text())
-    missing = sorted(get_settings_environment_names().difference(documented))
-    if missing:
-        print("The following environment variables are not documented in README.md:\n")
-        for environment_name in missing:
-            print(f"  {environment_name}")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--update", action="store_true")
+    args = parser.parse_args()
+
+    table_content, env_content = generate_docs()
+
+    readme_text = README.read_text()
+
+    start_idx = readme_text.find(_ENV_DOCS_MARKER_START)
+    end_idx = readme_text.find(_ENV_DOCS_MARKER_END)
+
+    if start_idx == -1 or end_idx == -1:
+        print("Error: Could not find env-docs markers in README.md")
         return 1
 
-    environment_count = len(get_settings_environment_names())
-    print(f"All {environment_count} Settings environment variables are documented.")
+    current_table = readme_text[start_idx + len(_ENV_DOCS_MARKER_START) : end_idx]
+
+    if current_table != table_content:
+        if args.update:
+            new_readme = (
+                readme_text[: start_idx + len(_ENV_DOCS_MARKER_START)]
+                + table_content
+                + readme_text[end_idx:]
+            )
+            README.write_text(new_readme)
+            print("Updated README.md")
+        else:
+            print("❌ Environment variable documentation in README.md is out of sync.")
+            print("Run `uv run scripts/check_doc_env.py --update` to fix.")
+            return 1
+    else:
+        print("✅ Environment variable documentation in README.md is up to date.")
+
+    if ENV_EXAMPLE.exists():
+        current_env = ENV_EXAMPLE.read_text()
+        if current_env != env_content:
+            if args.update:
+                ENV_EXAMPLE.write_text(env_content)
+                print(f"Updated {ENV_EXAMPLE.relative_to(REPO_ROOT)}")
+            else:
+                print(f"❌ {ENV_EXAMPLE.relative_to(REPO_ROOT)} is out of sync.")
+                print("Run `uv run scripts/check_doc_env.py --update` to fix.")
+                return 1
+        else:
+            print(f"✅ {ENV_EXAMPLE.relative_to(REPO_ROOT)} is up to date.")
+    elif args.update:
+        ENV_EXAMPLE.parent.mkdir(parents=True, exist_ok=True)
+        ENV_EXAMPLE.write_text(env_content)
+        print(f"Created {ENV_EXAMPLE.relative_to(REPO_ROOT)}")
+
     return 0
 
 
