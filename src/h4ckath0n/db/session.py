@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Callable, Generator
 
+from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -37,3 +38,9 @@ def get_async_db_dependency(
 
 # Populated at app startup.
 get_db = get_db_dependency
+
+
+async def get_async_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
+    """FastAPI dependency that returns an async database session."""
+    async with request.app.state.async_session_factory() as session:
+        yield session

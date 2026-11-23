@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
-
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,13 +26,9 @@ from h4ckath0n.auth.passkeys.service import (
     start_registration,
 )
 from h4ckath0n.auth.service import register_device
+from h4ckath0n.db import get_async_session
 
 router = APIRouter(prefix="/auth/passkey", tags=["passkey"])
-
-
-async def _db_dep(request: Request) -> AsyncGenerator[AsyncSession, None]:
-    async with request.app.state.async_session_factory() as db:
-        yield db
 
 
 @router.post(
@@ -55,7 +49,7 @@ async def _db_dep(request: Request) -> AsyncGenerator[AsyncSession, None]:
 async def register_start(
     body: schemas.PasskeyRegisterStartRequest,
     request: Request,
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> schemas.PasskeyRegisterStartResponse:
     settings = request.app.state.settings
     flow_id, options = await start_registration(
@@ -83,7 +77,7 @@ async def register_start(
 async def register_finish(
     body: schemas.PasskeyRegisterFinishRequest,
     request: Request,
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> schemas.PasskeyFinishResponse:
     settings = request.app.state.settings
     try:
@@ -114,7 +108,7 @@ async def register_finish(
     ),
 )
 async def login_start(
-    request: Request, db: AsyncSession = Depends(_db_dep)
+    request: Request, db: AsyncSession = Depends(get_async_session)
 ) -> schemas.PasskeyLoginStartResponse:
     settings = request.app.state.settings
     flow_id, options = await start_authentication(db, settings)
@@ -139,7 +133,7 @@ async def login_start(
 async def login_finish(
     body: schemas.PasskeyLoginFinishRequest,
     request: Request,
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> schemas.PasskeyFinishResponse:
     settings = request.app.state.settings
     try:
@@ -178,7 +172,7 @@ async def login_finish(
 async def add_start(
     request: Request,
     user: User = Depends(_get_current_user),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> schemas.PasskeyAddStartResponse:
     settings = request.app.state.settings
     flow_id, options = await start_add_credential(db, user, settings)
@@ -206,7 +200,7 @@ async def add_finish(
     body: schemas.PasskeyAddFinishRequest,
     request: Request,
     user: User = Depends(_get_current_user),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> schemas.PasskeyFinishResponse:
     settings = request.app.state.settings
     try:
@@ -246,7 +240,7 @@ passkeys_router = APIRouter(prefix="/auth/passkeys", tags=["passkey"])
 async def passkeys_list(
     request: Request,
     user: User = Depends(_get_current_user),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> schemas.PasskeyListResponse:
     creds = await list_passkeys(db, user)
     items = [
@@ -296,7 +290,7 @@ async def passkey_revoke(
     key_id: str,
     request: Request,
     user: User = Depends(_get_current_user),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> schemas.PasskeyRevokeResponse:
     try:
         await revoke_passkey(db, user, key_id)
@@ -338,7 +332,7 @@ async def passkey_rename(
     body: schemas.PasskeyRenameRequest,
     request: Request,
     user: User = Depends(_get_current_user),
-    db: AsyncSession = Depends(_db_dep),
+    db: AsyncSession = Depends(get_async_session),
 ) -> schemas.PasskeyRenameResponse:
     try:
         cred = await rename_passkey(db, user, key_id, body.name)
