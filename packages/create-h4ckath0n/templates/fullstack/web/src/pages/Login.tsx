@@ -110,6 +110,7 @@ export function Login() {
               data-testid="login-email-input"
               autoComplete="email"
               autoCapitalize="none"
+              required
               autoFocus
             />
             <div className="space-y-2">
@@ -134,6 +135,7 @@ export function Login() {
                 disabled={isLoading}
                 data-testid="login-password-input"
                 autoComplete="current-password"
+                required
               />
             </div>
             <Button

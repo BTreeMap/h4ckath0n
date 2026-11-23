@@ -95,6 +95,7 @@ export function ForgotPassword() {
                 data-testid="forgot-email-input"
                 autoComplete="email"
                 autoCapitalize="none"
+                required
                 autoFocus
               />
               <Button
