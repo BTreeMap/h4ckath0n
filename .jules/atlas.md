@@ -9,3 +9,8 @@ ideally inside backtick delimiters, to avoid this trap.
 
 **Action:** Always match method+path together in drift checks. Use `` `METHOD /path` `` patterns
 that mirror the actual markdown formatting.
+
+## 2023-11-06 - FastAPI app.routes fails to expose nested routes
+
+**Learning:** Iterating `app.routes` in a FastAPI application only yields top-level routes and `_IncludedRouter` instances, failing to expose nested routes. This leads to drift checks missing the vast majority of endpoints (e.g., finding only 2 instead of 25).
+**Action:** To reliably enumerate all fully evaluated API endpoints for drift prevention, you must query the OpenAPI schema using `app.openapi().get('paths', {})` rather than `app.routes`.
