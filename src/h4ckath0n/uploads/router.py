@@ -124,13 +124,13 @@ async def list_uploads(
     user: User = require_user(),
     db: AsyncSession = Depends(_db_dep),
 ) -> list[UploadResponse]:
-    result = await db.execute(
+    result = await db.scalars(
         select(Upload)
         .filter(Upload.owner_user_id == user.id)
         .order_by(Upload.created_at.desc())
         .limit(50)
     )
-    return [_upload_to_response(u) for u in result.scalars()]
+    return [_upload_to_response(u) for u in result]
 
 
 @uploads_router.get(

@@ -34,7 +34,7 @@ def _cmd_passkeys_list(args: argparse.Namespace) -> int:
         stmt = select(WebAuthnCredential).where(WebAuthnCredential.user_id == user.id)
         if not getattr(args, "include_revoked", False):
             stmt = stmt.where(WebAuthnCredential.revoked_at.is_(None))
-        creds = session.execute(stmt).scalars().all()
+        creds = session.scalars(stmt).all()
         _output([_passkey_dict(c) for c in creds], fmt=args.format, pretty=args.pretty)
     return EXIT_OK
 
@@ -53,14 +53,14 @@ def _cmd_passkeys_revoke(args: argparse.Namespace) -> int:
             return EXIT_BAD_ARGS
 
         active_count = (
-            session.execute(
+            session.scalar(
                 select(func.count())
                 .select_from(WebAuthnCredential)
                 .where(
                     WebAuthnCredential.user_id == cred.user_id,
                     WebAuthnCredential.revoked_at.is_(None),
                 )
-            ).scalar()
+            )
             or 0
         )
 

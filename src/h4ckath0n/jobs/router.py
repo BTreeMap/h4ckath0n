@@ -82,13 +82,13 @@ async def list_jobs(
     user: User = require_user(),
     db: AsyncSession = Depends(_db_dep),
 ) -> list[JobResponse]:
-    result = await db.execute(
+    result = await db.scalars(
         select(Job)
         .filter(Job.created_by_user_id == user.id)
         .order_by(Job.created_at.desc())
         .limit(50)
     )
-    return [_job_to_response(j) for j in result.scalars()]
+    return [_job_to_response(j) for j in result]
 
 
 @jobs_router.get(

@@ -201,13 +201,14 @@ async def finish_authentication(
     flow = await _get_valid_flow(db, flow_id, "authenticate")
 
     raw_id = credential_json.get("rawId") or credential_json.get("id", "")
-    result = await db.execute(
-        select(WebAuthnCredential).filter(
-            WebAuthnCredential.credential_id == raw_id,
-            WebAuthnCredential.revoked_at.is_(None),
+    if (
+        stored := await db.scalar(
+            select(WebAuthnCredential).filter(
+                WebAuthnCredential.credential_id == raw_id,
+                WebAuthnCredential.revoked_at.is_(None),
+            )
         )
-    )
-    if (stored := result.scalars().first()) is None:
+    ) is None:
         raise ValueError("Unknown or revoked credential")
 
     challenge_bytes = base64url_to_bytes(flow.challenge)
@@ -242,13 +243,12 @@ async def start_add_credential(
     origin = settings.effective_origin()
 
     # Exclude the user's active credentials.
-    result = await db.execute(
+    existing = await db.scalars(
         select(WebAuthnCredential).filter(
             WebAuthnCredential.user_id == user.id,
             WebAuthnCredential.revoked_at.is_(None),
         )
     )
-    existing = result.scalars().all()
     from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 
     exclude = [
@@ -323,12 +323,12 @@ async def finish_add_credential(
 
 async def list_passkeys(db: AsyncSession, user: User) -> list[WebAuthnCredential]:
     """List all credentials (active and revoked) for a user."""
-    result = await db.execute(
+    result = await db.scalars(
         select(WebAuthnCredential)
         .filter(WebAuthnCredential.user_id == user.id)
         .order_by(WebAuthnCredential.created_at)
     )
-    return list(result.scalars().all())
+    return list(result.all())
 
 
 async def rename_passkey(
